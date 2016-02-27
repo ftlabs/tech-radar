@@ -15,10 +15,16 @@ html, body {
 			.datum {
 				display: none;
 			}
+			&:after {
+				content: 'Click To Display';
+			}
 
 			&.name, &.do-able {
 				.datum {
 					display: inline-block;
+				}
+				&:after {
+					content: '';
 				}
 			}
 		}
@@ -27,7 +33,7 @@ html, body {
 
 
 .d3-label {
-	fill: #333;
+	fill: #000;
 	fill-opacity: 1;
 	stroke: #fff;
 	stroke-width: 0.5px;

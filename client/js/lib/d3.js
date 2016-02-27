@@ -24,7 +24,7 @@ module.exports = function ({
 
 	nodes.unshift({
 		name: 'root',
-		x: width,
+		x: width/2,
 		y: height,
 		fixed: true,
 		visible: false,
@@ -45,7 +45,7 @@ module.exports = function ({
 		.links(links)
 		.gravity(0.1)
 		.charge(-100)
-		.chargeDistance(150)
+		.chargeDistance(300)
 		.linkStrength(20)
 		.linkDistance(l => l.distance)
 		.size([width, height]);
@@ -86,16 +86,20 @@ module.exports = function ({
 	// Define the gradient colors
 	gradient.append('svg:stop')
 		.attr('offset', '90%')
-		.attr('stop-color', 'rgba(255, 255, 255, 0)')
+		.attr('stop-color', 'rgba(0, 0, 0, 0)')
 		.attr('stop-opacity', 1);
 
 	gradient.append('svg:stop')
 		.attr('offset', '100%')
-		.attr('stop-color', '#CCCCFF')
+		.attr('stop-color', 'rgba(0, 0, 0, 0.3)')
 		.attr('stop-opacity', 1);
 
 	const rootNode = svg.select('.rootNode');
 	for (let i=0; i<10; i++) {
+		rootNode.append('circle')
+			.attr('class', 'node')
+			.attr('r', (10 - i) * ringSize)
+			.style('fill', `hsla(${i * 36}, 100%, 85%, 1)`);
 		rootNode.append('circle')
 			.attr('class', 'node')
 			.attr('r', (10 - i) * ringSize)

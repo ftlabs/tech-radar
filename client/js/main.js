@@ -24,6 +24,10 @@ function addScript (url) {
 	});
 }
 
+function removeCollapsedClass (e) {
+	e.currentTarget.classList.remove('collapsed');
+}
+
 function generateData (data) {
 	data = data.filter(datum => !!datum['do-able'] && !!datum['name']);
 
@@ -31,7 +35,7 @@ function generateData (data) {
 	const svg = graph({
 		data,
 		width: svgTarget.clientWidth,
-		height: svgTarget.clientWidth*0.66
+		height: svgTarget.clientWidth*0.5
 	});
 	const table = document.createElement('table');
 	const thead = document.createElement('thead');
@@ -42,27 +46,36 @@ function generateData (data) {
 		const keys = Object.keys(datum);
 		keys.forEach(k => headings.add(k));
 	});
+	const filterHeadings = ['name', 'do-able', 'Other Details'];
 
 	table.appendChild(thead);
 	thead.appendChild(theadTr);
 	table.appendChild(tbody);
 	table.classList.add('filter-table');
-	for (const heading of headings.values()) {
+	for (const heading of filterHeadings) {
 		const td = document.createElement('td');
 		td.textContent = heading;
 		theadTr.appendChild(td);
 	}
 	for (const datum of data) {
 		const tbodyTr = document.createElement('tr');
+		tbodyTr.addEventListener('click', removeCollapsedClass);
 		tbody.appendChild(tbodyTr);
 		tbodyTr.classList.add('collapsed');
-		for (const heading of headings.values()) {
+		for (const heading of filterHeadings) {
 			const td = document.createElement('td');
+			td.classList.add(heading.replace(/[^a-z]/ig, '-'));
 			const tdContent = document.createElement('div');
 			tdContent.classList.add('datum');
-			tdContent.textContent = datum[heading] || '';
-			td.classList.add(heading);
 			td.appendChild(tdContent);
+			if (heading !== 'Other Details') {
+				tdContent.textContent = datum[heading] || '';
+			} else {
+
+				// Do something prettier here
+				tdContent.style.whiteSpace = 'pre';
+				tdContent.textContent = JSON.stringify(datum, null, '  ');
+			}
 			tbodyTr.appendChild(td);
 		}
 	}
