@@ -82,6 +82,10 @@
 		});
 	}
 	
+	function removeCollapsedClass(e) {
+		e.currentTarget.classList.remove('collapsed');
+	}
+	
 	function generateData(data) {
 		data = data.filter(function (datum) {
 			return !!datum['do-able'] && !!datum['name'];
@@ -91,7 +95,7 @@
 		var svg = graph({
 			data: data,
 			width: svgTarget.clientWidth,
-			height: svgTarget.clientWidth * 0.66
+			height: svgTarget.clientWidth * 0.5
 		});
 		var table = document.createElement('table');
 		var thead = document.createElement('thead');
@@ -104,6 +108,7 @@
 				return headings.add(k);
 			});
 		});
+		var filterHeadings = ['name', 'do-able', 'Other Details'];
 	
 		table.appendChild(thead);
 		thead.appendChild(theadTr);
@@ -114,7 +119,7 @@
 		var _iteratorError = undefined;
 	
 		try {
-			for (var _iterator = _getIterator(headings.values()), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+			for (var _iterator = _getIterator(filterHeadings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 				var heading = _step.value;
 	
 				var td = document.createElement('td');
@@ -145,6 +150,7 @@
 				var datum = _step2.value;
 	
 				var tbodyTr = document.createElement('tr');
+				tbodyTr.addEventListener('click', removeCollapsedClass);
 				tbody.appendChild(tbodyTr);
 				tbodyTr.classList.add('collapsed');
 				var _iteratorNormalCompletion3 = true;
@@ -152,15 +158,22 @@
 				var _iteratorError3 = undefined;
 	
 				try {
-					for (var _iterator3 = _getIterator(headings.values()), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+					for (var _iterator3 = _getIterator(filterHeadings), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 						var heading = _step3.value;
 	
 						var td = document.createElement('td');
+						td.classList.add(heading.replace(/[^a-z]/ig, '-'));
 						var tdContent = document.createElement('div');
 						tdContent.classList.add('datum');
-						tdContent.textContent = datum[heading] || '';
-						td.classList.add(heading);
 						td.appendChild(tdContent);
+						if (heading !== 'Other Details') {
+							tdContent.textContent = datum[heading] || '';
+						} else {
+	
+							// Do something prettier here
+							tdContent.style.whiteSpace = 'pre';
+							tdContent.textContent = JSON.stringify(datum, null, '  ');
+						}
 						tbodyTr.appendChild(td);
 					}
 				} catch (err) {
@@ -1844,7 +1857,7 @@
 	
 		nodes.unshift({
 			name: 'root',
-			x: width,
+			x: width / 2,
 			y: height,
 			fixed: true,
 			visible: false,
@@ -1858,7 +1871,7 @@
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 		var svg = d3.select(svgNode).attr('width', width).attr('height', height);
 	
-		var force = d3.layout.force().nodes(nodes).links(links).gravity(0.1).charge(-100).chargeDistance(150).linkStrength(20).linkDistance(function (l) {
+		var force = d3.layout.force().nodes(nodes).links(links).gravity(0.1).charge(-100).chargeDistance(300).linkStrength(20).linkDistance(function (l) {
 			return l.distance;
 		}).size([width, height]);
 	
@@ -1885,12 +1898,13 @@
 		var gradient = svg.append('svg:defs').append('svg:radialGradient').attr('id', 'radgrad').attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '100%').attr('spreadMethod', 'pad');
 	
 		// Define the gradient colors
-		gradient.append('svg:stop').attr('offset', '90%').attr('stop-color', 'rgba(255, 255, 255, 0)').attr('stop-opacity', 1);
+		gradient.append('svg:stop').attr('offset', '90%').attr('stop-color', 'rgba(0, 0, 0, 0)').attr('stop-opacity', 1);
 	
-		gradient.append('svg:stop').attr('offset', '100%').attr('stop-color', '#CCCCFF').attr('stop-opacity', 1);
+		gradient.append('svg:stop').attr('offset', '100%').attr('stop-color', 'rgba(0, 0, 0, 0.3)').attr('stop-opacity', 1);
 	
 		var rootNode = svg.select('.rootNode');
 		for (var i = 0; i < 10; i++) {
+			rootNode.append('circle').attr('class', 'node').attr('r', (10 - i) * ringSize).style('fill', 'hsla(' + i * 36 + ', 100%, 85%, 1)');
 			rootNode.append('circle').attr('class', 'node').attr('r', (10 - i) * ringSize).style('fill', 'url(#radgrad)');
 		}
 	

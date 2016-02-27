@@ -9,11 +9,17 @@ html, body {
 .filter-table tr.collapsed td .datum {
   display: none; }
 
+.filter-table tr.collapsed td:after {
+  content: 'Click To Display'; }
+
 .filter-table tr.collapsed td.name .datum, .filter-table tr.collapsed td.do-able .datum {
   display: inline-block; }
 
+.filter-table tr.collapsed td.name:after, .filter-table tr.collapsed td.do-able:after {
+  content: ''; }
+
 .d3-label {
-  fill: #333;
+  fill: #000;
   fill-opacity: 1;
   stroke: #fff;
   stroke-width: 0.5px;
