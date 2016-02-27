@@ -61,7 +61,7 @@ module.exports = function ({
 		.attr('class', d => d.rootEl ? 'rootNode' : 'node');
 
 	node
-		.style('display', d => d.visible === false ? 'none' : 'initial');
+		.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
 	node.append('circle')
 		.attr('class', 'node')
