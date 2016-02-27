@@ -6,7 +6,8 @@
   "scripts": {
     "compile": "origami-build-tools build --js=client/js/main.js --buildFolder=dist --sass=client/scss/main.scss",
     "watch": "origami-build-tools build --watch --js=client/js/main.js --buildFolder=dist --sass=client/scss/main.scss",
-    "build": "npm run compile && cp ./client/* ./dist/ || :"
+    "build": "npm run compile && cp ./client/* ./dist/ || :",
+    "deploy": "git-directory-deploy --directory ./dist"
   },
   "author": "FTLabs",
   "license": "MIT",

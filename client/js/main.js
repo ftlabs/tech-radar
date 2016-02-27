@@ -99,6 +99,5 @@ Promise.all([
 		.then(data => {
 			cleanUp = generateData(data);
 		});
-	})
-	(data);
+	});
 });
