@@ -1873,7 +1873,7 @@
 		});
 	
 		node.style('display', function (d) {
-			return d.visible === false ? 'none' : 'initial';
+			return d.visible === false && d.rootEl !== true ? 'none' : 'initial';
 		});
 	
 		node.append('circle').attr('class', 'node').attr('r', 8).style('fill', 'white').style('stroke-width', '2px').style('stroke', 'black');
