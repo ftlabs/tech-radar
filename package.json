@@ -1,0 +1,19 @@
+{
+  "name": "tech-radar",
+  "version": "1.0.0",
+  "description": "Use ft bertha to display the information about FT tech projects.",
+  "main": "index.js",
+  "scripts": {
+    "compile": "origami-build-tools build --js=client/js/main.js --buildFolder=dist --sass=client/scss/main.scss",
+    "watch": "origami-build-tools build --watch --js=client/js/main.js --buildFolder=dist --sass=client/scss/main.scss",
+    "build": "npm run compile && cp ./client/* ./dist/ || :"
+  },
+  "author": "FTLabs",
+  "license": "MIT",
+  "devDependencies": {
+    "git-directory-deploy": "^1.4.0",
+    "handlebars": "^4.0.5",
+    "origami-build-tools": "^5.0.0",
+    "query-string": "^3.0.0"
+  }
+}
