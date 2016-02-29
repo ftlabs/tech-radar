@@ -11,8 +11,8 @@ module.exports = function ({
 	height
 }) {
 
-	width = (height || 400) * 1.5;
-	height = height || 400;
+	width = (width || 400);
+	height = (width || 400) - 30;
 	const nodes = data.slice(0);
 	nodes.forEach(n => {
 		n.x = width/2 + (Math.random() * 50);
@@ -43,7 +43,8 @@ module.exports = function ({
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode)
 		.attr('width', width)
-		.attr('height', height);
+		.attr('height', height)
+		.attr('viewBox', `0 0 ${width} ${height}`);
 
 	const force = d3.layout.force()
 		.nodes(nodes)

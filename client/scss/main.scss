@@ -4,6 +4,10 @@ html, body {
 	font-family: 'MetricWeb';
 }
 
+div {
+	box-sizing: content-box;
+}
+
 .filter-table {
 	thead {
 		background: #ccc;
@@ -31,36 +35,39 @@ html, body {
 	}
 }
 
+svg {
+	max-width: 100%;
+	height: auto;
 
-.d3-label {
-	fill: #000;
-	fill-opacity: 1;
-	stroke: #fff;
-	stroke-width: 1px;
-	stroke-linecap: round;
-	stroke-linejoin: round;
-	stroke-opacity: 1;
-	stroke-alignment: outer;
-	z-index: 10;
-	font-size: 14pt;
-	font-weight: bold;
-	pointer-events: none;
-	font-family: MetricWeb, helvetica, sans;
-	transition: transform 0.2s ease;
-	text-anchor: end;
+	.d3-label {
+		fill: #000;
+		fill-opacity: 1;
+		stroke: #fff;
+		stroke-width: 1px;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		stroke-opacity: 1;
+		stroke-alignment: outer;
+		z-index: 10;
+		font-size: 14pt;
+		font-weight: bold;
+		pointer-events: none;
+		font-family: MetricWeb, helvetica, sans;
+		transition: transform 0.2s ease;
+		text-anchor: end;
+	}
+
+	circle.background {
+		pointer-events: none;
+	}
+
+	circle.node {
+		fill: white;
+		stroke-width: 2px;
+		stroke: black;
+	}
+
+	g.node:hover {
+		fill: red;
+	}
 }
-
-circle.background {
-	pointer-events: none;
-}
-
-circle.node {
-	fill: white;
-	stroke-width: 2px;
-	stroke: black;
-}
-
-g.node:hover {
-	fill: red;
-}
-
