@@ -68,9 +68,25 @@ module.exports = function ({
 	node
 		.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
+	function mouseover (d) {
+		const row = document.getElementById(d.name);
+		this.parentNode.classList.add('hovering');
+		row.classList.add('hovering');
+	}
+
+	function mouseout (d) {
+		const row = document.getElementById(d.name);
+		this.parentNode.classList.remove('hovering');
+		row.classList.remove('hovering');
+	}
+
 	node.append('circle')
 		.attr('class', 'node')
-		.attr('r', 8);
+		.attr('r', 8)
+		.attr('id', n => `${n.name}--graph-point`)
+		.style('fill', n => `hsl(${n.hue}, 95%, 60%)`)
+        .on('mouseover', mouseover)
+		.on('mouseout', mouseout);
 
 	node.append('svg:text')
 		.text(d => d.name || '')

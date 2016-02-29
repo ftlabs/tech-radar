@@ -13,6 +13,8 @@ const dataUrlFragment = (function () {
 	throw Error('No ID and Sheet parameters.');
 }());
 
+// String input from the filter field used to filter the text input
+let filterString = '';
 
 function addScript (url) {
 	return new Promise(function (resolve, reject) {
@@ -28,8 +30,28 @@ function removeCollapsedClass (e) {
 	e.currentTarget.classList.remove('collapsed');
 }
 
-function generateData (data) {
+
+// Process the data
+function process (data) {
 	data = data.filter(datum => !!datum['do-able'] && !!datum['name']);
+
+	let hue = Math.random();
+	data.forEach(datum => {
+
+		if (datum.hue) return;
+
+		datum.hue = 360 * hue;
+
+		// Add the golden ratio to get the next colour, gives great distribution.
+		hue = (hue + 0.618033988749895) % 1;
+	});
+
+	return data;
+}
+
+function generateGraphs (data) {
+
+	data = process(data);
 
 	const svgTarget = document.getElementById('tech-radar__graph-target');
 	const svg = graph({
@@ -37,6 +59,29 @@ function generateData (data) {
 		width: svgTarget.clientWidth,
 		height: svgTarget.clientWidth*0.5
 	});
+	svgTarget.appendChild(svg);
+
+	return function cleanUp () {
+		svg.parentNode.removeChild(svg);
+	};
+}
+
+function rowMouseOver (e) {
+	const pointId = e.currentTarget.id + '--graph-point';
+	const point = document.getElementById(pointId);
+	point.parentNode.classList.add('hovering');
+	e.currentTarget.classList.add('hovering');
+}
+
+function rowMouseOut (e) {
+	const pointId = e.currentTarget.id + '--graph-point';
+	const point = document.getElementById(pointId);
+	point.parentNode.classList.remove('hovering');
+	e.currentTarget.classList.remove('hovering');
+}
+
+function generateTable (data) {
+	data = process(data);
 	const table = document.createElement('table');
 	const thead = document.createElement('thead');
 	const theadTr = document.createElement('tr');
@@ -46,7 +91,7 @@ function generateData (data) {
 		const keys = Object.keys(datum);
 		keys.forEach(k => headings.add(k));
 	});
-	const filterHeadings = ['name', 'do-able', 'Other Details'];
+	const filterHeadings = ['hue', 'name', 'do-able', 'Other Details'];
 
 	table.appendChild(thead);
 	thead.appendChild(theadTr);
@@ -62,31 +107,35 @@ function generateData (data) {
 		tbodyTr.addEventListener('click', removeCollapsedClass);
 		tbody.appendChild(tbodyTr);
 		tbodyTr.classList.add('collapsed');
+		tbodyTr.id = datum.name;
+		tbodyTr.addEventListener('mouseover', rowMouseOver);
+		tbodyTr.addEventListener('mouseout', rowMouseOut);
 		for (const heading of filterHeadings) {
 			const td = document.createElement('td');
 			td.classList.add(heading.replace(/[^a-z]/ig, '-'));
 			const tdContent = document.createElement('div');
 			tdContent.classList.add('datum');
 			td.appendChild(tdContent);
-			if (heading !== 'Other Details') {
-				tdContent.textContent = datum[heading] || '';
-			} else {
+			if (heading === 'Other Details') {
 
 				// Do something prettier here
 				tdContent.style.whiteSpace = 'pre';
 				tdContent.textContent = JSON.stringify(datum, null, '  ');
+			} else if (heading === 'hue') {
+				td.style.background = `hsl(${datum.hue}, 95%, 60%)`;
+			} else {
+				tdContent.textContent = datum[heading] || '';
 			}
 			tbodyTr.appendChild(td);
 		}
 	}
 	document.getElementById('tech-radar__filter-list-target').appendChild(table);
-	svgTarget.appendChild(svg);
 
 	return function cleanUp () {
 		table.parentNode.removeChild(table);
-		svg.parentNode.removeChild(svg);
 	};
 }
+
 
 Promise.all([
 	addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'),
@@ -98,19 +147,42 @@ Promise.all([
 .then(response => response.json())
 .then(function (data) {
 
-	let cleanUp = generateData(data);
+	let cleanUpGraph = generateGraphs(data);
+	let cleanUpTable = generateTable(data);
 
 	const buttons = document.getElementById('tech-radar__buttons');
 
 	const updateDataButton = document.createElement('button');
 	updateDataButton.textContent = 'Refresh Data';
 	buttons.appendChild(updateDataButton);
+	updateDataButton.classList.add('o-buttons');
+	updateDataButton.classList.add('o-buttons--standout');
 	updateDataButton.addEventListener('click', () => {
-		cleanUp();
+		cleanUpGraph();
+		cleanUpTable();
 		fetch(`${berthaRoot}${berthaRepublish}${dataUrlFragment}`)
 		.then(response => response.json())
-		.then(data => {
-			cleanUp = generateData(data);
+		.then(dataIn => {
+			data = dataIn;
+			cleanUpGraph = generateGraphs(data);
+			cleanUpTable = generateTable(data);
 		});
+	});
+
+	document.getElementById('filter').addEventListener('input', function (e) {
+
+		// Filter graph
+		filterString = e.currentTarget.value;
+		cleanUpTable();
+		cleanUpTable = generateTable(data);
+	});
+
+	document.getElementById('filter-form').addEventListener('submit', function (e) {
+		e.preventDefault();
+		console.log(e);
+		cleanUpTable();
+		cleanUpGraph();
+		cleanUpTable = generateTable(data);
+		cleanUpGraph = generateGraphs(data);
 	});
 });

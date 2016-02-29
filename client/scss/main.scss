@@ -9,6 +9,9 @@ div {
 }
 
 .filter-table {
+
+	white-space: nowrap;
+
 	thead {
 		background: #ccc;
 	}
@@ -23,7 +26,7 @@ div {
 				content: 'Click To Display';
 			}
 
-			&.name, &.do-able {
+			&.name, &.do-able, &.hue {
 				.datum {
 					display: inline-block;
 				}
@@ -66,8 +69,12 @@ svg {
 		stroke-width: 2px;
 		stroke: black;
 	}
+}
 
-	g.node:hover {
-		fill: red;
+.hovering {
+	font-weight: bold;
+
+	.d3-label {
+		font-size: 150%;
 	}
 }

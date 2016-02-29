@@ -5,7 +5,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 	<title>FT Tech Radar</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link href="https://build.origami.ft.com/v2/bundles/css?modules=o-techdocs@^5.0.0,o-forms@^2.0.0,o-grid@^4.0.0,o-fonts@^2.1.1" rel="stylesheet">
+	<link href="https://build.origami.ft.com/v2/bundles/css?modules=o-techdocs@^5.0.0,o-buttons@^3.0.3,o-forms@^2.0.0,o-grid@^4.0.0,o-fonts@^2.1.1" rel="stylesheet">
 	<script src="https://build.origami.ft.com/v2/bundles/js?modules=o-techdocs@^5.0.0"></script>
 	<link href="./main.css" rel="stylesheet">
 	<script src="./main.js"></script>
@@ -27,13 +27,31 @@
 		</div>
 	</header>
 	<div class="o-techdocs-container o-grid-container">
-		<div class="o-techdocs-layout o-grid-row">
-			<div id="tech-radar__buttons" data-o-grid-colspan="12">
+		<div class="o-grid-row">
+			<div data-o-grid-colspan="12">
+				<div class="o-forms-wrapper o-forms-wrapper--highlight">
+					<div id="tech-radar__buttons" class="o-forms-group">
+						<label class="o-forms-label">Update Data</label>
+						<small class="o-forms-additional-info">Pulldown updated data from Bertha</small>
+					</div>
+					<div class="o-forms-group">
+						<label class="o-forms-label">Filter Data</label>
+						<form id="filter-form">
+							<div class="o-forms-affix-wrapper">
+								<input id="filter" type="text" placeholder="e.g. 'foo', 'do-able:bar', 'biz:baz'" class="o-forms-text"></input>
+								<div class="o-forms-suffix">
+									<button type="submit" class="o-buttons">Filter Graph</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
 			</div>
-		</div><div class="o-techdocs-layout o-grid-row">
-			<div id="tech-radar__filter-list-target" data-o-grid-colspan="12 M4">
+		</div>
+		<div class="o-grid-row">
+			<div id="tech-radar__filter-list-target" data-o-grid-colspan="12 S4">
 			</div>
-			<div id="tech-radar__graph-target" data-o-grid-colspan="12 M8">
+			<div id="tech-radar__graph-target" data-o-grid-colspan="12 S8">
 			</div>
 		</div>
 	</div>
