@@ -1843,25 +1843,31 @@
 		var height = _ref.height;
 	
 		width = width || 400;
-		height = height || 400;
+		height = (width || 400) - 30;
 		var nodes = data.slice(0);
-		var ringSize = height / 10;
-	
-		var links = nodes.map(function (n, i) {
-			return {
-				target: 0,
-				source: i + 1,
-				distance: (10 - n['do-able']) * ringSize
-			};
+		nodes.forEach(function (n) {
+			n.x = width / 2 + Math.random() * 50;
+			n.y = height / 2 + Math.random() * 50;
 		});
+		var ringSize = height / 10;
 	
 		nodes.unshift({
 			name: 'root',
-			x: width / 2,
+			x: width,
 			y: height,
 			fixed: true,
 			visible: false,
 			rootEl: true
+		});
+	
+		var links = nodes.map(function (n, i) {
+			return {
+				target: 0,
+				source: !!n['do-able'] ? i : 0,
+				distance: (10.5 - n['do-able']) * ringSize
+			};
+		}).filter(function (l) {
+			return !!l.source;
 		});
 	
 		/**
@@ -1869,9 +1875,9 @@
 	  */
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-		var svg = d3.select(svgNode).attr('width', width).attr('height', height);
+		var svg = d3.select(svgNode).attr('width', width).attr('height', height).attr('viewBox', '0 0 ' + width + ' ' + height);
 	
-		var force = d3.layout.force().nodes(nodes).links(links).gravity(0.1).charge(-100).chargeDistance(300).linkStrength(20).linkDistance(function (l) {
+		var force = d3.layout.force().nodes(nodes).links(links).gravity(0.05).charge(-200).linkStrength(20).linkDistance(function (l) {
 			return l.distance;
 		}).size([width, height]);
 	
@@ -1889,11 +1895,11 @@
 			return d.visible === false && d.rootEl !== true ? 'none' : 'initial';
 		});
 	
-		node.append('circle').attr('class', 'node').attr('r', 8).style('fill', 'white').style('stroke-width', '2px').style('stroke', 'black');
+		node.append('circle').attr('class', 'node').attr('r', 8);
 	
 		node.append('svg:text').text(function (d) {
 			return d.name || '';
-		}).attr('class', 'd3-label');
+		}).attr('class', 'd3-label').attr('x', '-10px').attr('y', '5px');
 	
 		var gradient = svg.append('svg:defs').append('svg:radialGradient').attr('id', 'radgrad').attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '100%').attr('spreadMethod', 'pad');
 	
@@ -1904,8 +1910,8 @@
 	
 		var rootNode = svg.select('.rootNode');
 		for (var i = 0; i < 10; i++) {
-			rootNode.append('circle').attr('class', 'node').attr('r', (10 - i) * ringSize).style('fill', 'hsla(' + i * 36 + ', 100%, 85%, 1)');
-			rootNode.append('circle').attr('class', 'node').attr('r', (10 - i) * ringSize).style('fill', 'url(#radgrad)');
+			rootNode.append('circle').attr('class', 'background').attr('r', (10 - i) * ringSize).style('fill', 'hsla(' + i * 36 + ', 100%, 85%, 1)');
+			rootNode.append('circle').attr('class', 'background').attr('r', (10 - i) * ringSize).style('fill', 'url(#radgrad)');
 		}
 	
 		force.start().alpha(0.1);
@@ -1973,7 +1979,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.sort().map(function (val2) {
+				return val.slice().sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
