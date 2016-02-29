@@ -18,6 +18,7 @@ Tech-radar has no server compenent, all of the resources are static. To view the
 If you head to `http://localhost:3010/` you'll be presented with a rainbow, but no information will be visible. This is because you need to pass two URL parameters for tech radar to generate a chart.
 
 There are two parameters :
+
 1. sheet
 2. id
 
