@@ -1,6 +1,7 @@
 'use strict';
 
 const graph = require('./lib/d3');
+const extend = require('util')._extend;
 const berthaRoot = 'http://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
@@ -26,8 +27,8 @@ function addScript (url) {
 	});
 }
 
-function removeCollapsedClass (e) {
-	e.currentTarget.classList.remove('collapsed');
+function toggleCollapsedClass (e) {
+	e.currentTarget.classList.toggle('collapsed');
 }
 
 
@@ -50,12 +51,13 @@ function process (data) {
 		}
 	});
 
-	let hue = Math.random();
+	// starting point for colours
+	let hue = 0.1;
 	data.forEach(datum => {
 
-		if (datum.hue) return;
+		if (datum['hidden-graph-item-hue']) return;
 
-		datum.hue = 360 * hue;
+		datum['hidden-graph-item-hue'] = 360 * hue;
 
 		// Add the golden ratio to get the next colour, gives great distribution.
 		hue = (hue + 0.618033988749895) % 1;
@@ -66,7 +68,7 @@ function process (data) {
 
 function generateGraphs (data) {
 
-	data = process(data);
+	data = process(cloneData(data));
 
 	const svgTarget = document.getElementById('tech-radar__graph-target');
 	const svg = graph({
@@ -119,7 +121,7 @@ function generateTable (data) {
 	}
 	for (const datum of data) {
 		const tbodyTr = document.createElement('tr');
-		tbodyTr.addEventListener('click', removeCollapsedClass);
+		tbodyTr.addEventListener('click', toggleCollapsedClass);
 		tbody.appendChild(tbodyTr);
 		tbodyTr.classList.add('collapsed');
 		tbodyTr.id = datum.name;
@@ -133,11 +135,17 @@ function generateTable (data) {
 			td.appendChild(tdContent);
 			if (heading === 'Other Details') {
 
-				// Do something prettier here
-				tdContent.style.whiteSpace = 'pre';
-				tdContent.textContent = JSON.stringify(datum, null, '  ');
+				let newContent = '<ul class="details">';
+
+				const itemKeys = Object.keys(datum);
+				for (const k of itemKeys) {
+					if (k.match(/^hidden-graph-item/)) continue;
+					newContent += `<li><span class="key">${k}:</span> ${datum[k]}</li>`;
+				}
+				newContent += '</ul>';
+				tdContent.innerHTML = newContent;
 			} else if (heading === 'hue') {
-				td.style.background = `hsl(${datum.hue}, 95%, 60%)`;
+				td.style.background = `hsl(${datum['hidden-graph-item-hue']}, 95%, 60%)`;
 			} else {
 				tdContent.textContent = datum[heading] || '';
 			}
@@ -151,6 +159,9 @@ function generateTable (data) {
 	};
 }
 
+function cloneData (data) {
+	return data.map(datum => extend({}, datum));
+}
 
 Promise.all([
 	addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'),
@@ -194,7 +205,6 @@ Promise.all([
 
 	document.getElementById('filter-form').addEventListener('submit', function (e) {
 		e.preventDefault();
-		console.log(e);
 		cleanUpTable();
 		cleanUpGraph();
 		cleanUpTable = generateTable(data);

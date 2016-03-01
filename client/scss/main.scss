@@ -78,3 +78,19 @@ svg {
 		font-size: 150%;
 	}
 }
+
+.details {
+	padding-left: 0;
+
+	li {
+		list-style: none;
+		width: 10em;
+		margin-bottom: 0.5em;
+		white-space: normal;
+		font-weight: normal !important;
+
+		.key {
+			font-weight: bold;
+		}
+	}
+}
