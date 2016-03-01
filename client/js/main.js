@@ -33,7 +33,22 @@ function removeCollapsedClass (e) {
 
 // Process the data
 function process (data) {
-	data = data.filter(datum => !!datum['do-able'] && !!datum['name']);
+	data = data
+	.filter(datum => !!datum['do-able'] && !!datum['name'])
+	.filter(datum => {
+		let regex;
+		try {
+			regex = new RegExp(filterString, 'gi');
+		} catch (e) {
+
+			// if there is a broken regex then don't try matching
+			return true;
+		}
+		const possibleMatches = Object.keys(datum).map(k => `${k}:${datum[k]}`);
+		for (const p of possibleMatches) {
+			if (p.match(regex)) return true;
+		}
+	});
 
 	let hue = Math.random();
 	data.forEach(datum => {
