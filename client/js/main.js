@@ -189,8 +189,8 @@ Promise.all([
 		.then(response => response.json())
 		.then(dataIn => {
 			data = dataIn;
-			cleanUpGraph = generateGraphs(data);
-			cleanUpTable = generateTable(data);
+			cleanUpGraph = generateGraphs(process(cloneData(data)));
+			cleanUpTable = generateTable(process(cloneData(data)));
 		});
 	});
 
@@ -199,7 +199,7 @@ Promise.all([
 		// Filter graph
 		filterString = e.currentTarget.value;
 		cleanUpTable();
-		cleanUpTable = generateTable(data);
+		cleanUpTable = generateTable(process(cloneData(data)));
 	});
 
 	document.getElementById('filter-form').addEventListener('submit', function (e) {

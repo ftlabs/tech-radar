@@ -15,8 +15,9 @@ module.exports = function ({
 	height = (width || 400) - 30;
 	const nodes = data.slice(0);
 	nodes.forEach(n => {
-		n.x = width/2 + (Math.random() * 50);
-		n.y = height/2 + (Math.random() * 50);
+		n.x = width/2 + (Math.random() * 100) - 50;
+		n.y = height/2 + (Math.random() * 100) - 50;
+		n.weight = 10;
 	});
 	const ringSize = height / 10;
 
@@ -49,9 +50,9 @@ module.exports = function ({
 	const force = d3.layout.force()
 		.nodes(nodes)
 		.links(links)
-		.gravity(0.05)
-		.charge(-200)
-		.linkStrength(20)
+		.gravity(0.01)
+		.charge(-60)
+		.linkStrength(10)
 		.linkDistance(l => l.distance)
 		.size([width, height]);
 
