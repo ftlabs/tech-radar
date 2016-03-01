@@ -47,11 +47,8 @@ Bertha then exposes a JSON feed of the spreadsheet's contents, accessible via a 
 
 The first row of the spreadsheet needs to name the following columns as a minimum:
 
-* name
-* do-able
-
-The values of name can be any text, but the shorter the better to minimise overlaps in the display.
-The values of do-able need to integers in the range 1-10 (for now).
+* *name* : values can be any text, but the shorter the better to minimise overlaps in the display.
+* *do-able* : values need to integers in the range 1-10 (for now).
 
 All other named columns with be available for filtering in the radar view and can take pretty much any values.
 
