@@ -86,7 +86,7 @@ module.exports = function ({
 		.attr('class', 'node')
 		.attr('r', 8)
 		.attr('id', n => `${n.name}--graph-point`)
-		.style('fill', n => `hsl(${n.hue}, 95%, 60%)`)
+		.style('fill', n => `hsla(${n['hidden-graph-item-hue']}, 95%, 60%, 1)`)
         .on('mouseover', mouseover)
 		.on('mouseout', mouseout);
 

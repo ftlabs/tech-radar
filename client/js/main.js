@@ -68,8 +68,6 @@ function process (data) {
 
 function generateGraphs (data) {
 
-	data = process(cloneData(data));
-
 	const svgTarget = document.getElementById('tech-radar__graph-target');
 	const svg = graph({
 		data,
@@ -100,7 +98,6 @@ function rowMouseOut (e) {
 }
 
 function generateTable (data) {
-	data = process(data);
 	const table = document.createElement('table');
 	const thead = document.createElement('thead');
 	const theadTr = document.createElement('tr');
@@ -175,8 +172,8 @@ Promise.all([
 .then(response => response.json())
 .then(function (data) {
 
-	let cleanUpGraph = generateGraphs(data);
-	let cleanUpTable = generateTable(data);
+	let cleanUpGraph = generateGraphs(process(cloneData(data)));
+	let cleanUpTable = generateTable(process(cloneData(data)));
 
 	const buttons = document.getElementById('tech-radar__buttons');
 
@@ -209,7 +206,7 @@ Promise.all([
 		e.preventDefault();
 		cleanUpTable();
 		cleanUpGraph();
-		cleanUpTable = generateTable(data);
-		cleanUpGraph = generateGraphs(data);
+		cleanUpTable = generateTable(process(cloneData(data)));
+		cleanUpGraph = generateGraphs(process(cloneData(data)));
 	});
 });
