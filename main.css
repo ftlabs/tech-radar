@@ -7,20 +7,18 @@ div {
   -webkit-box-sizing: content-box;
   box-sizing: content-box; }
 
-.filter-table thead {
-  background: #ccc; }
-
-.filter-table tr.collapsed td .datum {
-  display: none; }
-
-.filter-table tr.collapsed td:after {
-  content: 'Click To Display'; }
-
-.filter-table tr.collapsed td.name .datum, .filter-table tr.collapsed td.do-able .datum {
-  display: inline-block; }
-
-.filter-table tr.collapsed td.name:after, .filter-table tr.collapsed td.do-able:after {
-  content: ''; }
+.filter-table {
+  white-space: nowrap; }
+  .filter-table thead {
+    background: #ccc; }
+  .filter-table tr.collapsed td .datum {
+    display: none; }
+  .filter-table tr.collapsed td:after {
+    content: 'Click To Display'; }
+  .filter-table tr.collapsed td.name .datum, .filter-table tr.collapsed td.do-able .datum, .filter-table tr.collapsed td.hue .datum {
+    display: inline-block; }
+  .filter-table tr.collapsed td.name:after, .filter-table tr.collapsed td.do-able:after, .filter-table tr.collapsed td.hue:after {
+    content: ''; }
 
 svg {
   max-width: 100%;
@@ -50,7 +48,10 @@ svg {
     fill: white;
     stroke-width: 2px;
     stroke: black; }
-  svg g.node:hover {
-    fill: red; }
+
+.hovering {
+  font-weight: bold; }
+  .hovering .d3-label {
+    font-size: 150%; }
 
 /*# sourceMappingURL=main.css.map */

@@ -49,11 +49,11 @@
 	
 	var _Promise = __webpack_require__(1)['default'];
 	
-	var _Set = __webpack_require__(56)['default'];
+	var _Object$keys = __webpack_require__(56)['default'];
 	
-	var _Object$keys = __webpack_require__(63)['default'];
+	var _getIterator = __webpack_require__(61)['default'];
 	
-	var _getIterator = __webpack_require__(68)['default'];
+	var _Set = __webpack_require__(64)['default'];
 	
 	var define = false;
 	
@@ -72,6 +72,9 @@
 		throw Error('No ID and Sheet parameters.');
 	})();
 	
+	// String input from the filter field used to filter the text input
+	var filterString = '';
+	
 	function addScript(url) {
 		return new _Promise(function (resolve, reject) {
 			var script = document.createElement('script');
@@ -86,10 +89,65 @@
 		e.currentTarget.classList.remove('collapsed');
 	}
 	
-	function generateData(data) {
+	// Process the data
+	function process(data) {
 		data = data.filter(function (datum) {
 			return !!datum['do-able'] && !!datum['name'];
+		}).filter(function (datum) {
+			var regex = undefined;
+			try {
+				regex = new RegExp(filterString, 'gi');
+			} catch (e) {
+	
+				// if there is a broken regex then don't try matching
+				return true;
+			}
+			var possibleMatches = _Object$keys(datum).map(function (k) {
+				return k + ':' + datum[k];
+			});
+			var _iteratorNormalCompletion = true;
+			var _didIteratorError = false;
+			var _iteratorError = undefined;
+	
+			try {
+				for (var _iterator = _getIterator(possibleMatches), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+					var p = _step.value;
+	
+					if (p.match(regex)) return true;
+				}
+			} catch (err) {
+				_didIteratorError = true;
+				_iteratorError = err;
+			} finally {
+				try {
+					if (!_iteratorNormalCompletion && _iterator['return']) {
+						_iterator['return']();
+					}
+				} finally {
+					if (_didIteratorError) {
+						throw _iteratorError;
+					}
+				}
+			}
 		});
+	
+		var hue = Math.random();
+		data.forEach(function (datum) {
+	
+			if (datum.hue) return;
+	
+			datum.hue = 360 * hue;
+	
+			// Add the golden ratio to get the next colour, gives great distribution.
+			hue = (hue + 0.618033988749895) % 1;
+		});
+	
+		return data;
+	}
+	
+	function generateGraphs(data) {
+	
+		data = process(data);
 	
 		var svgTarget = document.getElementById('tech-radar__graph-target');
 		var svg = graph({
@@ -97,6 +155,29 @@
 			width: svgTarget.clientWidth,
 			height: svgTarget.clientWidth * 0.5
 		});
+		svgTarget.appendChild(svg);
+	
+		return function cleanUp() {
+			svg.parentNode.removeChild(svg);
+		};
+	}
+	
+	function rowMouseOver(e) {
+		var pointId = e.currentTarget.id + '--graph-point';
+		var point = document.getElementById(pointId);
+		point.parentNode.classList.add('hovering');
+		e.currentTarget.classList.add('hovering');
+	}
+	
+	function rowMouseOut(e) {
+		var pointId = e.currentTarget.id + '--graph-point';
+		var point = document.getElementById(pointId);
+		point.parentNode.classList.remove('hovering');
+		e.currentTarget.classList.remove('hovering');
+	}
+	
+	function generateTable(data) {
+		data = process(data);
 		var table = document.createElement('table');
 		var thead = document.createElement('thead');
 		var theadTr = document.createElement('tr');
@@ -108,88 +189,23 @@
 				return headings.add(k);
 			});
 		});
-		var filterHeadings = ['name', 'do-able', 'Other Details'];
+		var filterHeadings = ['hue', 'name', 'do-able', 'Other Details'];
 	
 		table.appendChild(thead);
 		thead.appendChild(theadTr);
 		table.appendChild(tbody);
 		table.classList.add('filter-table');
-		var _iteratorNormalCompletion = true;
-		var _didIteratorError = false;
-		var _iteratorError = undefined;
-	
-		try {
-			for (var _iterator = _getIterator(filterHeadings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-				var heading = _step.value;
-	
-				var td = document.createElement('td');
-				td.textContent = heading;
-				theadTr.appendChild(td);
-			}
-		} catch (err) {
-			_didIteratorError = true;
-			_iteratorError = err;
-		} finally {
-			try {
-				if (!_iteratorNormalCompletion && _iterator['return']) {
-					_iterator['return']();
-				}
-			} finally {
-				if (_didIteratorError) {
-					throw _iteratorError;
-				}
-			}
-		}
-	
 		var _iteratorNormalCompletion2 = true;
 		var _didIteratorError2 = false;
 		var _iteratorError2 = undefined;
 	
 		try {
-			for (var _iterator2 = _getIterator(data), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-				var datum = _step2.value;
+			for (var _iterator2 = _getIterator(filterHeadings), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+				var heading = _step2.value;
 	
-				var tbodyTr = document.createElement('tr');
-				tbodyTr.addEventListener('click', removeCollapsedClass);
-				tbody.appendChild(tbodyTr);
-				tbodyTr.classList.add('collapsed');
-				var _iteratorNormalCompletion3 = true;
-				var _didIteratorError3 = false;
-				var _iteratorError3 = undefined;
-	
-				try {
-					for (var _iterator3 = _getIterator(filterHeadings), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-						var heading = _step3.value;
-	
-						var td = document.createElement('td');
-						td.classList.add(heading.replace(/[^a-z]/ig, '-'));
-						var tdContent = document.createElement('div');
-						tdContent.classList.add('datum');
-						td.appendChild(tdContent);
-						if (heading !== 'Other Details') {
-							tdContent.textContent = datum[heading] || '';
-						} else {
-	
-							// Do something prettier here
-							tdContent.style.whiteSpace = 'pre';
-							tdContent.textContent = JSON.stringify(datum, null, '  ');
-						}
-						tbodyTr.appendChild(td);
-					}
-				} catch (err) {
-					_didIteratorError3 = true;
-					_iteratorError3 = err;
-				} finally {
-					try {
-						if (!_iteratorNormalCompletion3 && _iterator3['return']) {
-							_iterator3['return']();
-						}
-					} finally {
-						if (_didIteratorError3) {
-							throw _iteratorError3;
-						}
-					}
-				}
+				var td = document.createElement('td');
+				td.textContent = heading;
+				theadTr.appendChild(td);
 			}
 		} catch (err) {
 			_didIteratorError2 = true;
@@ -206,12 +222,80 @@
 			}
 		}
 	
+		var _iteratorNormalCompletion3 = true;
+		var _didIteratorError3 = false;
+		var _iteratorError3 = undefined;
+	
+		try {
+			for (var _iterator3 = _getIterator(data), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+				var datum = _step3.value;
+	
+				var tbodyTr = document.createElement('tr');
+				tbodyTr.addEventListener('click', removeCollapsedClass);
+				tbody.appendChild(tbodyTr);
+				tbodyTr.classList.add('collapsed');
+				tbodyTr.id = datum.name;
+				tbodyTr.addEventListener('mouseover', rowMouseOver);
+				tbodyTr.addEventListener('mouseout', rowMouseOut);
+				var _iteratorNormalCompletion4 = true;
+				var _didIteratorError4 = false;
+				var _iteratorError4 = undefined;
+	
+				try {
+					for (var _iterator4 = _getIterator(filterHeadings), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+						var heading = _step4.value;
+	
+						var td = document.createElement('td');
+						td.classList.add(heading.replace(/[^a-z]/ig, '-'));
+						var tdContent = document.createElement('div');
+						tdContent.classList.add('datum');
+						td.appendChild(tdContent);
+						if (heading === 'Other Details') {
+	
+							// Do something prettier here
+							tdContent.style.whiteSpace = 'pre';
+							tdContent.textContent = JSON.stringify(datum, null, '  ');
+						} else if (heading === 'hue') {
+							td.style.background = 'hsl(' + datum.hue + ', 95%, 60%)';
+						} else {
+							tdContent.textContent = datum[heading] || '';
+						}
+						tbodyTr.appendChild(td);
+					}
+				} catch (err) {
+					_didIteratorError4 = true;
+					_iteratorError4 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion4 && _iterator4['return']) {
+							_iterator4['return']();
+						}
+					} finally {
+						if (_didIteratorError4) {
+							throw _iteratorError4;
+						}
+					}
+				}
+			}
+		} catch (err) {
+			_didIteratorError3 = true;
+			_iteratorError3 = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+					_iterator3['return']();
+				}
+			} finally {
+				if (_didIteratorError3) {
+					throw _iteratorError3;
+				}
+			}
+		}
+	
 		document.getElementById('tech-radar__filter-list-target').appendChild(table);
-		svgTarget.appendChild(svg);
 	
 		return function cleanUp() {
 			table.parentNode.removeChild(table);
-			svg.parentNode.removeChild(svg);
 		};
 	}
 	
@@ -223,20 +307,43 @@
 		return response.json();
 	}).then(function (data) {
 	
-		var cleanUp = generateData(data);
+		var cleanUpGraph = generateGraphs(data);
+		var cleanUpTable = generateTable(data);
 	
 		var buttons = document.getElementById('tech-radar__buttons');
 	
 		var updateDataButton = document.createElement('button');
 		updateDataButton.textContent = 'Refresh Data';
 		buttons.appendChild(updateDataButton);
+		updateDataButton.classList.add('o-buttons');
+		updateDataButton.classList.add('o-buttons--standout');
 		updateDataButton.addEventListener('click', function () {
-			cleanUp();
+			cleanUpGraph();
+			cleanUpTable();
 			fetch('' + berthaRoot + berthaRepublish + dataUrlFragment).then(function (response) {
 				return response.json();
-			}).then(function (data) {
-				cleanUp = generateData(data);
+			}).then(function (dataIn) {
+				data = dataIn;
+				cleanUpGraph = generateGraphs(data);
+				cleanUpTable = generateTable(data);
 			});
+		});
+	
+		document.getElementById('filter').addEventListener('input', function (e) {
+	
+			// Filter graph
+			filterString = e.currentTarget.value;
+			cleanUpTable();
+			cleanUpTable = generateTable(data);
+		});
+	
+		document.getElementById('filter-form').addEventListener('submit', function (e) {
+			e.preventDefault();
+			console.log(e);
+			cleanUpTable();
+			cleanUpGraph();
+			cleanUpTable = generateTable(data);
+			cleanUpGraph = generateGraphs(data);
 		});
 	});
 
@@ -1471,22 +1578,99 @@
 /* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(3);
-	__webpack_require__(4);
-	__webpack_require__(28);
 	__webpack_require__(58);
-	__webpack_require__(61);
-	module.exports = __webpack_require__(12).Set;
+	module.exports = __webpack_require__(12).Object.keys;
 
 /***/ },
 /* 58 */
 /***/ function(module, exports, __webpack_require__) {
 
+	// 19.1.2.14 Object.keys(O)
+	var toObject = __webpack_require__(59);
+	
+	__webpack_require__(60)('keys', function($keys){
+	  return function keys(it){
+	    return $keys(toObject(it));
+	  };
+	});
+
+/***/ },
+/* 59 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// 7.1.13 ToObject(argument)
+	var defined = __webpack_require__(7);
+	module.exports = function(it){
+	  return Object(defined(it));
+	};
+
+/***/ },
+/* 60 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// most Object methods by ES6 should accept primitives
+	var $export = __webpack_require__(10)
+	  , core    = __webpack_require__(12)
+	  , fails   = __webpack_require__(20);
+	module.exports = function(KEY, exec){
+	  var fn  = (core.Object || {})[KEY] || Object[KEY]
+	    , exp = {};
+	  exp[KEY] = exec(fn);
+	  $export($export.S + $export.F * fails(function(){ fn(1); }), 'Object', exp);
+	};
+
+/***/ },
+/* 61 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = { "default": __webpack_require__(62), __esModule: true };
+
+/***/ },
+/* 62 */
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(28);
+	__webpack_require__(4);
+	module.exports = __webpack_require__(63);
+
+/***/ },
+/* 63 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var anObject = __webpack_require__(38)
+	  , get      = __webpack_require__(44);
+	module.exports = __webpack_require__(12).getIterator = function(it){
+	  var iterFn = get(it);
+	  if(typeof iterFn != 'function')throw TypeError(it + ' is not iterable!');
+	  return anObject(iterFn.call(it));
+	};
+
+/***/ },
+/* 64 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = { "default": __webpack_require__(65), __esModule: true };
+
+/***/ },
+/* 65 */
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(3);
+	__webpack_require__(4);
+	__webpack_require__(28);
+	__webpack_require__(66);
+	__webpack_require__(69);
+	module.exports = __webpack_require__(12).Set;
+
+/***/ },
+/* 66 */
+/***/ function(module, exports, __webpack_require__) {
+
 	'use strict';
-	var strong = __webpack_require__(59);
+	var strong = __webpack_require__(67);
 	
 	// 23.2 Set Objects
-	__webpack_require__(60)('Set', function(get){
+	__webpack_require__(68)('Set', function(get){
 	  return function Set(){ return get(this, arguments.length > 0 ? arguments[0] : undefined); };
 	}, {
 	  // 23.2.3.1 Set.prototype.add(value)
@@ -1496,7 +1680,7 @@
 	}, strong);
 
 /***/ },
-/* 59 */
+/* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1660,7 +1844,7 @@
 	};
 
 /***/ },
-/* 60 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1720,16 +1904,16 @@
 	};
 
 /***/ },
-/* 61 */
+/* 69 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/DavidBruant/Map-Set.prototype.toJSON
 	var $export  = __webpack_require__(10);
 	
-	$export($export.P, 'Set', {toJSON: __webpack_require__(62)('Set')});
+	$export($export.P, 'Set', {toJSON: __webpack_require__(70)('Set')});
 
 /***/ },
-/* 62 */
+/* 70 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/DavidBruant/Map-Set.prototype.toJSON
@@ -1742,83 +1926,6 @@
 	    forOf(this, false, arr.push, arr);
 	    return arr;
 	  };
-	};
-
-/***/ },
-/* 63 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = { "default": __webpack_require__(64), __esModule: true };
-
-/***/ },
-/* 64 */
-/***/ function(module, exports, __webpack_require__) {
-
-	__webpack_require__(65);
-	module.exports = __webpack_require__(12).Object.keys;
-
-/***/ },
-/* 65 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// 19.1.2.14 Object.keys(O)
-	var toObject = __webpack_require__(66);
-	
-	__webpack_require__(67)('keys', function($keys){
-	  return function keys(it){
-	    return $keys(toObject(it));
-	  };
-	});
-
-/***/ },
-/* 66 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// 7.1.13 ToObject(argument)
-	var defined = __webpack_require__(7);
-	module.exports = function(it){
-	  return Object(defined(it));
-	};
-
-/***/ },
-/* 67 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// most Object methods by ES6 should accept primitives
-	var $export = __webpack_require__(10)
-	  , core    = __webpack_require__(12)
-	  , fails   = __webpack_require__(20);
-	module.exports = function(KEY, exec){
-	  var fn  = (core.Object || {})[KEY] || Object[KEY]
-	    , exp = {};
-	  exp[KEY] = exec(fn);
-	  $export($export.S + $export.F * fails(function(){ fn(1); }), 'Object', exp);
-	};
-
-/***/ },
-/* 68 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = { "default": __webpack_require__(69), __esModule: true };
-
-/***/ },
-/* 69 */
-/***/ function(module, exports, __webpack_require__) {
-
-	__webpack_require__(28);
-	__webpack_require__(4);
-	module.exports = __webpack_require__(70);
-
-/***/ },
-/* 70 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var anObject = __webpack_require__(38)
-	  , get      = __webpack_require__(44);
-	module.exports = __webpack_require__(12).getIterator = function(it){
-	  var iterFn = get(it);
-	  if(typeof iterFn != 'function')throw TypeError(it + ' is not iterable!');
-	  return anObject(iterFn.call(it));
 	};
 
 /***/ },
@@ -1895,7 +2002,23 @@
 			return d.visible === false && d.rootEl !== true ? 'none' : 'initial';
 		});
 	
-		node.append('circle').attr('class', 'node').attr('r', 8);
+		function mouseover(d) {
+			var row = document.getElementById(d.name);
+			this.parentNode.classList.add('hovering');
+			row.classList.add('hovering');
+		}
+	
+		function mouseout(d) {
+			var row = document.getElementById(d.name);
+			this.parentNode.classList.remove('hovering');
+			row.classList.remove('hovering');
+		}
+	
+		node.append('circle').attr('class', 'node').attr('r', 8).attr('id', function (n) {
+			return n.name + '--graph-point';
+		}).style('fill', function (n) {
+			return 'hsl(' + n.hue + ', 95%, 60%)';
+		}).on('mouseover', mouseover).on('mouseout', mouseout);
 	
 		node.append('svg:text').text(function (d) {
 			return d.name || '';
@@ -1979,7 +2102,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.slice().sort().map(function (val2) {
+				return val.sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
