@@ -165,17 +165,19 @@
 	}
 	
 	function rowMouseOver(e) {
+		e.currentTarget.classList.add('hovering');
 		var pointId = e.currentTarget.id + '--graph-point';
 		var point = document.getElementById(pointId);
+		if (!point) return;
 		point.parentNode.classList.add('hovering');
-		e.currentTarget.classList.add('hovering');
 	}
 	
 	function rowMouseOut(e) {
+		e.currentTarget.classList.remove('hovering');
 		var pointId = e.currentTarget.id + '--graph-point';
 		var point = document.getElementById(pointId);
+		if (!point) return;
 		point.parentNode.classList.remove('hovering');
-		e.currentTarget.classList.remove('hovering');
 	}
 	
 	function generateTable(data) {
@@ -2038,14 +2040,16 @@
 		});
 	
 		function mouseover(d) {
-			var row = document.getElementById(d.name);
 			this.parentNode.classList.add('hovering');
+			var row = document.getElementById(d.name);
+			if (!row) return;
 			row.classList.add('hovering');
 		}
 	
 		function mouseout(d) {
-			var row = document.getElementById(d.name);
 			this.parentNode.classList.remove('hovering');
+			var row = document.getElementById(d.name);
+			if (!row) return;
 			row.classList.remove('hovering');
 		}
 	
