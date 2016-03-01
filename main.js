@@ -149,8 +149,6 @@
 	
 	function generateGraphs(data) {
 	
-		data = process(cloneData(data));
-	
 		var svgTarget = document.getElementById('tech-radar__graph-target');
 		var svg = graph({
 			data: data,
@@ -181,7 +179,6 @@
 	}
 	
 	function generateTable(data) {
-		data = process(data);
 		var table = document.createElement('table');
 		var thead = document.createElement('thead');
 		var theadTr = document.createElement('tr');
@@ -345,8 +342,8 @@
 		return response.json();
 	}).then(function (data) {
 	
-		var cleanUpGraph = generateGraphs(data);
-		var cleanUpTable = generateTable(data);
+		var cleanUpGraph = generateGraphs(process(cloneData(data)));
+		var cleanUpTable = generateTable(process(cloneData(data)));
 	
 		var buttons = document.getElementById('tech-radar__buttons');
 	
@@ -379,8 +376,8 @@
 			e.preventDefault();
 			cleanUpTable();
 			cleanUpGraph();
-			cleanUpTable = generateTable(data);
-			cleanUpGraph = generateGraphs(data);
+			cleanUpTable = generateTable(process(cloneData(data)));
+			cleanUpGraph = generateGraphs(process(cloneData(data)));
 		});
 	});
 
@@ -2056,7 +2053,7 @@
 		node.append('circle').attr('class', 'node').attr('r', 8).attr('id', function (n) {
 			return n.name + '--graph-point';
 		}).style('fill', function (n) {
-			return 'hsl(' + n.hue + ', 95%, 60%)';
+			return 'hsla(' + n['hidden-graph-item-hue'] + ', 95%, 60%, 1)';
 		}).on('mouseover', mouseover).on('mouseout', mouseout);
 	
 		node.append('svg:text').text(function (d) {
