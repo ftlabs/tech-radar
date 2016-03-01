@@ -54,4 +54,15 @@ svg {
   .hovering .d3-label {
     font-size: 150%; }
 
+.details {
+  padding-left: 0; }
+  .details li {
+    list-style: none;
+    width: 10em;
+    margin-bottom: 0.5em;
+    white-space: normal;
+    font-weight: normal !important; }
+    .details li .key {
+      font-weight: bold; }
+
 /*# sourceMappingURL=main.css.map */
