@@ -35,7 +35,7 @@ Example URL:
 
 ## Constructing the spreadsheet
 
-You can create a new google spreadsheet quite easily, paying attention to the UUID in the url and the name of the sheet.
+You can create a new google spreadsheet quite easily, shared to be viewable by all in the FT, paying attention to the UUID in the url and the name of the sheet.
 
 The latest contents of the spreadsheet are exported to Bertha, via a similar url constructed from the spreadsheet's UUID and sheet name.
 
