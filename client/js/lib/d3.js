@@ -69,14 +69,16 @@ module.exports = function ({
 		.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
 	function mouseover (d) {
-		const row = document.getElementById(d.name);
 		this.parentNode.classList.add('hovering');
+		const row = document.getElementById(d.name);
+		if (!row) return;
 		row.classList.add('hovering');
 	}
 
 	function mouseout (d) {
-		const row = document.getElementById(d.name);
 		this.parentNode.classList.remove('hovering');
+		const row = document.getElementById(d.name);
+		if (!row) return;
 		row.classList.remove('hovering');
 	}
 
