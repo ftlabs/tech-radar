@@ -50,7 +50,10 @@ The first row of the spreadsheet needs to name the following columns as a minimu
 * name
 * do-able
 
-All other named columns with be available for filtering on the radar view.
+The values of name can be any text, but the shorter the better to minimise overlaps in the display.
+The values of do-able need to integers in the range 1-10 (for now).
+
+All other named columns with be available for filtering in the radar view and can take pretty much any values.
 
 You can then create a Tech radar view of that spreadsheet by constructing a URL as descriobed in the previous section
 
