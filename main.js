@@ -359,8 +359,8 @@
 				return response.json();
 			}).then(function (dataIn) {
 				data = dataIn;
-				cleanUpGraph = generateGraphs(data);
-				cleanUpTable = generateTable(data);
+				cleanUpGraph = generateGraphs(process(cloneData(data)));
+				cleanUpTable = generateTable(process(cloneData(data)));
 			});
 		});
 	
@@ -369,7 +369,7 @@
 			// Filter graph
 			filterString = e.currentTarget.value;
 			cleanUpTable();
-			cleanUpTable = generateTable(data);
+			cleanUpTable = generateTable(process(cloneData(data)));
 		});
 	
 		document.getElementById('filter-form').addEventListener('submit', function (e) {
@@ -1987,8 +1987,9 @@
 		height = (width || 400) - 30;
 		var nodes = data.slice(0);
 		nodes.forEach(function (n) {
-			n.x = width / 2 + Math.random() * 50;
-			n.y = height / 2 + Math.random() * 50;
+			n.x = width / 2 + Math.random() * 100 - 50;
+			n.y = height / 2 + Math.random() * 100 - 50;
+			n.weight = 10;
 		});
 		var ringSize = height / 10;
 	
@@ -2018,7 +2019,7 @@
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 		var svg = d3.select(svgNode).attr('width', width).attr('height', height).attr('viewBox', '0 0 ' + width + ' ' + height);
 	
-		var force = d3.layout.force().nodes(nodes).links(links).gravity(0.05).charge(-200).linkStrength(20).linkDistance(function (l) {
+		var force = d3.layout.force().nodes(nodes).links(links).gravity(0.01).charge(-60).linkStrength(10).linkDistance(function (l) {
 			return l.distance;
 		}).size([width, height]);
 	
