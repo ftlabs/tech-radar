@@ -8,7 +8,8 @@
 module.exports = function ({
 	data,
 	width,
-	height
+	height,
+	rings
 }) {
 
 	width = (width || 400);
@@ -17,9 +18,9 @@ module.exports = function ({
 	nodes.forEach(n => {
 		n.x = width/2 + (Math.random() * 100) - 50;
 		n.y = height/2 + (Math.random() * 100) - 50;
-		n.weight = 10;
+		n.weight = 5;
 	});
-	const ringSize = height / 10;
+	const ringSize = height / rings.length;
 
 	nodes.unshift({
 		name: 'root',
@@ -32,8 +33,8 @@ module.exports = function ({
 
 	const links = nodes.map((n, i) => ({
 		target: 0,
-		source: (!!n['do-able'] ? i : 0),
-		distance: (10.5 - n['do-able']) * ringSize
+		source: ((!!n.ring || !!n.datumValue) ? i : 0),
+		distance: (n.ring || n.datumValue) * ringSize
 	}))
 	.filter(l => !!l.source);
 
@@ -52,7 +53,7 @@ module.exports = function ({
 		.links(links)
 		.gravity(0.01)
 		.charge(-60)
-		.linkStrength(10)
+		.linkStrength(30)
 		.linkDistance(l => l.distance)
 		.size([width, height]);
 
@@ -118,18 +119,18 @@ module.exports = function ({
 		.attr('stop-opacity', 1);
 
 	const rootNode = svg.select('.rootNode');
-	for (let i=0; i<10; i++) {
+	for (let i=0; i<rings.length; i++) {
 		rootNode.append('circle')
 			.attr('class', 'background')
-			.attr('r', (10 - i) * ringSize)
-			.style('fill', `hsla(${i * 36}, 100%, 85%, 1)`);
+			.attr('r', rings[i].max * ringSize)
+			.style('fill', rings[i].fill);
 		rootNode.append('circle')
 			.attr('class', 'background')
-			.attr('r', (10 - i) * ringSize)
+			.attr('r', rings[i].max * ringSize)
 			.style('fill', `url(#radgrad)`);
 	}
 
-	force.start().alpha(0.1);
+	force.start();
 
 	return svgNode;
 };

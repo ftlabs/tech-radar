@@ -18,21 +18,12 @@ div {
 
 	tr.collapsed {
 
-		td {
+		td.hidden {
 			.datum {
 				display: none;
 			}
 			&:after {
 				content: 'Click To Display';
-			}
-
-			&.name, &.do-able, &.hue {
-				.datum {
-					display: inline-block;
-				}
-				&:after {
-					content: '';
-				}
 			}
 		}
 	}

@@ -5,11 +5,21 @@ const extend = require('util')._extend;
 const berthaRoot = 'http://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
-const dataUrlFragment = (function () {
+const {
+	dataUrlFragment,
+	showcol,
+	sortcol,
+} = (function () {
 	const queryString = require('query-string');
 	const parsed = queryString.parse(location.search);
+	parsed.showcol = parsed.showcol || '';
+	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	if (parsed.id && parsed.sheet) {
-		return `${parsed.id}/${parsed.sheet}`;
+		return {
+			dataUrlFragment: `${parsed.id}/${parsed.sheet}`,
+			sortcol: parsed.sortcol,
+			showcol: parsed.showcol.split(',')
+		};
 	}
 	throw Error('No ID and Sheet parameters.');
 }());
@@ -34,9 +44,63 @@ function toggleCollapsedClass (e) {
 
 // Process the data
 function process (data) {
-	data = data
-	.filter(datum => !!datum['do-able'] && !!datum['name'])
-	.filter(datum => {
+
+	for (const datum of data) {
+
+		// Ensure it is string so we can do analysis
+		datum[sortcol] = String(datum[sortcol]);
+	}
+
+
+	if (data[0]) {
+		if (data[0][sortcol] === undefined) {
+			throw Error(`No column with the name '${sortcol}'.${ sortcol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }, available headings: ${Object.keys(data[0]).join(', ')}`);
+		}
+	} else {
+		throw Error('Empty spreasheet from Bertha');
+	}
+
+	data = cloneData(data).filter(datum => !!datum[sortcol] && !!datum['name']);
+
+	let sortType = 'alphabetical';
+	for (const datum of data) {
+		if (datum[sortcol].match(/^[0-9]/)) {
+			sortType = 'numerical';
+			break;
+		}
+	}
+
+	if (sortType === 'numerical') {
+
+		data
+		.map(datum => (datum['datumValue'] = datum[sortcol].match(/^[0-9\.]+/), datum))
+		.filter(datum => datum['datumValue'] !== null)
+
+		// Map 1.2.3 to 1.23 to for smarter sorting
+		.forEach(datum => datum['datumValue'] = Number(datum['datumValue'][0].split('.').reduce((p,c,i) => p + (!i ? c + '.' : c ),'')));
+
+	} else if (sortType === 'alphabetical') {
+		const phases = new Set();
+		const valueMap = new Map();
+		data.forEach(datum => phases.add(datum[sortcol]));
+
+		// Create a map of 'My String' => 1, 'Mz String' => 2
+		[...phases].sort().forEach((d,i) => valueMap.set(d,i));
+
+		data.forEach(datum => {
+			datum['datumValue'] = valueMap.get(datum[sortcol]);
+		});
+	}
+
+	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
+
+	// Generate chart rings and attatch that data
+	const chartRings = generateChartRings(data);
+	data.forEach(datum => {
+		datum.ring = 
+	})
+
+	data = data.filter(datum => {
 		let regex;
 		try {
 			regex = new RegExp(filterString, 'gi');
@@ -66,13 +130,34 @@ function process (data) {
 	return data;
 }
 
-function generateGraphs (data) {
+function generateChartRings (data) {
 
+	let min = Infinity;
+	let max = -Infinity;
+	for (const datum of data) {
+		min = Math.min(datum.datumValue, min);
+		max = Math.max(datum.datumValue, max);
+	}
+	let nRings = Math.ceil(max - min);
+	const rings = Array(nRings);
+	let i = nRings;
+	for (const r of rings) {
+		rings[--i] = {
+			fill: `hsla(${i * 360/(nRings - 1)}, 100%, 85%, 1)`,
+			min: max - i - 1,
+			max: max - i
+		}
+	}
+	return rings;
+}
+
+function generateGraphs (data) {
 	const svgTarget = document.getElementById('tech-radar__graph-target');
 	const svg = graph({
 		data,
 		width: svgTarget.clientWidth,
-		height: svgTarget.clientWidth*0.5
+		height: svgTarget.clientWidth*0.5,
+		rings: generateChartRings(data)
 	});
 	svgTarget.appendChild(svg);
 
@@ -97,6 +182,10 @@ function rowMouseOut (e) {
 	point.parentNode.classList.remove('hovering');
 }
 
+function stripDuplicates (arr) {
+	return [...new Set(arr)];
+}
+
 function generateTable (data) {
 	const table = document.createElement('table');
 	const thead = document.createElement('thead');
@@ -107,7 +196,9 @@ function generateTable (data) {
 		const keys = Object.keys(datum);
 		keys.forEach(k => headings.add(k));
 	});
-	const filterHeadings = ['hue', 'name', 'do-able', 'Other Details'];
+
+	// Get the headings removing duplicates and empty strings.
+	const filterHeadings = stripDuplicates(showcol.concat(['Key', 'name', sortcol, 'Other Details'])).filter(a => !!String(a));
 
 	table.appendChild(thead);
 	thead.appendChild(theadTr);
@@ -143,7 +234,8 @@ function generateTable (data) {
 				}
 				newContent += '</ul>';
 				tdContent.innerHTML = newContent;
-			} else if (heading === 'hue') {
+				td.classList.add('hidden');
+			} else if (heading === 'Key') {
 				td.style.background = `hsl(${datum['hidden-graph-item-hue']}, 95%, 60%)`;
 			} else {
 				tdContent.textContent = datum[heading] || '';
@@ -172,8 +264,8 @@ Promise.all([
 .then(response => response.json())
 .then(function (data) {
 
-	let cleanUpGraph = generateGraphs(process(cloneData(data)));
-	let cleanUpTable = generateTable(process(cloneData(data)));
+	let cleanUpGraph = generateGraphs(process(data));
+	let cleanUpTable = generateTable(process(data));
 
 	const buttons = document.getElementById('tech-radar__buttons');
 
@@ -189,8 +281,8 @@ Promise.all([
 		.then(response => response.json())
 		.then(dataIn => {
 			data = dataIn;
-			cleanUpGraph = generateGraphs(process(cloneData(data)));
-			cleanUpTable = generateTable(process(cloneData(data)));
+			cleanUpGraph = generateGraphs(process(data));
+			cleanUpTable = generateTable(process(data));
 		});
 	});
 
@@ -199,14 +291,14 @@ Promise.all([
 		// Filter graph
 		filterString = e.currentTarget.value;
 		cleanUpTable();
-		cleanUpTable = generateTable(process(cloneData(data)));
+		cleanUpTable = generateTable(process(data));
 	});
 
 	document.getElementById('filter-form').addEventListener('submit', function (e) {
 		e.preventDefault();
 		cleanUpTable();
 		cleanUpGraph();
-		cleanUpTable = generateTable(process(cloneData(data)));
-		cleanUpGraph = generateGraphs(process(cloneData(data)));
+		cleanUpTable = generateTable(process(data));
+		cleanUpGraph = generateGraphs(process(data));
 	});
 });
