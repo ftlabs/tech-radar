@@ -11,14 +11,10 @@ div {
   white-space: nowrap; }
   .filter-table thead {
     background: #ccc; }
-  .filter-table tr.collapsed td .datum {
+  .filter-table tr.collapsed td.hidden .datum {
     display: none; }
-  .filter-table tr.collapsed td:after {
+  .filter-table tr.collapsed td.hidden:after {
     content: 'Click To Display'; }
-  .filter-table tr.collapsed td.name .datum, .filter-table tr.collapsed td.do-able .datum, .filter-table tr.collapsed td.hue .datum {
-    display: inline-block; }
-  .filter-table tr.collapsed td.name:after, .filter-table tr.collapsed td.do-able:after, .filter-table tr.collapsed td.hue:after {
-    content: ''; }
 
 svg {
   max-width: 100%;
@@ -64,5 +60,8 @@ svg {
     font-weight: normal !important; }
     .details li .key {
       font-weight: bold; }
+
+#error-text-target {
+  white-space: pre; }
 
 /*# sourceMappingURL=main.css.map */
