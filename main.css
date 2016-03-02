@@ -63,5 +63,7 @@ svg {
 
 #error-text-target {
   white-space: pre; }
+  #error-text-target:empty {
+    display: none; }
 
 /*# sourceMappingURL=main.css.map */

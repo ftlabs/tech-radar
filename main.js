@@ -81,7 +81,9 @@
 				showcol: parsed.showcol.split(',')
 			};
 		}
-		throw Error('No ID and Sheet parameters.');
+		var errMessage = 'No ID and Sheet parameters.';
+		document.getElementById('error-text-target').textContent = errMessage;
+		throw Error(errMessage);
 	})();
 	
 	var dataUrlFragment = _ref.dataUrlFragment;
