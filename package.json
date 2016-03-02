@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "origami-build-tools build --js=client/js/main.js --buildFolder=dist --sass=client/scss/main.scss",
-    "watch": "origami-build-tools build --watch --js=client/js/main.js --buildFolder=dist --sass=client/scss/main.scss",
+    "watch": "nodemon -e js,html,scss --watch ./client --exec 'npm run build'",
     "build": "npm run compile && cp ./client/* ./dist/ || :",
     "deploy": "git-directory-deploy --directory ./dist"
   },
@@ -14,6 +14,7 @@
   "devDependencies": {
     "git-directory-deploy": "^1.4.0",
     "handlebars": "^4.0.5",
+    "nodemon": "^1.9.1",
     "origami-build-tools": "^5.0.0",
     "query-string": "^3.0.0"
   }

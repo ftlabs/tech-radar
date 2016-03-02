@@ -45,19 +45,18 @@ function toggleCollapsedClass (e) {
 // Process the data
 function process (data) {
 
+	if (data[0]) {
+		if (data[0][sortcol] === undefined) {
+			throw Error(`No column with the name '${sortcol}'.${ sortcol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }\n Available headings: ${Object.keys(data[0]).join(', ')}`);
+		}
+	} else {
+		throw Error('Empty spreasheet from Bertha');
+	}
+
 	for (const datum of data) {
 
 		// Ensure it is string so we can do analysis
 		datum[sortcol] = String(datum[sortcol]);
-	}
-
-
-	if (data[0]) {
-		if (data[0][sortcol] === undefined) {
-			throw Error(`No column with the name '${sortcol}'.${ sortcol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }, available headings: ${Object.keys(data[0]).join(', ')}`);
-		}
-	} else {
-		throw Error('Empty spreasheet from Bertha');
 	}
 
 	data = cloneData(data).filter(datum => !!datum[sortcol] && !!datum['name']);
@@ -85,7 +84,7 @@ function process (data) {
 		data.forEach(datum => phases.add(datum[sortcol]));
 
 		// Create a map of 'My String' => 1, 'Mz String' => 2
-		[...phases].sort().forEach((d,i) => valueMap.set(d,i));
+		[...phases].sort().forEach((d,i) => valueMap.set(d,i + 0.5));
 
 		data.forEach(datum => {
 			datum['datumValue'] = valueMap.get(datum[sortcol]);
@@ -97,8 +96,13 @@ function process (data) {
 	// Generate chart rings and attatch that data
 	const chartRings = generateChartRings(data);
 	data.forEach(datum => {
-		datum.ring = 
-	})
+		for (const r of chartRings) {
+			if (datum.datumValue >= r.min && datum.datumValue < r.max) {
+				datum['hidden-graph-item-ring'] = r;
+				break;
+			}
+		}
+	});
 
 	data = data.filter(datum => {
 		let regex;
@@ -132,21 +136,29 @@ function process (data) {
 
 function generateChartRings (data) {
 
-	let min = Infinity;
-	let max = -Infinity;
+	let max = 0;
 	for (const datum of data) {
-		min = Math.min(datum.datumValue, min);
 		max = Math.max(datum.datumValue, max);
 	}
-	let nRings = Math.ceil(max - min);
+
+	if (Math.ceil(max) - max < 0.1) {
+		max = Math.ceil(max) + 1;
+	} else {
+		max = Math.ceil(max);
+	}
+
+	// Draw rings from the max value down to zero
+	let nRings = Math.ceil(max);
 	const rings = Array(nRings);
 	let i = nRings;
 	for (const r of rings) {
+		r; // Suppress lint warning for r not being used
 		rings[--i] = {
-			fill: `hsla(${i * 360/(nRings - 1)}, 100%, 85%, 1)`,
+			fill: `hsla(${i * 360/nRings}, 100%, 85%, 1)`,
 			min: max - i - 1,
-			max: max - i
-		}
+			max: max - i,
+			index: i
+		};
 	}
 	return rings;
 }
@@ -198,7 +210,7 @@ function generateTable (data) {
 	});
 
 	// Get the headings removing duplicates and empty strings.
-	const filterHeadings = stripDuplicates(showcol.concat(['Key', 'name', sortcol, 'Other Details'])).filter(a => !!String(a));
+	const filterHeadings = stripDuplicates(['Key', 'name', sortcol].concat(showcol).concat(['Other Details'])).filter(a => !!String(a));
 
 	table.appendChild(thead);
 	thead.appendChild(theadTr);
@@ -237,6 +249,9 @@ function generateTable (data) {
 				td.classList.add('hidden');
 			} else if (heading === 'Key') {
 				td.style.background = `hsl(${datum['hidden-graph-item-hue']}, 95%, 60%)`;
+			} else if (heading === sortcol) {
+				td.style.background = datum['hidden-graph-item-ring'].fill;
+				tdContent.textContent = datum[heading] || '';
 			} else {
 				tdContent.textContent = datum[heading] || '';
 			}
@@ -264,8 +279,8 @@ Promise.all([
 .then(response => response.json())
 .then(function (data) {
 
-	let cleanUpGraph = generateGraphs(process(data));
 	let cleanUpTable = generateTable(process(data));
+	let cleanUpGraph = generateGraphs(process(data));
 
 	const buttons = document.getElementById('tech-radar__buttons');
 
@@ -281,8 +296,8 @@ Promise.all([
 		.then(response => response.json())
 		.then(dataIn => {
 			data = dataIn;
-			cleanUpGraph = generateGraphs(process(data));
 			cleanUpTable = generateTable(process(data));
+			cleanUpGraph = generateGraphs(process(data));
 		});
 	});
 
@@ -301,4 +316,8 @@ Promise.all([
 		cleanUpTable = generateTable(process(data));
 		cleanUpGraph = generateGraphs(process(data));
 	});
+})
+.catch(e => {
+	document.getElementById('error-text-target').textContent = e.message;
+	throw e;
 });

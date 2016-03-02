@@ -18,7 +18,8 @@ module.exports = function ({
 	nodes.forEach(n => {
 		n.x = width/2 + (Math.random() * 100) - 50;
 		n.y = height/2 + (Math.random() * 100) - 50;
-		n.weight = 5;
+		n.weight = 40;
+		n.charge = 0;
 	});
 	const ringSize = height / rings.length;
 
@@ -28,13 +29,14 @@ module.exports = function ({
 		y: height,
 		fixed: true,
 		visible: false,
-		rootEl: true
+		rootEl: true,
+		charge: 0
 	});
 
 	const links = nodes.map((n, i) => ({
 		target: 0,
-		source: ((!!n.ring || !!n.datumValue) ? i : 0),
-		distance: (n.ring || n.datumValue) * ringSize
+		source: i,
+		distance: (n.datumValue || 0) * ringSize
 	}))
 	.filter(l => !!l.source);
 
@@ -51,13 +53,21 @@ module.exports = function ({
 	const force = d3.layout.force()
 		.nodes(nodes)
 		.links(links)
-		.gravity(0.01)
+		.gravity(0.015)
 		.charge(-60)
 		.linkStrength(30)
 		.linkDistance(l => l.distance)
 		.size([width, height]);
 
 	force.on('tick', function () {
+
+		// bounce off the walls
+		nodes.forEach(function (d) {
+			if (d.x > width) [d.x, d.px] = [d.px, d.x];
+			if (d.y > height) [d.y, d.py] = [d.py, d.y];
+			d.x = d.x % (width * 4);
+			d.y = d.y % (height * 4);
+		});
 		node.attr('transform', d => `translate(${d.x}, ${d.y})`);
 	});
 
@@ -67,8 +77,7 @@ module.exports = function ({
 		.append('svg:g')
 		.attr('class', d => d.rootEl ? 'rootNode' : 'node');
 
-	node
-		.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
+	node.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
 	function mouseover (d) {
 		this.parentNode.classList.add('hovering');
@@ -130,7 +139,7 @@ module.exports = function ({
 			.style('fill', `url(#radgrad)`);
 	}
 
-	force.start();
+	force.start().alpha(0.05);
 
 	return svgNode;
 };
