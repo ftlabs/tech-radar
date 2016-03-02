@@ -8,7 +8,6 @@
 	<link href="https://build.origami.ft.com/v2/bundles/css?modules=o-techdocs@^5.0.0,o-buttons@^3.0.3,o-forms@^2.0.0,o-grid@^4.0.0,o-fonts@^2.1.1" rel="stylesheet">
 	<script src="https://build.origami.ft.com/v2/bundles/js?modules=o-techdocs@^5.0.0"></script>
 	<link href="./main.css" rel="stylesheet">
-	<script src="./main.js"></script>
 </head>
 <body class="o-techdocs">
 
@@ -29,6 +28,9 @@
 	<div class="o-techdocs-container o-grid-container">
 		<div class="o-grid-row">
 			<div data-o-grid-colspan="12">
+				<div class="o-forms-group">
+					<div class="o-forms-message o-forms-message--error"><p id="error-text-target"></p></div>
+				</div>
 				<div class="o-forms-wrapper o-forms-wrapper--highlight">
 					<div id="tech-radar__buttons" class="o-forms-group">
 						<label class="o-forms-label">Update Data</label>
@@ -45,9 +47,6 @@
 								</div>
 							</div>
 						</form>
-					</div>
-					<div class="o-forms-group">
-						<div id="error-text-target" class="o-forms-message o-forms-message--error"></div>
 					</div>
 				</div>
 			</div>
@@ -68,6 +67,7 @@
 		<p>&copy; THE FINANCIAL TIMES LTD 2016. FT and 'Financial Times' are trademarks of The Financial Times Ltd.</p>
 	</footer>
 
+	<script src="./main.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.js"></script>
 	<script>prettyPrint();</script>
 </body>

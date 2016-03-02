@@ -88,4 +88,8 @@ svg {
 
 #error-text-target {
 	white-space: pre;
+
+	&:empty {
+		display: none;
+	}
 }

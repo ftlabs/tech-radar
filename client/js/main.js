@@ -21,7 +21,9 @@ const {
 			showcol: parsed.showcol.split(',')
 		};
 	}
-	throw Error('No ID and Sheet parameters.');
+	const errMessage = 'No ID and Sheet parameters.';
+	document.getElementById('error-text-target').textContent = errMessage;
+	throw Error(errMessage);
 }());
 
 // String input from the filter field used to filter the text input
