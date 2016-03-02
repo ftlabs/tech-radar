@@ -19,20 +19,34 @@ If you head to `http://localhost:3010/` you'll be presented with a rainbow, but 
 
 ## Constructing the URL
 
-There are two parameters :
+There are four parameters :
 
-1. sheet
-2. id
+1. sheet - sheet name (mandatory)
+2. id - spreadsheet id (mandatory)
+3. sortcol - column to sort by and to graph, defualts to 'phase'
+4. showcol - a comma seperated list of other columns to reveal in the table
 
-These parameters point to a specific Google spreadsheet (that has been published to JSON via Bertha). 
+The mandatory parameters point to a specific Google spreadsheet (that has been published to JSON via Bertha). 
 
 Open the spreadsheet you want to display and copy the UID of the document. This will be the value for the `id` parameter.
 The `sheet` parameter is the name of the sheet in the spreadsheet document that contains the information you wish to display.
 
+`sortcol` - It will try to sort the column numerically and will do so if any of the items start with a number. Failing to find any numbers it will sort it alphabetically. The groups will be drawn on the graph.
+
+`showcol` - Other columns to show as headers in the table, all other information can be revealed with a click.
+
 Example URL:
 
-```http://local.ft.com:8080/?sheet=my information sheet&id=12345678-ABCDEFG_ABCDEFGHIJKLMNMLKJIHGFEDCBA```
+```
 
+Example URL: http://local.ft.com:8080/?sheet=my-information-sheet&id=12345678-ABCDEFG_ABCDEFGHIJKLMNMLKJIHGFEDCBA&sortcol=important-row&showcol=revelant-row,another-relevant-row```
+
+Demo URL: http://ftlabs.github.io/tech-radar/?id=14-BOCeYDFXQyGB4H7NRx5Vej6q9Fuh7gH93AsxEtl00&sheet=Data1&sortcol=do-able&showcol=heft
+
+```
+Graph: 
+
+```
 ## Constructing the spreadsheet
 
 You can create a new google spreadsheet quite easily, shared to be viewable by all in the FT, paying attention to the UUID in the url and the name of the sheet.
