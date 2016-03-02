@@ -23,7 +23,7 @@ There are four parameters :
 
 1. sheet - sheet name (mandatory)
 2. id - spreadsheet id (mandatory)
-3. sortcol - column to sort by and to graph, defualts to 'phase'
+3. sortcol - column to sort by and to graph, defaults to 'phase'
 4. showcol - a comma seperated list of other columns to reveal in the table
 
 The mandatory parameters point to a specific Google spreadsheet (that has been published to JSON via Bertha). 
@@ -44,9 +44,7 @@ Example URL: http://local.ft.com:8080/?sheet=my-information-sheet&id=12345678-AB
 Demo URL: http://ftlabs.github.io/tech-radar/?id=14-BOCeYDFXQyGB4H7NRx5Vej6q9Fuh7gH93AsxEtl00&sheet=Data1&sortcol=do-able&showcol=heft
 
 ```
-Graph: 
 
-```
 ## Constructing the spreadsheet
 
 You can create a new google spreadsheet quite easily, shared to be viewable by all in the FT, paying attention to the UUID in the url and the name of the sheet.
