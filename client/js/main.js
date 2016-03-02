@@ -49,7 +49,7 @@ function process (data) {
 
 	if (data[0]) {
 		if (data[0][sortcol] === undefined) {
-			throw Error(`No column with the name '${sortcol}'.${ sortcol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }\n Available headings: ${Object.keys(data[0]).join(', ')}`);
+			throw Error(`No column with the name '${sortcol}'. ${ sortcol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }\n Available headings: ${Object.keys(data[0]).join(', ')}`);
 		}
 	} else {
 		throw Error('Empty spreasheet from Bertha');
