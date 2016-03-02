@@ -51,11 +51,11 @@ You can create a new google spreadsheet quite easily, shared to be viewable by a
 
 The latest contents of the spreadsheet are exported to Bertha, via a similar url constructed from the spreadsheet's UUID and sheet name.
 
-* http://bertha.ig.ft.com/republish/publish/gss/UUID/SheetName
+* https://bertha.ig.ft.com/republish/publish/gss/UUID/SheetName
 
 Bertha then exposes a JSON feed of the spreadsheet's contents, accessible via a slightly different URL.
 
-* http://bertha.ig.ft.com/view/publish/gss/UUID/SheetName
+* https://bertha.ig.ft.com/view/publish/gss/UUID/SheetName
 
 The first row of the spreadsheet needs to name the following columns as a minimum:
 
