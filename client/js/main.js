@@ -2,7 +2,7 @@
 
 const graph = require('./lib/d3');
 const extend = require('util')._extend;
-const berthaRoot = 'http://bertha.ig.ft.com/';
+const berthaRoot = 'https://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
 const {
