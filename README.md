@@ -1,5 +1,9 @@
 # Tech Radar
 
+## Bertha Documentation
+Bertha is an Interactive Graphics application which exposes an API to turn a Google Spreadsheet into a JSON object.
+Documentation for Bertha can be found in the project's wiki - https://github.com/ft-interactive/bertha/wiki/Tutorial
+
 ## Building
 
 Requires origami build tools setup.
