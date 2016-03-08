@@ -9,18 +9,21 @@ const {
 	dataUrlFragment,
 	showcol,
 	sortcol,
-	dashboard
+	dashboard,
+	sortcolorder
 } = (function () {
 	const queryString = require('query-string');
 	const parsed = queryString.parse(location.search);
 	parsed.showcol = parsed.showcol || '';
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
+	parsed.sortcolorder = (parsed.sortcolorder || '');
 	if (parsed.id && parsed.sheet) {
 		return {
 			dataUrlFragment: `${parsed.id}/${parsed.sheet}`,
 			sortcol: parsed.sortcol,
 			showcol: parsed.showcol.split(','),
-			dashboard: (parsed.dashboard !== undefined) || false
+			dashboard: (parsed.dashboard !== undefined) || false,
+			sortcolorder : parsed.sortcolorder.split(',').filter(item => (item !== '') )
 		};
 	}
 	const errMessage = 'No ID and Sheet parameters.';
@@ -90,9 +93,15 @@ function process (data) {
 		const phases = new Set();
 		const valueMap = new Map();
 		data.forEach(datum => phases.add(datum[sortcol]));
-
-		// Create a map of 'My String' => 1, 'Mz String' => 2
-		[...phases].sort().forEach((d,i) => valueMap.set(d,i + 0.5));
+		
+		// If we don't have enough values passed to sort the 
+		// order by, we'll default to ordering the rings alphabetically 
+		if( sortcolorder.length === phases.size ){
+			sortcolorder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
+		} else {
+			// Create a map of 'My String' => 1, 'Mz String' => 2
+			[...phases].sort().forEach((d,i) => valueMap.set(d,i + 0.2));
+		}
 
 		data.forEach(datum => {
 			datum['datumValue'] = valueMap.get(datum[sortcol]);
@@ -102,7 +111,7 @@ function process (data) {
 	}
 
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
-
+	
 	// Generate chart rings and attatch that data
 	const chartRings = generateChartRings(data, labels);
 	data.forEach(datum => {
