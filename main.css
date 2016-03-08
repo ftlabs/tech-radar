@@ -1,7 +1,8 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: 'MetricWeb'; }
+  font-family: 'MetricWeb';
+  height: 100%; }
 
 div {
   -webkit-box-sizing: content-box;
@@ -22,7 +23,6 @@ svg {
   svg .d3-label {
     fill: #000;
     fill-opacity: 1;
-    stroke: #fff;
     stroke-width: 1px;
     stroke-linecap: round;
     stroke-linejoin: round;

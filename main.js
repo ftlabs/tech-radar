@@ -59,13 +59,15 @@
 	
 	var _Map = __webpack_require__(75)['default'];
 	
+	var _Array$from = __webpack_require__(2)['default'];
+	
 	var define = false;
 	
 	'use strict';
 	
 	var graph = __webpack_require__(79);
 	var extend = __webpack_require__(80)._extend;
-	var berthaRoot = 'http://bertha.ig.ft.com/';
+	var berthaRoot = 'https://bertha.ig.ft.com/';
 	var berthaView = 'view/publish/gss/';
 	var berthaRepublish = 'republish/publish/gss/';
 	
@@ -74,11 +76,16 @@
 		var parsed = queryString.parse(location.search);
 		parsed.showcol = parsed.showcol || '';
 		parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
+		parsed.sortcolorder = parsed.sortcolorder || '';
 		if (parsed.id && parsed.sheet) {
 			return {
 				dataUrlFragment: parsed.id + '/' + parsed.sheet,
 				sortcol: parsed.sortcol,
-				showcol: parsed.showcol.split(',')
+				showcol: parsed.showcol.split(','),
+				dashboard: parsed.dashboard !== undefined || false,
+				sortcolorder: parsed.sortcolorder.split(',').filter(function (item) {
+					return item !== '';
+				})
 			};
 		}
 		var errMessage = 'No ID and Sheet parameters.';
@@ -89,6 +96,8 @@
 	var dataUrlFragment = _ref.dataUrlFragment;
 	var showcol = _ref.showcol;
 	var sortcol = _ref.sortcol;
+	var dashboard = _ref.dashboard;
+	var sortcolorder = _ref.sortcolorder;
 	
 	// String input from the filter field used to filter the text input
 	var filterString = '';
@@ -158,6 +167,7 @@
 				var datum = _step2.value;
 	
 				if (datum[sortcol].match(/^[0-9]/)) {
+	
 					sortType = 'numerical';
 					break;
 				}
@@ -177,6 +187,7 @@
 			}
 		}
 	
+		var labels = [];
 		if (sortType === 'numerical') {
 	
 			data.map(function (datum) {
@@ -187,7 +198,7 @@
 	
 			// Map 1.2.3 to 1.23 to for smarter sorting
 			.forEach(function (datum) {
-				return datum['datumValue'] = Number(datum['datumValue'][0].split('.').reduce(function (p, c, i) {
+				datum['datumValue'] = Number(datum['datumValue'][0].split('.').reduce(function (p, c, i) {
 					return p + (!i ? c + '.' : c);
 				}, ''));
 			});
@@ -199,13 +210,25 @@
 					return phases.add(datum[sortcol]);
 				});
 	
-				// Create a map of 'My String' => 1, 'Mz String' => 2
-				[].concat(_toConsumableArray(phases)).sort().forEach(function (d, i) {
-					return valueMap.set(d, i + 0.5);
-				});
+				// If we don't have enough values passed to sort the
+				// order by, we'll default to ordering the rings alphabetically
+				if (sortcolorder.length === phases.size) {
+					sortcolorder.forEach(function (item, idx) {
+						return valueMap.set(item, idx + 0.2);
+					});
+				} else {
+					// Create a map of 'My String' => 1, 'Mz String' => 2
+					[].concat(_toConsumableArray(phases)).sort().forEach(function (d, i) {
+						return valueMap.set(d, i + 0.2);
+					});
+				}
 	
 				data.forEach(function (datum) {
 					datum['datumValue'] = valueMap.get(datum[sortcol]);
+				});
+	
+				labels = _Array$from(phases.values()).map(function (key) {
+					return key.match(/^[a-z0-9]+/i)[0];
 				});
 			})();
 		}
@@ -215,7 +238,7 @@
 		});
 	
 		// Generate chart rings and attatch that data
-		var chartRings = generateChartRings(data);
+		var chartRings = generateChartRings(data, labels);
 		data.forEach(function (datum) {
 			var _iteratorNormalCompletion3 = true;
 			var _didIteratorError3 = false;
@@ -296,10 +319,14 @@
 			hue = (hue + 0.618033988749895) % 1;
 		});
 	
-		return data;
+		return {
+			data: data,
+			labels: labels
+		};
 	}
 	
 	function generateChartRings(data) {
+		var labels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 	
 		var max = 0;
 		var _iteratorNormalCompletion5 = true;
@@ -350,7 +377,8 @@
 					fill: 'hsla(' + i * 360 / nRings + ', 100%, 85%, 1)',
 					min: max - i - 1,
 					max: max - i,
-					index: i
+					index: i,
+					groupLabel: labels[i]
 				};
 			}
 		} catch (err) {
@@ -371,13 +399,19 @@
 		return rings;
 	}
 	
-	function generateGraphs(data) {
+	function generateGraphs(inData) {
+		var _process = process(inData);
+	
+		var data = _process.data;
+		var labels = _process.labels;
+	
 		var svgTarget = document.getElementById('tech-radar__graph-target');
+		var header = document.querySelector('.o-header');
+		var footer = document.querySelector('footer');
 		var svg = graph({
 			data: data,
-			width: svgTarget.clientWidth,
-			height: svgTarget.clientWidth * 0.5,
-			rings: generateChartRings(data)
+			size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
+			rings: generateChartRings(data, labels)
 		});
 		svgTarget.appendChild(svg);
 	
@@ -406,7 +440,11 @@
 		return [].concat(_toConsumableArray(new _Set(arr)));
 	}
 	
-	function generateTable(data) {
+	function generateTable(inData) {
+		var _process2 = process(inData);
+	
+		var data = _process2.data;
+	
 		var table = document.createElement('table');
 		var thead = document.createElement('thead');
 		var theadTr = document.createElement('tr');
@@ -578,8 +616,13 @@
 		return response.json();
 	}).then(function (data) {
 	
-		var cleanUpTable = generateTable(process(data));
-		var cleanUpGraph = generateGraphs(process(data));
+		var cleanUpTable = generateTable(data);
+		var cleanUpGraph = generateGraphs(data);
+	
+		if (dashboard) {
+			document.getElementById('tech-radar__settings').style.display = 'none';
+			return;
+		}
 	
 		var buttons = document.getElementById('tech-radar__buttons');
 	
@@ -595,8 +638,8 @@
 				return response.json();
 			}).then(function (dataIn) {
 				data = dataIn;
-				cleanUpTable = generateTable(process(data));
-				cleanUpGraph = generateGraphs(process(data));
+				cleanUpTable = generateTable(data);
+				cleanUpGraph = generateGraphs(data);
 			});
 		});
 	
@@ -605,15 +648,15 @@
 			// Filter graph
 			filterString = e.currentTarget.value;
 			cleanUpTable();
-			cleanUpTable = generateTable(process(data));
+			cleanUpTable = generateTable(data);
 		});
 	
 		document.getElementById('filter-form').addEventListener('submit', function (e) {
 			e.preventDefault();
 			cleanUpTable();
 			cleanUpGraph();
-			cleanUpTable = generateTable(process(data));
-			cleanUpGraph = generateGraphs(process(data));
+			cleanUpTable = generateTable(data);
+			cleanUpGraph = generateGraphs(data);
 		});
 	})['catch'](function (e) {
 		document.getElementById('error-text-target').textContent = e.message;
@@ -2343,12 +2386,11 @@
 	
 	module.exports = function (_ref) {
 		var data = _ref.data;
-		var width = _ref.width;
-		var height = _ref.height;
+		var size = _ref.size;
 		var rings = _ref.rings;
 	
-		width = width || 400;
-		height = (width || 400) - 30;
+		var width = size || 400;
+		var height = size || 400;
 		var nodes = data.slice(0);
 		nodes.forEach(function (n) {
 			n.x = width / 2 + Math.random() * 100 - 50;
@@ -2356,7 +2398,7 @@
 			n.weight = 40;
 			n.charge = 0;
 		});
-		var ringSize = height / rings.length;
+		var ringSize = height / (rings.length + 1);
 	
 		nodes.unshift({
 			name: 'root',
@@ -2372,7 +2414,7 @@
 			return {
 				target: 0,
 				source: i,
-				distance: (n.datumValue || 0) * ringSize
+				distance: (1 + (n.datumValue || 0)) * ringSize
 			};
 		}).filter(function (l) {
 			return !!l.source;
@@ -2452,9 +2494,16 @@
 	
 		var rootNode = svg.select('.rootNode');
 		for (var i = 0; i < rings.length; i++) {
-			rootNode.append('circle').attr('class', 'background').attr('r', rings[i].max * ringSize).style('fill', rings[i].fill);
-			rootNode.append('circle').attr('class', 'background').attr('r', rings[i].max * ringSize).style('fill', 'url(#radgrad)');
+			rootNode.append('circle').attr('class', 'background').attr('r', (rings[i].max + 1) * ringSize).style('fill', rings[i].fill);
+			rootNode.append('circle').attr('class', 'background').attr('r', (rings[i].max + 1) * ringSize).style('fill', 'url(#radgrad)');
 		}
+	
+		for (var i = 0; i < rings.length; i++) {
+			rootNode.append('svg:text').text(rings[rings.length - i - 1].groupLabel || i).attr('class', 'd3-label').attr('x', '-16px').attr('y', -(i + 1) * ringSize + 'px');
+		}
+	
+		// Nothing goes in the middle ring
+		rootNode.append('circle').attr('class', 'background').attr('r', ringSize).style('fill', 'rgba(255, 255, 255, 1)');
 	
 		force.start().alpha(0.05);
 	
@@ -3251,7 +3300,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.sort().map(function (val2) {
+				return val.slice().sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
