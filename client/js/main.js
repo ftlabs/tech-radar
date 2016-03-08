@@ -15,13 +15,13 @@ const {
 	const parsed = queryString.parse(location.search);
 	parsed.showcol = parsed.showcol || '';
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
-	parsed.sortcolorder = (parsed.sortcolorder || "");
+	parsed.sortcolorder = (parsed.sortcolorder || '');
 	if (parsed.id && parsed.sheet) {
 		return {
 			dataUrlFragment: `${parsed.id}/${parsed.sheet}`,
 			sortcol: parsed.sortcol,
 			showcol: parsed.showcol.split(','),
-			sortcolorder : parsed.sortcolorder.split(',').filter(item => (item !== "") )
+			sortcolorder : parsed.sortcolorder.split(',').filter(item => (item !== '') )
 		};
 	}
 	const errMessage = 'No ID and Sheet parameters.';
@@ -101,7 +101,7 @@ function process (data) {
 			datum['datumValue'] = valueMap.get(datum[sortcol]);
 		});
 	}
-	
+
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
 	
 	// Generate chart rings and attatch that data
