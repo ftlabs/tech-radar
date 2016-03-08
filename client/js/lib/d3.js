@@ -7,13 +7,12 @@
 
 module.exports = function ({
 	data,
-	width,
-	height,
+	size,
 	rings
 }) {
 
-	width = (width || 400);
-	height = (width || 400) - 30;
+	const width = (size || 400);
+	const height = (size || 400);
 	const nodes = data.slice(0);
 	nodes.forEach(n => {
 		n.x = width/2 + (Math.random() * 100) - 50;
@@ -21,7 +20,7 @@ module.exports = function ({
 		n.weight = 40;
 		n.charge = 0;
 	});
-	const ringSize = height / rings.length;
+	const ringSize = height / (rings.length + 1);
 
 	nodes.unshift({
 		name: 'root',
@@ -36,7 +35,7 @@ module.exports = function ({
 	const links = nodes.map((n, i) => ({
 		target: 0,
 		source: i,
-		distance: (n.datumValue || 0) * ringSize
+		distance: (1 + (n.datumValue || 0)) * ringSize
 	}))
 	.filter(l => !!l.source);
 
@@ -131,13 +130,28 @@ module.exports = function ({
 	for (let i=0; i<rings.length; i++) {
 		rootNode.append('circle')
 			.attr('class', 'background')
-			.attr('r', rings[i].max * ringSize)
+			.attr('r', (rings[i].max + 1) * ringSize)
 			.style('fill', rings[i].fill);
 		rootNode.append('circle')
 			.attr('class', 'background')
-			.attr('r', rings[i].max * ringSize)
+			.attr('r', (rings[i].max + 1 ) * ringSize)
 			.style('fill', `url(#radgrad)`);
 	}
+
+
+	for (let i=0; i<rings.length; i++) {
+		rootNode.append('svg:text')
+			.text(rings[rings.length - i - 1].groupLabel || i)
+			.attr('class', 'd3-label')
+			.attr('x', '-16px')
+			.attr('y', (-(i + 1) * ringSize) + 'px');
+	}
+
+	// Nothing goes in the middle ring
+	rootNode.append('circle')
+		.attr('class', 'background')
+		.attr('r', ringSize)
+		.style('fill', 'rgba(255, 255, 255, 1)');
 
 	force.start().alpha(0.05);
 
