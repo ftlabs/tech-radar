@@ -9,6 +9,7 @@ const {
 	dataUrlFragment,
 	showcol,
 	sortcol,
+	dashboard
 } = (function () {
 	const queryString = require('query-string');
 	const parsed = queryString.parse(location.search);
@@ -18,7 +19,8 @@ const {
 		return {
 			dataUrlFragment: `${parsed.id}/${parsed.sheet}`,
 			sortcol: parsed.sortcol,
-			showcol: parsed.showcol.split(',')
+			showcol: parsed.showcol.split(','),
+			dashboard: (parsed.dashboard !== undefined) || false
 		};
 	}
 	const errMessage = 'No ID and Sheet parameters.';
@@ -66,11 +68,13 @@ function process (data) {
 	let sortType = 'alphabetical';
 	for (const datum of data) {
 		if (datum[sortcol].match(/^[0-9]/)) {
+
 			sortType = 'numerical';
 			break;
 		}
 	}
 
+	let labels = [];
 	if (sortType === 'numerical') {
 
 		data
@@ -78,7 +82,9 @@ function process (data) {
 		.filter(datum => datum['datumValue'] !== null)
 
 		// Map 1.2.3 to 1.23 to for smarter sorting
-		.forEach(datum => datum['datumValue'] = Number(datum['datumValue'][0].split('.').reduce((p,c,i) => p + (!i ? c + '.' : c ),'')));
+		.forEach(datum => {
+			datum['datumValue'] = Number(datum['datumValue'][0].split('.').reduce((p,c,i) => p + (!i ? c + '.' : c ),''));
+		});
 
 	} else if (sortType === 'alphabetical') {
 		const phases = new Set();
@@ -91,12 +97,14 @@ function process (data) {
 		data.forEach(datum => {
 			datum['datumValue'] = valueMap.get(datum[sortcol]);
 		});
+
+		labels = Array.from(phases.values()).map(key => key.match(/^[a-z0-9]+/i)[0]);
 	}
 
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
 
 	// Generate chart rings and attatch that data
-	const chartRings = generateChartRings(data);
+	const chartRings = generateChartRings(data, labels);
 	data.forEach(datum => {
 		for (const r of chartRings) {
 			if (datum.datumValue >= r.min && datum.datumValue < r.max) {
@@ -133,10 +141,13 @@ function process (data) {
 		hue = (hue + 0.618033988749895) % 1;
 	});
 
-	return data;
+	return {
+		data,
+		labels
+	};
 }
 
-function generateChartRings (data) {
+function generateChartRings (data, labels = []) {
 
 	let max = 0;
 	for (const datum of data) {
@@ -159,19 +170,22 @@ function generateChartRings (data) {
 			fill: `hsla(${i * 360/nRings}, 100%, 85%, 1)`,
 			min: max - i - 1,
 			max: max - i,
-			index: i
+			index: i,
+			groupLabel: labels[i]
 		};
 	}
 	return rings;
 }
 
-function generateGraphs (data) {
+function generateGraphs (inData) {
+	const {data, labels} = process(inData);
 	const svgTarget = document.getElementById('tech-radar__graph-target');
+	const header = document.querySelector('.o-header');
+	const footer = document.querySelector('footer');
 	const svg = graph({
 		data,
-		width: svgTarget.clientWidth,
-		height: svgTarget.clientWidth*0.5,
-		rings: generateChartRings(data)
+		size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
+		rings: generateChartRings(data, labels)
 	});
 	svgTarget.appendChild(svg);
 
@@ -200,7 +214,8 @@ function stripDuplicates (arr) {
 	return [...new Set(arr)];
 }
 
-function generateTable (data) {
+function generateTable (inData) {
+	const {data} = process(inData);
 	const table = document.createElement('table');
 	const thead = document.createElement('thead');
 	const theadTr = document.createElement('tr');
@@ -281,8 +296,13 @@ Promise.all([
 .then(response => response.json())
 .then(function (data) {
 
-	let cleanUpTable = generateTable(process(data));
-	let cleanUpGraph = generateGraphs(process(data));
+	let cleanUpTable = generateTable(data);
+	let cleanUpGraph = generateGraphs(data);
+
+	if (dashboard) {
+		document.getElementById('tech-radar__settings').style.display = 'none';
+		return;
+	}
 
 	const buttons = document.getElementById('tech-radar__buttons');
 
@@ -298,8 +318,8 @@ Promise.all([
 		.then(response => response.json())
 		.then(dataIn => {
 			data = dataIn;
-			cleanUpTable = generateTable(process(data));
-			cleanUpGraph = generateGraphs(process(data));
+			cleanUpTable = generateTable(data);
+			cleanUpGraph = generateGraphs(data);
 		});
 	});
 
@@ -308,15 +328,15 @@ Promise.all([
 		// Filter graph
 		filterString = e.currentTarget.value;
 		cleanUpTable();
-		cleanUpTable = generateTable(process(data));
+		cleanUpTable = generateTable(data);
 	});
 
 	document.getElementById('filter-form').addEventListener('submit', function (e) {
 		e.preventDefault();
 		cleanUpTable();
 		cleanUpGraph();
-		cleanUpTable = generateTable(process(data));
-		cleanUpGraph = generateGraphs(process(data));
+		cleanUpTable = generateTable(data);
+		cleanUpGraph = generateGraphs(data);
 	});
 })
 .catch(e => {
