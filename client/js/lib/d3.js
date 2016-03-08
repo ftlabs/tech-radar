@@ -92,13 +92,20 @@ module.exports = function ({
 		row.classList.remove('hovering');
 	}
 
+	function click (d) {
+		const row = document.getElementById(d.name);
+		if (!row) return;
+		row.classList.toggle('collapsed');
+	}
+
 	node.append('circle')
 		.attr('class', 'node')
 		.attr('r', 8)
 		.attr('id', n => `${n.name}--graph-point`)
 		.style('fill', n => `hsla(${n['hidden-graph-item-hue']}, 95%, 60%, 1)`)
         .on('mouseover', mouseover)
-		.on('mouseout', mouseout);
+		.on('mouseout', mouseout)
+		.on('click', click);
 
 	node.append('svg:text')
 		.text(d => d.name || '')
