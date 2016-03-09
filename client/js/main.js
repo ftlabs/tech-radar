@@ -316,8 +316,22 @@ function generateTable (inData) {
 	};
 }
 
-function mergeData(data){
+function purgeNulls (obj){
+	
+	Object.keys(obj).forEach( key => {
 		
+		if(obj[key] === null){
+			delete obj[key];
+		}
+
+	});
+	
+	return obj;
+	
+}
+
+function mergeData(data){
+	
 	if(data.length === 1){
 		return data[0];
 	}
@@ -330,7 +344,7 @@ function mergeData(data){
 		
 		for(let b = 0; b < thisArray.length; b += 1){
 			
-			const thisValue = thisArray[b];
+			const thisValue = purgeNulls(thisArray[b]);
 			
 			if(a === 0){
 				flattenedData.push(thisValue);
@@ -342,7 +356,7 @@ function mergeData(data){
 				
 				for(let d = 0; d < arrayToCompareWith.length; d += 1){
 					
-					const theValueToCompareWith = arrayToCompareWith[d];
+					const theValueToCompareWith = purgeNulls(arrayToCompareWith[d]);
 					
 					if( !isEqual(thisValue, theValueToCompareWith) ){
 						flattenedData.push(theValueToCompareWith);
