@@ -59,6 +59,17 @@ function getDocsFromBertha(docs){
 	
 }
 
+function getAllSheetsAsJSON (){
+	
+	const docsToRetreive = docUIDs.map( (UID, idx) => {
+		return {UID, sheet : sheets[idx]}
+	});
+	
+	return getDocsFromBertha(docsToRetreive)
+	.then(responses => { return Promise.all( responses.map (response => { return response.json() } ) ) ; } );
+	
+}
+
 function toggleCollapsedClass (e) {
 	e.currentTarget.classList.toggle('collapsed');
 }
@@ -370,15 +381,7 @@ Promise.all([
 	addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'),
 	addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')
 ])
-.then(function (){
-	const docsToRetreive = docUIDs.map( (UID, idx) => {
-		return {UID, sheet : sheets[idx]}
-	});
-	return getDocsFromBertha(docsToRetreive);
-})
-.then(responses => {
-	return Promise.all( responses.map (response => { return response.json() } ) ) ; 
-})
+.then(getAllSheetsAsJSON)
 .then(data => mergeData(data))
 .then(flat => {
 
@@ -406,8 +409,8 @@ Promise.all([
 	updateDataButton.addEventListener('click', () => {
 		cleanUpGraph();
 		cleanUpTable();
-		fetch(`${berthaRoot}${berthaRepublish}${dataUrlFragment}`)
-		.then(response => response.json())
+		getAllSheetsAsJSON()
+		.then(data => mergeData(data))
 		.then(dataIn => {
 			data = dataIn;
 			cleanUpTable = generateTable(data);
