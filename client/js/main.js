@@ -203,6 +203,22 @@ function generateGraphs (inData) {
 	};
 }
 
+function getConfigInformation (data){
+	
+	const config = {};
+	
+	data.forEach(item => {
+		
+		if(item.configvalue !== undefined && item.configvalue !== null){
+			config[item.name] = item.configvalue
+		}
+		
+	});
+	
+	return config;
+	
+}
+
 function rowMouseOver (e) {
 	e.currentTarget.classList.add('hovering');
 	const pointId = e.currentTarget.id + '--graph-point';
@@ -304,7 +320,11 @@ Promise.all([
 .then(fetch)
 .then(response => response.json())
 .then(function (data) {
-
+	
+	data.config = getConfigInformation(data);
+	
+	debugger;
+	
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
 
