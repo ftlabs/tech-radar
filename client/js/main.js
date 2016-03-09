@@ -18,10 +18,11 @@ const {
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
 	if (parsed.id && parsed.sheet) {
+		parsed.showcol = stripDuplicates(['name', parsed.sortcol].concat(parsed.showcol.split(',')));
 		return {
 			dataUrlFragment: `${parsed.id}/${parsed.sheet}`,
 			sortcol: parsed.sortcol,
-			showcol: parsed.showcol.split(','),
+			showcol: parsed.showcol,
 			dashboard: (parsed.dashboard !== undefined) || false,
 			sortcolorder : parsed.sortcolorder.split(',').filter(item => (item !== '') )
 		};
@@ -64,6 +65,12 @@ function process (data) {
 
 		// Ensure it is string so we can do analysis
 		datum[sortcol] = String(datum[sortcol]);
+
+		// expose additional data;
+		datum.longDesc = '';
+		for (const col of showcol) {
+			datum.longDesc = datum.longDesc + `${col}: ${datum[col]}` + '\n';
+		}
 	}
 
 	data = cloneData(data).filter(datum => !!datum[sortcol] && !!datum['name']);
@@ -107,7 +114,7 @@ function process (data) {
 			datum['datumValue'] = valueMap.get(datum[sortcol]);
 		});
 
-		labels = Array.from(phases.values()).map(key => key.match(/^[a-z0-9]+/i)[0]);
+		labels = Array.from(valueMap.keys()).map(key => key.match(/^[a-z0-9]+/i)[0]);
 	}
 
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
@@ -236,7 +243,7 @@ function generateTable (inData) {
 	});
 
 	// Get the headings removing duplicates and empty strings.
-	const filterHeadings = stripDuplicates(['Key', 'name', sortcol].concat(showcol).concat(['Other Details'])).filter(a => !!String(a));
+	const filterHeadings = ['Key'].concat(showcol).concat(['Other Details']).filter(a => !!String(a));
 
 	table.appendChild(thead);
 	thead.appendChild(theadTr);

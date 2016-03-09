@@ -101,11 +101,13 @@ module.exports = function ({
 	node.append('circle')
 		.attr('class', 'node')
 		.attr('r', 8)
-		.attr('id', n => `${n.name}--graph-point`)
+		.attr('id', n => `${n.name}--graph-point`) 
 		.style('fill', n => `hsla(${n['hidden-graph-item-hue']}, 95%, 60%, 1)`)
         .on('mouseover', mouseover)
 		.on('mouseout', mouseout)
-		.on('click', click);
+		.on('click', click)
+		.append('svg:title')
+		.text(n => n.longDesc);
 
 	node.append('svg:text')
 		.text(d => d.name || '')
