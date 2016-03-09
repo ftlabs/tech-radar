@@ -383,13 +383,7 @@ Promise.all([
 ])
 .then(getAllSheetsAsJSON)
 .then(data => mergeData(data))
-.then(flat => {
-
-	console.table(flat);
-	
-	return flat;
-	
-}).then(function (data) {
+.then(function (data) {
 
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
