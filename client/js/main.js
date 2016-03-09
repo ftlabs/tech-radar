@@ -5,8 +5,11 @@ const extend = require('util')._extend;
 const berthaRoot = 'https://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
+const isEqual = require('lodash.isequal');
 const {
 	dataUrlFragment,
+	docUIDs,
+	sheets,
 	showcol,
 	sortcol,
 	dashboard,
@@ -20,6 +23,8 @@ const {
 	if (parsed.id && parsed.sheet) {
 		return {
 			dataUrlFragment: `${parsed.id}/${parsed.sheet}`,
+			docUIDs : parsed.id.split(','),
+			sheets : parsed.sheet.split(','),
 			sortcol: parsed.sortcol,
 			showcol: parsed.showcol.split(','),
 			dashboard: (parsed.dashboard !== undefined) || false,
@@ -44,10 +49,19 @@ function addScript (url) {
 	});
 }
 
+function getDocsFromBertha(docs){
+		
+	const requests = docs.map(doc => {
+		return fetch(`${berthaRoot}${berthaView}${doc.UID}/${doc.sheet}`)
+	});
+	
+	return Promise.all(requests);
+	
+}
+
 function toggleCollapsedClass (e) {
 	e.currentTarget.classList.toggle('collapsed');
 }
-
 
 // Process the data
 function process (data) {
@@ -291,6 +305,63 @@ function generateTable (inData) {
 	};
 }
 
+function mergeData(data){
+		
+	if(data.length === 1){
+		return data[0];
+	}
+	
+	const flattenedData = [];
+	
+	for(let a = 0; a < data.length; a += 1){
+		
+		const thisArray = data[a];
+		
+		for(let b = 0; b < thisArray.length; b += 1){
+			
+			const thisValue = thisArray[b];
+			
+			if(a === 0){
+				flattenedData.push(thisValue);
+			}
+			
+			for(let c = a; c < data.length; c++){
+				
+				const arrayToCompareWith = data[c];
+				
+				for(let d = 0; d < arrayToCompareWith.length; d += 1){
+					
+					const theValueToCompareWith = arrayToCompareWith[d];
+					
+					if( !isEqual(thisValue, theValueToCompareWith) ){
+						flattenedData.push(theValueToCompareWith);
+					}
+					
+				}
+				
+			}
+			
+		} 
+			
+	}
+	
+	for(let e = 0; e < flattenedData.length; e += 1){
+		
+		for(let f = e + 1; f < flattenedData.length; f +=1 ){
+			
+			if(isEqual(flattenedData[e], flattenedData[f])){
+				flattenedData.splice( f, 1 );
+				f -= 1;
+			}
+			
+		}
+		
+	}
+	
+	return flattenedData;
+	
+}
+
 function cloneData (data) {
 	return data.map(datum => extend({}, datum));
 }
@@ -299,11 +370,23 @@ Promise.all([
 	addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'),
 	addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')
 ])
-.then(() => dataUrlFragment)
-.then(urlFragment => `${berthaRoot}${berthaView}${urlFragment}`)
-.then(fetch)
-.then(response => response.json())
-.then(function (data) {
+.then(function (){
+	const docsToRetreive = docUIDs.map( (UID, idx) => {
+		return {UID, sheet : sheets[idx]}
+	});
+	return getDocsFromBertha(docsToRetreive);
+})
+.then(responses => {
+	return Promise.all( responses.map (response => { return response.json() } ) ) ; 
+})
+.then(data => mergeData(data))
+.then(flat => {
+
+	console.table(flat);
+	
+	return flat;
+	
+}).then(function (data) {
 
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
