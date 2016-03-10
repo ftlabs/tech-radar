@@ -8,7 +8,7 @@ const berthaRepublish = 'republish/publish/gss/';
 const isEqual = require('lodash.isequal');
 const {
 	docUIDs,
-	sheets,
+	sheet,
 	showcol,
 	sortcol,
 	dashboard,
@@ -23,7 +23,7 @@ const {
 		parsed.showcol = stripDuplicates(['name', parsed.sortcol].concat(parsed.showcol.split(',')));
 		return {
 			docUIDs : parsed.id.split(','),
-			sheets : parsed.sheet.split(','),
+			sheet : parsed.sheet,
 			sortcol: parsed.sortcol,
 			showcol: parsed.showcol,
 			dashboard: (parsed.dashboard !== undefined) || false,
@@ -61,7 +61,7 @@ function getDocsFromBertha(docs){
 function getAllSheetsAsJSON (){
 	
 	const docsToRetreive = docUIDs.map( (UID, idx) => {
-		return {UID, sheet : sheets[idx]}
+		return {UID, sheet}
 	});
 	
 	return getDocsFromBertha(docsToRetreive)
