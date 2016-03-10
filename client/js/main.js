@@ -7,7 +7,6 @@ const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
 const isEqual = require('lodash.isequal');
 const {
-	dataUrlFragment,
 	docUIDs,
 	sheets,
 	showcol,
@@ -22,7 +21,6 @@ const {
 	parsed.sortcolorder = (parsed.sortcolorder || '');
 	if (parsed.id && parsed.sheet) {
 		return {
-			dataUrlFragment: `${parsed.id}/${parsed.sheet}`,
 			docUIDs : parsed.id.split(','),
 			sheets : parsed.sheet.split(','),
 			sortcol: parsed.sortcol,
