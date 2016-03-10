@@ -17,5 +17,8 @@
     "nodemon": "^1.9.1",
     "origami-build-tools": "^5.0.0",
     "query-string": "^3.0.0"
+  },
+  "dependencies": {
+    "lodash.isequal": "^4.1.1"
   }
 }
