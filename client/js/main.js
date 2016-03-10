@@ -48,39 +48,46 @@ function addScript (url) {
 	});
 }
 
-function getDocsFromBertha(docs){
+function getDocsFromBertha (docs, republish = false) {
 
 	const requests = docs.map(doc => {
-		return fetch(`${berthaRoot}${berthaView}${doc.UID}/${doc.sheet}`)
+		return fetch(`${berthaRoot}${republish ? berthaRepublish : berthaView}${doc.UID}/${doc.sheet}`);
 	});
 
 	return Promise.all(requests);
 
 }
 
-function getAllSheetsAsJSON (){
-
-	const docsToRetreive = docUIDs.map( (UID, idx) => {
-		return {UID, sheet}
-	});
-
-	return getDocsFromBertha(docsToRetreive)
-	.then(responses => { return Promise.all( responses.map (response => { return response.json() } ) ) ; } );
-
-}
-
-function retrieveSheets(how){
+function retrieveSheets (how, republish = false) {
 
 	// "multipleIDsWithSingleSheet";
 	// "singleIDWithMultipleSheets";
 	// "oneIDPerSheet";
 
 	if(how === 'multipleIDsWithSingleSheet'){
-		return getDocsFromBertha(docUIDs.map( UID => { return {UID, sheet : sheets[0] }; }) );
+		return getDocsFromBertha(
+			docUIDs.map(UID => ({
+				UID,
+				sheet: sheets[0]
+			})),
+			republish
+		);
 	} else if(how === 'singleIDWithMultipleSheets'){
-		return getDocsFromBertha(sheets.map( sheetName => { return {UID : docUIDs[0], sheet : sheetName }; }) );
+		return getDocsFromBertha(
+			sheets.map(sheetName => ({
+				UID: docUIDs[0],
+				sheet : sheetName
+			})),
+			republish
+		);
 	} else if( how === 'oneIDPerSheet'){
-		return getDocsFromBertha(docUIDs.map( (UID, idx) => { return {UID, sheet : sheets[idx] }; }) );		
+		return getDocsFromBertha(
+			docUIDs.map((UID, idx) => ({
+				UID,
+				sheet: sheets[idx]
+			})),
+			republish
+		);
 	}
 
 }
@@ -347,7 +354,7 @@ function generateTable (inData) {
 	};
 }
 
-function mergeData(data){
+function mergeData (data) {
 
 	if(data.length === 1){
 		return data[0];
@@ -360,7 +367,6 @@ function mergeData(data){
 		const thisArray = data[a];
 
 		for(let b = 0; b < thisArray.length; b += 1){
-
 			const thisValue = thisArray[b];
 
 			if(a === 0){
@@ -370,34 +376,24 @@ function mergeData(data){
 			for(let c = a; c < data.length; c++){
 
 				const arrayToCompareWith = data[c];
-
 				for(let d = 0; d < arrayToCompareWith.length; d += 1){
-
 					const theValueToCompareWith = arrayToCompareWith[d];
 
 					if( !isEqual(thisValue, theValueToCompareWith) ){
 						flattenedData.push(theValueToCompareWith);
 					}
-
 				}
-
 			}
-
-		} 
-
+		}
 	}
 
-	for(let e = 0; e < flattenedData.length; e += 1){
-
+	for (let e = 0; e < flattenedData.length; e += 1) {
 		for(let f = e + 1; f < flattenedData.length; f +=1 ){
-
 			if(isEqual(flattenedData[e], flattenedData[f])){
 				flattenedData.splice( f, 1 );
 				f -= 1;
 			}
-
 		}
-
 	}
 
 	return flattenedData;
@@ -440,8 +436,9 @@ Promise.all([
 	updateDataButton.addEventListener('click', () => {
 		cleanUpGraph();
 		cleanUpTable();
+
 		decideHowToAct()
-		.then(howToAct => retrieveSheets(howToAct))
+		.then(howToAct => retrieveSheets(howToAct, true))
 		.then(responses => {
 			return Promise.all( responses.map( response => {
 				return response.json();
