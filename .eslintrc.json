@@ -27,6 +27,8 @@
     "space-before-function-paren": [1, "always"],
     "strict": [1, "global"],
     "no-console": 1,
-    "semi": 1
+    "semi": 1,
+    "indent": [2, "tab"],
+    "no-trailing-spaces": 2
   }
 }

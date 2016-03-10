@@ -20,11 +20,12 @@ const {
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
 	if (parsed.id && parsed.sheet) {
+		parsed.showcol = stripDuplicates(['name', parsed.sortcol].concat(parsed.showcol.split(',')));
 		return {
 			docUIDs : parsed.id.split(','),
 			sheets : parsed.sheet.split(','),
 			sortcol: parsed.sortcol,
-			showcol: parsed.showcol.split(','),
+			showcol: parsed.showcol,
 			dashboard: (parsed.dashboard !== undefined) || false,
 			sortcolorder : parsed.sortcolorder.split(',').filter(item => (item !== '') )
 		};
@@ -87,6 +88,12 @@ function process (data) {
 
 		// Ensure it is string so we can do analysis
 		datum[sortcol] = String(datum[sortcol]);
+
+		// expose additional data;
+		datum.longDesc = '';
+		for (const col of showcol) {
+			datum.longDesc = datum.longDesc + `${col}: ${datum[col]}` + '\n';
+		}
 	}
 
 	data = cloneData(data).filter(datum => !!datum[sortcol] && !!datum['name']);
@@ -116,9 +123,9 @@ function process (data) {
 		const phases = new Set();
 		const valueMap = new Map();
 		data.forEach(datum => phases.add(datum[sortcol]));
-		
-		// If we don't have enough values passed to sort the 
-		// order by, we'll default to ordering the rings alphabetically 
+
+		// If we don't have enough values passed to sort the
+		// order by, we'll default to ordering the rings alphabetically
 		if( sortcolorder.length === phases.size ){
 			sortcolorder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
 		} else {
@@ -130,11 +137,11 @@ function process (data) {
 			datum['datumValue'] = valueMap.get(datum[sortcol]);
 		});
 
-		labels = Array.from(phases.values()).map(key => key.match(/^[a-z0-9]+/i)[0]);
+		labels = Array.from(valueMap.keys()).map(key => key.match(/^[a-z0-9]+/i)[0]);
 	}
 
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
-	
+
 	// Generate chart rings and attatch that data
 	const chartRings = generateChartRings(data, labels);
 	data.forEach(datum => {
@@ -259,7 +266,7 @@ function generateTable (inData) {
 	});
 
 	// Get the headings removing duplicates and empty strings.
-	const filterHeadings = stripDuplicates(['Key', 'name', sortcol].concat(showcol).concat(['Other Details'])).filter(a => !!String(a));
+	const filterHeadings = ['Key'].concat(showcol).concat(['Other Details']).filter(a => !!String(a));
 
 	table.appendChild(thead);
 	thead.appendChild(theadTr);
