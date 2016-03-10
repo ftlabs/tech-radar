@@ -191,7 +191,7 @@ function process (data) {
 		}
 	}
 
-	data = cloneData(data).filter(datum => !!datum[options.sortCol] && !!datum['name']);
+	data = cloneData(data).filter(datum => !!datum[options.sortCol] && !!datum['name'] && (datum['configvalue'] === undefined || datum['configvalue'] === null));
 
 	let sortType = 'alphabetical';
 	for (const datum of data) {
@@ -224,6 +224,7 @@ function process (data) {
 		if( options.sortColOrder.length === phases.size ){
 			options.sortColOrder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
 		} else {
+
 			// Create a map of 'My String' => 1, 'Mz String' => 2
 			[...phases].sort().forEach((d,i) => valueMap.set(d,i + 0.2));
 		}
@@ -232,7 +233,9 @@ function process (data) {
 			datum['datumValue'] = valueMap.get(datum[options.sortCol]);
 		});
 
-		labels = Array.from(valueMap.keys()).map(key => key.match(/^[a-z0-9]+/i)[0]);
+		labels = Array.from(valueMap.entries())
+		.sort((a,b) => b[1] - a[1])
+		.map(entry => entry[0].match(/^[a-z0-9]+/i)[0]);
 	}
 
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
