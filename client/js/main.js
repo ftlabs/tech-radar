@@ -1,34 +1,65 @@
 'use strict';
 
+// Handle the mapping of queryParams/sheetConfig to options' properties.
+const options = {};
+function parseOptions (config) {
+
+	// configProperty: [optionsParameter, type]
+	const filter = {
+		id: ['docUIDs', Array],
+		sheet: ['sheets', Array],
+		sortcol: ['sortCol', String],
+		showcol: ['showCol', Array],
+		dashboard: ['dashboard', Boolean],
+		showtable: ['showTable', Boolean],
+		sortcolorder: ['sortColOrder', Array]
+	};
+
+	Object.keys(config).forEach(key => {
+		const handle = filter[key];
+		if (handle === undefined) return;
+		switch (handle[1]) {
+		case Array:
+			if (config[key].constructor === Array) {
+				options[handle[0]] = config[key];
+				break;
+			}
+			options[handle[0]] = config[key].split(/, */).filter(item => (item !== ''));
+			break;
+		case String:
+			options[handle[0]] = String(config[key]);
+			break;
+		case Number:
+			options[handle[0]] = Number(config[key]);
+			break;
+		case Boolean:
+			options[handle[0]] = config[key] !== 'false' && config[key] !== false;
+			break;
+		}
+	});
+
+	return options;
+}
+
 const graph = require('./lib/d3');
 const extend = require('util')._extend;
 const berthaRoot = 'https://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
 const isEqual = require('lodash.isequal');
-const {
-	docUIDs,
-	sheets,
-	showcol,
-	sortcol,
-	dashboard,
-	sortcolorder
-} = (function () {
+parseOptions(function () {
 	const queryString = require('query-string');
 	const parsed = queryString.parse(location.search);
 	parsed.showcol = parsed.showcol || '';
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
+
+	// show the table by default
+	if (parsed.showtable === undefined) {
+		parsed.showtable = '';
+	}
 	if (parsed.id && parsed.sheet) {
-		parsed.showcol = stripDuplicates(['name', parsed.sortcol].concat(parsed.showcol.split(',')));
-		return {
-			docUIDs : parsed.id.split(','),
-			sheets : parsed.sheet.split(','),
-			sortcol: parsed.sortcol,
-			showcol: parsed.showcol,
-			dashboard: (parsed.dashboard !== undefined) || false,
-			sortcolorder : parsed.sortcolorder.split(',').filter(item => (item !== '') )
-		};
+		return parsed;
 	}
 	const errMessage = 'No ID and Sheet parameters.';
 	document.getElementById('error-text-target').textContent = errMessage;
@@ -51,7 +82,38 @@ function addScript (url) {
 function getDocsFromBertha (docs, republish = false) {
 
 	const requests = docs.map(doc => {
-		return fetch(`${berthaRoot}${republish ? berthaRepublish : berthaView}${doc.UID}/${doc.sheet}`);
+		return fetch(`${berthaRoot}${republish ? berthaRepublish : berthaView}${doc.UID}/${doc.sheet}`)
+		.then(response => response.json())
+		.then(function (json) {
+
+			// override options
+
+			// only override if it has configuration data
+			if (json[0].configvalue === undefined) return json;
+			if (json[0].name === undefined) return json;
+
+			const config = {};
+
+			for (const datum of json) {
+				if (datum.configvalue !== null && datum.name !== null) {
+
+					if (
+						datum.name === 'sortcol' && docs.length > 1 || // local sortcol is invalid if there are multiple documents
+						datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
+						datum.name === 'id'
+					) {
+						continue;
+					}
+
+					config[datum.name] = datum.configvalue;
+				}
+			}
+
+			// Set the options globally
+			parseOptions(config);
+
+			return json;
+		});
 	});
 
 	return Promise.all(requests);
@@ -60,12 +122,11 @@ function getDocsFromBertha (docs, republish = false) {
 
 function getAllSheetsAsJSON (republish = false) {
 
-	const docsToRetreive = docUIDs.map( (UID, idx) => {
-		return {UID, sheet : sheets[idx]};
+	const docsToRetreive = options.docUIDs.map( (UID, idx) => {
+		return {UID, sheet : options.sheets[idx]};
 	});
 
-	return getDocsFromBertha(docsToRetreive, republish)
-	.then(responses => Promise.all( responses.map (response => response.json() ) ) );
+	return getDocsFromBertha(docsToRetreive, republish);
 
 }
 
@@ -77,8 +138,8 @@ function toggleCollapsedClass (e) {
 function process (data) {
 
 	if (data[0]) {
-		if (data[0][sortcol] === undefined) {
-			throw Error(`No column with the name '${sortcol}'. ${ sortcol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }\n Available headings: ${Object.keys(data[0]).join(', ')}`);
+		if (data[0][options.sortCol] === undefined) {
+			throw Error(`No column with the name '${options.sortCol}'. ${ options.sortCol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }\n Available headings: ${Object.keys(data[0]).join(', ')}`);
 		}
 	} else {
 		throw Error('Empty spreasheet from Bertha');
@@ -87,20 +148,20 @@ function process (data) {
 	for (const datum of data) {
 
 		// Ensure it is string so we can do analysis
-		datum[sortcol] = String(datum[sortcol]);
+		datum[options.sortCol] = String(datum[options.sortCol]);
 
 		// expose additional data;
 		datum.longDesc = '';
-		for (const col of showcol) {
+		for (const col of stripDuplicates(['name', options.sortCol].concat(options.showCol))) {
 			datum.longDesc = datum.longDesc + `${col}: ${datum[col]}` + '\n';
 		}
 	}
 
-	data = cloneData(data).filter(datum => !!datum[sortcol] && !!datum['name']);
+	data = cloneData(data).filter(datum => !!datum[options.sortCol] && !!datum['name']);
 
 	let sortType = 'alphabetical';
 	for (const datum of data) {
-		if (datum[sortcol].match(/^[0-9]/)) {
+		if (datum[options.sortCol].match(/^[0-9]/)) {
 
 			sortType = 'numerical';
 			break;
@@ -111,7 +172,7 @@ function process (data) {
 	if (sortType === 'numerical') {
 
 		data
-		.map(datum => (datum['datumValue'] = datum[sortcol].match(/^[0-9\.]+/), datum))
+		.map(datum => (datum['datumValue'] = datum[options.sortCol].match(/^[0-9\.]+/), datum))
 		.filter(datum => datum['datumValue'] !== null)
 
 		// Map 1.2.3 to 1.23 to for smarter sorting
@@ -122,19 +183,19 @@ function process (data) {
 	} else if (sortType === 'alphabetical') {
 		const phases = new Set();
 		const valueMap = new Map();
-		data.forEach(datum => phases.add(datum[sortcol]));
+		data.forEach(datum => phases.add(datum[options.sortCol]));
 
 		// If we don't have enough values passed to sort the
 		// order by, we'll default to ordering the rings alphabetically
-		if( sortcolorder.length === phases.size ){
-			sortcolorder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
+		if( options.sortColOrder.length === phases.size ){
+			options.sortColOrder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
 		} else {
 			// Create a map of 'My String' => 1, 'Mz String' => 2
 			[...phases].sort().forEach((d,i) => valueMap.set(d,i + 0.2));
 		}
 
 		data.forEach(datum => {
-			datum['datumValue'] = valueMap.get(datum[sortcol]);
+			datum['datumValue'] = valueMap.get(datum[options.sortCol]);
 		});
 
 		labels = Array.from(valueMap.keys()).map(key => key.match(/^[a-z0-9]+/i)[0]);
@@ -254,6 +315,10 @@ function stripDuplicates (arr) {
 }
 
 function generateTable (inData) {
+
+	// if not suppose to show the table return a noop to clean it up.
+	if (options.showTable === false) return function () {};
+
 	const {data} = process(inData);
 	const table = document.createElement('table');
 	const thead = document.createElement('thead');
@@ -266,7 +331,7 @@ function generateTable (inData) {
 	});
 
 	// Get the headings removing duplicates and empty strings.
-	const filterHeadings = ['Key'].concat(showcol).concat(['Other Details']).filter(a => !!String(a));
+	const filterHeadings = stripDuplicates(['Key', 'name', options.sortCol].concat(options.showCol).concat(['Other Details']));
 
 	table.appendChild(thead);
 	thead.appendChild(theadTr);
@@ -305,7 +370,7 @@ function generateTable (inData) {
 				td.classList.add('hidden');
 			} else if (heading === 'Key') {
 				td.style.background = `hsl(${datum['hidden-graph-item-hue']}, 95%, 60%)`;
-			} else if (heading === sortcol) {
+			} else if (heading === options.sortCol) {
 				td.style.background = datum['hidden-graph-item-ring'].fill;
 				tdContent.textContent = datum[heading] || '';
 			} else {
@@ -381,7 +446,7 @@ Promise.all([
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
 
-	if (dashboard) {
+	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
 		return;
 	}
