@@ -8,7 +8,7 @@ const berthaRepublish = 'republish/publish/gss/';
 const isEqual = require('lodash.isequal');
 const {
 	docUIDs,
-	sheet,
+	sheets,
 	showcol,
 	sortcol,
 	dashboard,
@@ -23,7 +23,7 @@ const {
 		parsed.showcol = stripDuplicates(['name', parsed.sortcol].concat(parsed.showcol.split(',')));
 		return {
 			docUIDs : parsed.id.split(','),
-			sheet : parsed.sheet,
+			sheets : parsed.sheet.split(','),
 			sortcol: parsed.sortcol,
 			showcol: parsed.showcol,
 			dashboard: (parsed.dashboard !== undefined) || false,
@@ -49,24 +49,50 @@ function addScript (url) {
 }
 
 function getDocsFromBertha(docs){
-		
+
 	const requests = docs.map(doc => {
 		return fetch(`${berthaRoot}${berthaView}${doc.UID}/${doc.sheet}`)
 	});
-	
+
 	return Promise.all(requests);
-	
+
 }
 
 function getAllSheetsAsJSON (){
-	
+
 	const docsToRetreive = docUIDs.map( (UID, idx) => {
 		return {UID, sheet}
 	});
-	
+
 	return getDocsFromBertha(docsToRetreive)
 	.then(responses => { return Promise.all( responses.map (response => { return response.json() } ) ) ; } );
-	
+
+}
+
+function retrieveSheets(how){
+
+	// "multipleIDsWithSingleSheet";
+	// "singleIDWithMultipleSheets";
+	// "oneIDPerSheet";
+
+	if(how === 'multipleIDsWithSingleSheet'){
+		return getDocsFromBertha(docUIDs.map( UID => { return {UID, sheet : sheets[0] }; }) );
+	} else if(how === 'singleIDWithMultipleSheets'){
+		return getDocsFromBertha(sheets.map( sheetName => { return {UID : docUIDs[0], sheet : sheetName }; }) );
+	} else if( how === 'oneIDPerSheet'){
+		return getDocsFromBertha(docUIDs.map( (UID, idx) => { return {UID, sheet : sheets[idx] }; }) );		
+	}
+
+}
+
+function decideHowToAct (){
+	if(docUIDs.length > sheets.length){
+		return 'multipleIDsWithSingleSheet';
+	} else if(docUIDs.length === 1 && sheets.length){
+		return 'singleIDWithMultipleSheets';
+	} else {
+		return 'oneIDPerSheet';
+	}
 }
 
 function toggleCollapsedClass (e) {
@@ -322,60 +348,60 @@ function generateTable (inData) {
 }
 
 function mergeData(data){
-		
+
 	if(data.length === 1){
 		return data[0];
 	}
-	
+
 	const flattenedData = [];
-	
+
 	for(let a = 0; a < data.length; a += 1){
-		
+
 		const thisArray = data[a];
-		
+
 		for(let b = 0; b < thisArray.length; b += 1){
-			
+
 			const thisValue = thisArray[b];
-			
+
 			if(a === 0){
 				flattenedData.push(thisValue);
 			}
-			
+
 			for(let c = a; c < data.length; c++){
-				
+
 				const arrayToCompareWith = data[c];
-				
+
 				for(let d = 0; d < arrayToCompareWith.length; d += 1){
-					
+
 					const theValueToCompareWith = arrayToCompareWith[d];
-					
+
 					if( !isEqual(thisValue, theValueToCompareWith) ){
 						flattenedData.push(theValueToCompareWith);
 					}
-					
+
 				}
-				
+
 			}
-			
+
 		} 
-			
+
 	}
-	
+
 	for(let e = 0; e < flattenedData.length; e += 1){
-		
+
 		for(let f = e + 1; f < flattenedData.length; f +=1 ){
-			
+
 			if(isEqual(flattenedData[e], flattenedData[f])){
 				flattenedData.splice( f, 1 );
 				f -= 1;
 			}
-			
+
 		}
-		
+
 	}
-	
+
 	return flattenedData;
-	
+
 }
 
 function cloneData (data) {
@@ -386,7 +412,13 @@ Promise.all([
 	addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'),
 	addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')
 ])
-.then(getAllSheetsAsJSON)
+.then(decideHowToAct)
+.then(howToAct => retrieveSheets(howToAct))
+.then(responses => {
+	return Promise.all( responses.map( response => {
+		return response.json();
+	} ) );
+})
 .then(data => mergeData(data))
 .then(function (data) {
 
@@ -408,7 +440,13 @@ Promise.all([
 	updateDataButton.addEventListener('click', () => {
 		cleanUpGraph();
 		cleanUpTable();
-		getAllSheetsAsJSON()
+		decideHowToAct()
+		.then(howToAct => retrieveSheets(howToAct))
+		.then(responses => {
+			return Promise.all( responses.map( response => {
+				return response.json();
+			} ) );
+		})
 		.then(data => mergeData(data))
 		.then(dataIn => {
 			data = dataIn;
