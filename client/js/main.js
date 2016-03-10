@@ -58,15 +58,48 @@ function getDocsFromBertha (docs, republish = false) {
 
 }
 
-function getAllSheetsAsJSON (republish = false) {
+function retrieveSheets (how, republish = false) {
 
-	const docsToRetreive = docUIDs.map( (UID, idx) => {
-		return {UID, sheet : sheets[idx]};
-	});
+	// "multipleIDsWithSingleSheet";
+	// "singleIDWithMultipleSheets";
+	// "oneIDPerSheet";
 
-	return getDocsFromBertha(docsToRetreive, republish)
-	.then(responses => Promise.all( responses.map (response => response.json() ) ) );
+	if(how === 'multipleIDsWithSingleSheet'){
+		return getDocsFromBertha(
+			docUIDs.map(UID => ({
+				UID,
+				sheet: sheets[0]
+			})),
+			republish
+		);
+	} else if(how === 'singleIDWithMultipleSheets'){
+		return getDocsFromBertha(
+			sheets.map(sheetName => ({
+				UID: docUIDs[0],
+				sheet : sheetName
+			})),
+			republish
+		);
+	} else if( how === 'oneIDPerSheet'){
+		return getDocsFromBertha(
+			docUIDs.map((UID, idx) => ({
+				UID,
+				sheet: sheets[idx]
+			})),
+			republish
+		);
+	}
 
+}
+
+function decideHowToAct (){
+	if(docUIDs.length > sheets.length){
+		return 'multipleIDsWithSingleSheet';
+	} else if(docUIDs.length === 1 && sheets.length){
+		return 'singleIDWithMultipleSheets';
+	} else {
+		return 'oneIDPerSheet';
+	}
 }
 
 function toggleCollapsedClass (e) {
@@ -321,7 +354,7 @@ function generateTable (inData) {
 	};
 }
 
-function mergeData (data){
+function mergeData (data) {
 
 	if(data.length === 1){
 		return data[0];
@@ -341,6 +374,7 @@ function mergeData (data){
 			}
 
 			for(let c = a; c < data.length; c++){
+
 				const arrayToCompareWith = data[c];
 				for(let d = 0; d < arrayToCompareWith.length; d += 1){
 					const theValueToCompareWith = arrayToCompareWith[d];
@@ -374,7 +408,13 @@ Promise.all([
 	addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'),
 	addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')
 ])
-.then(() => getAllSheetsAsJSON())
+.then(decideHowToAct)
+.then(howToAct => retrieveSheets(howToAct))
+.then(responses => {
+	return Promise.all( responses.map( response => {
+		return response.json();
+	} ) );
+})
 .then(data => mergeData(data))
 .then(function (data) {
 
@@ -396,7 +436,14 @@ Promise.all([
 	updateDataButton.addEventListener('click', () => {
 		cleanUpGraph();
 		cleanUpTable();
-		getAllSheetsAsJSON(true)
+
+		decideHowToAct()
+		.then(howToAct => retrieveSheets(howToAct, true))
+		.then(responses => {
+			return Promise.all( responses.map( response => {
+				return response.json();
+			} ) );
+		})
 		.then(data => mergeData(data))
 		.then(dataIn => {
 			data = dataIn;
