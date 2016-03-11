@@ -147,7 +147,7 @@ module.exports = function ({
 		rootNode.append('circle')
 			.attr('class', 'background')
 			.attr('r', (rings[i].max + 1 ) * ringSize)
-			.style('fill', `rgba(0,0,0, 0.${ (i * dampener) | 0})`);
+			.style('fill', `rgba(0,0,0, 0.${ ( (8 / rings.length) * i ) | 0})`);
 	}
 
 
