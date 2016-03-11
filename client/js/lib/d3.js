@@ -11,14 +11,12 @@ module.exports = function ({
 	rings
 }) {
 
-	const width = (size || 400);
+	const width = (size || 400) + 40;
 	const height = (size || 400);
 	const nodes = data.slice(0);
 	nodes.forEach(n => {
-		n.x = width/2 + (Math.random() * 100) - 50;
-		n.y = height/2 + (Math.random() * 100) - 50;
-		n.weight = 40;
-		n.charge = 0;
+		n.weight = 30;
+		n.charge = -30;
 	});
 	const ringSize = height / (rings.length + 1);
 
@@ -32,12 +30,66 @@ module.exports = function ({
 		charge: 0
 	});
 
+
+	const segmentLines = [];
+	// Draw an arc of attractive points with labels
+	const r = height;
+	for (let i=0,l=rings[0].segments.length;i<l;i++) {
+		const segment = rings[0].segments[i];
+		const thetaMin = 1 * 2 * Math.PI/4; // slightly negative
+		const thetaMax = 2 * 2 * Math.PI/4; // same amount from the otherside
+		const arcWidth = thetaMax - thetaMin;
+		const segmentWidth = arcWidth/(l+1);
+		const theta = thetaMin + (1+i)*segmentWidth;
+		nodes.push({
+			name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
+			x: width + r * Math.cos(theta),
+			y: height - r * Math.sin(theta),
+			fixed: true,
+			charge: 0,
+			dot: false
+		});
+		segmentLines.push({
+			x: r * Math.cos(theta - (segmentWidth/2)),
+			y: r * -Math.sin(theta - (segmentWidth/2))
+		});
+		if (i === l-1) {
+			segmentLines.push({
+				x: r * Math.cos(theta + (segmentWidth/2)),
+				y: r * -Math.sin(theta + (segmentWidth/2))
+			});
+		}
+	}
+
 	const links = nodes.map((n, i) => ({
 		target: 0,
 		source: i,
-		distance: (1 + (n.datumValue || 0)) * ringSize
+		distance: n.distance || (1 + (n.datumValue || 0)) * ringSize,
+		linkStrength: 1,
+		fixed: n.fixed
 	}))
-	.filter(l => !!l.source);
+	.filter(l => !l.fixed);
+
+	// Attract the nodes to the segments
+	nodes.forEach((n,j) => {
+		for(let i=0,l=rings[0].segments.length;i<l;i++) {
+			if (
+				n[rings[0].segmentBy] !== undefined &&
+				n[rings[0].segmentBy] === rings[0].segments[i]
+			) {
+				const target = nodes.length - l + i;
+				n.x = nodes[target].x;
+				n.y = nodes[target].y;
+				links.push({
+					target,
+					source: j,
+					distance: 0,
+					linkStrength: 0.1
+				});
+				break;
+			}
+		}
+	});
 
 	/**
 	 * constiables
@@ -52,10 +104,10 @@ module.exports = function ({
 	const force = d3.layout.force()
 		.nodes(nodes)
 		.links(links)
-		.gravity(0.015)
-		.charge(-60)
-		.linkStrength(30)
+		.charge(n => n.charge)
+		.linkStrength(l => l.linkStrength)
 		.linkDistance(l => l.distance)
+		.gravity(0)
 		.size([width, height]);
 
 	force.on('tick', function () {
@@ -80,26 +132,26 @@ module.exports = function ({
 
 	function mouseover (d) {
 		this.parentNode.classList.add('hovering');
-		const row = document.getElementById(d.name);
+		const row = document.getElementById(d['hidden-graph-item-id']);
 		if (!row) return;
 		row.classList.add('hovering');
 	}
 
 	function mouseout (d) {
 		this.parentNode.classList.remove('hovering');
-		const row = document.getElementById(d.name);
+		const row = document.getElementById(d['hidden-graph-item-id']);
 		if (!row) return;
 		row.classList.remove('hovering');
 	}
 
 	function click (d) {
-		const row = document.getElementById(d.name);
+		const row = document.getElementById(d['hidden-graph-item-id']);
 		if (!row) return;
 		row.classList.toggle('collapsed');
 	}
 
 	node.append('circle')
-		.attr('class', 'node')
+		.attr('class', n => `node${n.dot === false ? ' no-dot' : ''}`)
 		.attr('r', 8)
 		.attr('id', n => `${n.name}--graph-point`)
 		.style('fill', n => `hsla(${n['hidden-graph-item-hue']}, 95%, 60%, 1)`)
@@ -110,9 +162,9 @@ module.exports = function ({
 		.text(n => n.longDesc);
 
 	node.append('svg:text')
-		.text(d => d.name || '')
-		.attr('class', 'd3-label')
-		.attr('x', '-10px')
+		.text(n => n.name || '')
+		.attr('class', n => `d3-label${n.dot === false ? ' no-dot' : ''}`)
+		.attr('x', n => n.dot !== false ? '-10px' : '0px')
 		.attr('y', '5px');
 
 	const gradient = svg.append('svg:defs')
@@ -144,7 +196,7 @@ module.exports = function ({
 		rootNode.append('circle')
 			.attr('class', 'background')
 			.attr('r', (rings[i].max + 1 ) * ringSize)
-			.style('fill', `url(#radgrad)`);
+			.style('fill', 'url(#radgrad)');
 	}
 
 
@@ -154,6 +206,15 @@ module.exports = function ({
 			.attr('class', 'd3-label')
 			.attr('x', '-16px')
 			.attr('y', (-(i + 1) * ringSize) + 'px');
+	}
+
+	for (const lineOrigin of segmentLines) {
+		rootNode.append('line')
+			.attr('x1', lineOrigin.x)
+			.attr('y1', lineOrigin.y)
+			.attr('x2', 0)
+			.attr('y2', 0)
+			.style('stroke', 'rgba(0, 0, 0, 0.5)');
 	}
 
 	// Nothing goes in the middle ring

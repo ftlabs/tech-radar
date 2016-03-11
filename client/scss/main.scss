@@ -49,6 +49,10 @@ svg {
 		font-family: MetricWeb, helvetica, sans;
 		transition: transform 0.2s ease;
 		text-anchor: end;
+
+		&.no-dot {
+			text-anchor: middle;
+		}
 	}
 
 	circle.background {
@@ -59,6 +63,11 @@ svg {
 		fill: white;
 		stroke-width: 2px;
 		stroke: black;
+
+		&.no-dot {
+			display: none;
+			font-size: 16pt;
+		}
 	}
 }
 
