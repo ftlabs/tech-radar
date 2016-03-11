@@ -68,6 +68,7 @@
 	// Handle the mapping of queryParams/sheetConfig to options' properties.
 	var options = {};
 	function parseOptions(config) {
+		var force = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 	
 		// configProperty: [optionsParameter, type]
 		var filter = {
@@ -83,15 +84,26 @@
 		_Object$keys(config).forEach(function (key) {
 			var handle = filter[key];
 			if (handle === undefined) return;
+	
+			// if it is overriding a query string then ignore
+			var queryStringData = queryString.parse(location.search);
+			if (!force && key in queryStringData && (options[handle[0]] === undefined || // can replace if not set already
+			handle[1] === Array && options[handle[0]].length === 0) // or is an empty array
+			) {
+					return;
+				}
+	
 			switch (handle[1]) {
 				case Array:
+					var arr = undefined;
 					if (config[key].constructor === Array) {
-						options[handle[0]] = config[key];
-						break;
+						arr = config[key];
+					} else {
+						arr = config[key].split(/, */).filter(function (item) {
+							return item !== '';
+						});
 					}
-					options[handle[0]] = config[key].split(/, */).filter(function (item) {
-						return item !== '';
-					});
+					options[handle[0]] = arr;
 					break;
 				case String:
 					options[handle[0]] = String(config[key]);
@@ -114,8 +126,8 @@
 	var berthaView = 'view/publish/gss/';
 	var berthaRepublish = 'republish/publish/gss/';
 	var isEqual = __webpack_require__(84);
+	var queryString = __webpack_require__(89);
 	parseOptions((function () {
-		var queryString = __webpack_require__(89);
 		var parsed = queryString.parse(location.search);
 		parsed.showcol = parsed.showcol || '';
 		parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
@@ -131,7 +143,7 @@
 		var errMessage = 'No ID and Sheet parameters.';
 		document.getElementById('error-text-target').textContent = errMessage;
 		throw Error(errMessage);
-	})());
+	})(), true);
 	
 	// String input from the filter field used to filter the text input
 	var filterString = '';
@@ -170,7 +182,8 @@
 					for (var _iterator = _getIterator(json), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 						var datum = _step.value;
 	
-						if (datum.configvalue !== null && datum.name !== null) {
+						if (datum.configvalue !== null && // It has a config value set
+						datum.name !== null) {
 	
 							if (datum.name === 'sortcol' && docs.length > 1 || // local sortcol is invalid if there are multiple documents
 							datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
@@ -854,6 +867,11 @@
 				data = dataIn;
 				cleanUpTable = generateTable(data);
 				cleanUpGraph = generateGraphs(data);
+	
+				// Hide the dashboard if hidden
+				if (options.dashboard) {
+					document.getElementById('tech-radar__settings').style.display = 'none';
+				}
 			});
 		});
 	
@@ -5466,7 +5484,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.slice().sort().map(function (val2) {
+				return val.sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
