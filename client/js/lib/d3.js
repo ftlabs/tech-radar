@@ -147,13 +147,22 @@ module.exports = function ({
 			.style('fill', `url(#radgrad)`);
 	}
 
+	rootNode.append('rect')
+		.attr('class', 'd3-ring-label')
+		.attr('width', width)
+		.attr('height', '20px')
+		.attr('x', -width)
+		.attr('y', '-20px')
+		.attr('fill', 'black')
+		.attr('fill-opacity', '0.2')
 
 	for (let i=0; i<rings.length; i++) {
 		rootNode.append('svg:text')
 			.text(rings[rings.length - i - 1].groupLabel || i)
 			.attr('class', 'd3-label')
-			.attr('x', '-16px')
-			.attr('y', (-(i + 1) * ringSize) + 'px');
+			.attr('x', ((-(i + 1) * ringSize) - 3) + 'px')
+			.attr('y', '-4px')
+			.attr('fill', 'white');
 	}
 
 	// Nothing goes in the middle ring
