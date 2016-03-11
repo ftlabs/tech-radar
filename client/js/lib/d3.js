@@ -8,7 +8,8 @@
 module.exports = function ({
 	data,
 	size,
-	rings
+	rings,
+	ringColor
 }) {
 
 	const width = (size || 400);
@@ -136,7 +137,8 @@ module.exports = function ({
 		.attr('stop-opacity', 1);
 
 	const rootNode = svg.select('.rootNode');
-	const baseColor = "#fff1e0";
+	const baseColor = ringColor ||  "#fff1e0";
+	debugger;
 	const dampener = 1.1;
 	for (let i=0; i<rings.length; i++) {
 		rootNode.append('circle')

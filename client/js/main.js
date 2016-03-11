@@ -12,7 +12,8 @@ function parseOptions (config, force = false) {
 		showcol: ['showCol', Array],
 		dashboard: ['dashboard', Boolean],
 		showtable: ['showTable', Boolean],
-		sortcolorder: ['sortColOrder', Array]
+		sortcolorder: ['sortColOrder', Array],
+		ringcolor: ['ringColor', String]
 	};
 
 	Object.keys(config).forEach(key => {
@@ -345,7 +346,8 @@ function generateGraphs (inData) {
 	const svg = graph({
 		data,
 		size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
-		rings: generateChartRings(data, labels)
+		rings: generateChartRings(data, labels),
+		ringColor : options.ringColor
 	});
 	svgTarget.appendChild(svg);
 
