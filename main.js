@@ -2664,7 +2664,7 @@
 		var nodes = data.slice(0);
 		nodes.forEach(function (n) {
 			n.weight = 30;
-			n.charge = -30;
+			n.charge = -60;
 		});
 		var ringSize = height / (rings.length + 1);
 	
@@ -2834,10 +2834,6 @@
 			rootNode.append('circle').attr('class', 'background').attr('r', (rings[i].max + 1) * ringSize).style('fill', 'url(#radgrad)');
 		}
 	
-		for (var i = 0; i < rings.length; i++) {
-			rootNode.append('svg:text').text(rings[rings.length - i - 1].groupLabel || i).attr('class', 'd3-label').attr('x', '-16px').attr('y', -(i + 1) * ringSize + 'px');
-		}
-	
 		var _iteratorNormalCompletion = true;
 		var _didIteratorError = false;
 		var _iteratorError = undefined;
@@ -2846,10 +2842,8 @@
 			for (var _iterator = _getIterator(segmentLines), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 				var lineOrigin = _step.value;
 	
-				rootNode.append('line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(0, 0, 0, 0.5)');
+				rootNode.append('line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
 			}
-	
-			// Nothing goes in the middle ring
 		} catch (err) {
 			_didIteratorError = true;
 			_iteratorError = err;
@@ -2865,6 +2859,11 @@
 			}
 		}
 	
+		for (var i = 0; i < rings.length; i++) {
+			rootNode.append('svg:text').text(rings[rings.length - i - 1].groupLabel || i).attr('class', 'd3-label').attr('x', '-16px').attr('y', -(i + 1) * ringSize + 'px');
+		}
+	
+		// Nothing goes in the middle ring
 		rootNode.append('circle').attr('class', 'background').attr('r', ringSize).style('fill', 'rgba(255, 255, 255, 1)');
 	
 		force.start().alpha(0.05);
