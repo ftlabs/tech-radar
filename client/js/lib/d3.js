@@ -16,7 +16,7 @@ module.exports = function ({
 	const nodes = data.slice(0);
 	nodes.forEach(n => {
 		n.weight = 30;
-		n.charge = -60;
+		n.charge = -200;
 	});
 	const ringSize = height / (rings.length + 1);
 
@@ -33,8 +33,8 @@ module.exports = function ({
 
 	const segmentLines = [];
 	// Draw an arc of attractive points with labels
-	const r = height;
 	for (let i=0,l=rings[0].segments.length;i<l;i++) {
+		const r = height * 1.05;
 		const segment = rings[0].segments[i];
 		const thetaMin = 1 * 2 * Math.PI/4; // slightly negative
 		const thetaMax = 2 * 2 * Math.PI/4; // same amount from the otherside
@@ -65,7 +65,7 @@ module.exports = function ({
 		target: 0,
 		source: i,
 		distance: n.distance || (1 + (n.datumValue || 0)) * ringSize,
-		linkStrength: 1,
+		linkStrength: 2,
 		fixed: n.fixed
 	}))
 	.filter(l => !l.fixed);
@@ -84,7 +84,7 @@ module.exports = function ({
 					target,
 					source: j,
 					distance: 0,
-					linkStrength: 0.1
+					linkStrength: 0.5
 				});
 				break;
 			}
@@ -97,17 +97,15 @@ module.exports = function ({
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode)
-		.attr('width', width + 100)
-		.attr('height', height + 100)
-		.attr('viewBox', `100 100 ${width} ${height}`);
-
-	svg
-	.style('margin', '-100px 0 0 -100px');
+		.attr('width', width)
+		.attr('height', height)
+		.attr('viewBox', `-100 -50 ${width + 100} ${height + 50}`);
 
 	const force = d3.layout.force()
 		.nodes(nodes)
 		.links(links)
 		.charge(n => n.charge)
+		.chargeDistance(45)
 		.linkStrength(l => l.linkStrength)
 		.linkDistance(l => l.distance)
 		.gravity(0)
@@ -123,11 +121,12 @@ module.exports = function ({
 			d.y = d.y % (height * 4);
 		});
 		node
-			.attr('transform', d => `translate(${d.x}, ${d.y})`);
+			.attr('transform', d => `translate(${d.x}, ${d.y})`)
 			// .select('.d3-label')
 			// .attr('transform', d => {
-			// 	return `rotate(${90 * ((d.x - (width - height))/height)})`;
-			// });
+			// 	return `rotate(${90 + 180 * Math.atan(-d.y/d.x)/Math.PI})`;
+			// })
+			;
 	});
 
 	const node = svg.selectAll('.node')

@@ -35,7 +35,7 @@ svg {
 	height: auto;
 
 	.d3-label {
-		fill: #000;
+		fill: #333;
 		fill-opacity: 1;
 		stroke-width: 1px;
 		stroke-linecap: round;
@@ -51,7 +51,9 @@ svg {
 		text-anchor: end;
 
 		&.no-dot {
-			text-anchor: middle;
+			fill: black;
+			text-decoration: underline;
+			font-size: 18pt;
 		}
 	}
 

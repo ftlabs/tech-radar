@@ -249,15 +249,15 @@ function process (data) {
 		// If we don't have enough values passed to sort the
 		// order by, we'll default to ordering the rings alphabetically
 		if( options.sortColOrder.length === phases.size ){
-			options.sortColOrder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
+			options.sortColOrder.forEach((item, i) => valueMap.set(item, i));
 		} else {
 
 			// Create a map of 'My String' => 1, 'Mz String' => 2
-			[...phases].sort().forEach((d,i) => valueMap.set(d,i + 0.2));
+			[...phases].sort().forEach((d,i) => valueMap.set(d,i));
 		}
 
 		data.forEach(datum => {
-			datum['datumValue'] = valueMap.get(datum[options.sortCol]);
+			datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (0.5*Math.random() + 0.2);
 		});
 
 		labels = Array.from(valueMap.entries())
