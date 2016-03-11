@@ -138,7 +138,6 @@ module.exports = function ({
 
 	const rootNode = svg.select('.rootNode');
 	const baseColor = ringColor ||  "#fff1e0";
-	debugger;
 	const dampener = 1.1;
 	for (let i=0; i<rings.length; i++) {
 		rootNode.append('circle')
