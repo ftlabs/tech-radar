@@ -85,13 +85,15 @@
 			var handle = filter[key];
 			if (handle === undefined) return;
 	
-			// if it is overriding a query string then ignore
+			// COMPLEX
 			var queryStringData = queryString.parse(location.search);
-			if (!force && key in queryStringData && (options[handle[0]] === undefined || // can replace if not set already
+			if (!force && // always overwrite if forcing it (initial load)
+			key in queryStringData && // skip if present in query string unless
+			(options[handle[0]] === undefined || // the option is empty
 			handle[1] === Array && options[handle[0]].length === 0) // or is an empty array
-			) {
-					return;
-				}
+			 !== true) {
+				return;
+			}
 	
 			switch (handle[1]) {
 				case Array:
@@ -402,12 +404,17 @@
 	
 				data.forEach(function (datum) {
 					datum['datumValue'] = valueMap.get(datum[options.sortCol]);
+	
+					if (datum['datumValue'] === undefined) {
+						datum['datumValue'] = phases.size + 0.2;
+						valueMap.set('sortcolorder_missing_entry', phases.size + 0.2);
+					}
 				});
 	
 				labels = _Array$from(valueMap.entries()).sort(function (a, b) {
 					return b[1] - a[1];
 				}).map(function (entry) {
-					return entry[0].match(/^[a-z0-9]+/i)[0];
+					return entry[0].match(/^[a-z0-9_]+/i)[0];
 				});
 			})();
 		}
