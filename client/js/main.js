@@ -19,15 +19,14 @@ function parseOptions (config, force = false) {
 		const handle = filter[key];
 		if (handle === undefined) return;
 
-
-		// if it is overriding a query string then ignore
+		// COMPLEX
 		const queryStringData = queryString.parse(location.search);
-		if (!force &&
-			key in queryStringData &&
+		if (!force &&                                                    // always overwrite if forcing it (initial load)
+			key in queryStringData &&									 // skip if present in query string unless
 			(
-				options[handle[0]] === undefined || 					 // can replace if not set already
+				options[handle[0]] === undefined || 					 // the option is empty
 				(handle[1] === Array && options[handle[0]].length === 0) // or is an empty array
-			)
+			) !== true
 		) {
 			return;
 		}
