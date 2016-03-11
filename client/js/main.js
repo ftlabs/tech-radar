@@ -2,7 +2,7 @@
 
 // Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
-function parseOptions (config) {
+function parseOptions (config, force = false) {
 
 	// configProperty: [optionsParameter, type]
 	const filter = {
@@ -18,13 +18,29 @@ function parseOptions (config) {
 	Object.keys(config).forEach(key => {
 		const handle = filter[key];
 		if (handle === undefined) return;
+
+
+		// if it is overriding a query string then ignore
+		const queryStringData = queryString.parse(location.search);
+		if (!force &&
+			key in queryStringData &&
+			(
+				options[handle[0]] === undefined || 					 // can replace if not set already
+				(handle[1] === Array && options[handle[0]].length === 0) // or is an empty array
+			)
+		) {
+			return;
+		}
+
 		switch (handle[1]) {
 		case Array:
+			let arr;
 			if (config[key].constructor === Array) {
-				options[handle[0]] = config[key];
-				break;
+				arr = config[key];
+			} else {
+				arr = config[key].split(/, */).filter(item => (item !== ''));
 			}
-			options[handle[0]] = config[key].split(/, */).filter(item => (item !== ''));
+			options[handle[0]] = arr;
 			break;
 		case String:
 			options[handle[0]] = String(config[key]);
@@ -47,8 +63,8 @@ const berthaRoot = 'https://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
 const isEqual = require('lodash.isequal');
-parseOptions(function () {
-	const queryString = require('query-string');
+const queryString = require('query-string');
+parseOptions((function () {
 	const parsed = queryString.parse(location.search);
 	parsed.showcol = parsed.showcol || '';
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
@@ -64,7 +80,7 @@ parseOptions(function () {
 	const errMessage = 'No ID and Sheet parameters.';
 	document.getElementById('error-text-target').textContent = errMessage;
 	throw Error(errMessage);
-}());
+}()), true);
 
 // String input from the filter field used to filter the text input
 let filterString = '';
@@ -95,7 +111,10 @@ function getDocsFromBertha (docs, republish = false) {
 			const config = {};
 
 			for (const datum of json) {
-				if (datum.configvalue !== null && datum.name !== null) {
+				if (
+					datum.configvalue !== null &&  // It has a config value set
+					datum.name !== null
+				) {
 
 					if (
 						datum.name === 'sortcol' && docs.length > 1 || // local sortcol is invalid if there are multiple documents
@@ -508,6 +527,11 @@ Promise.all([
 			data = dataIn;
 			cleanUpTable = generateTable(data);
 			cleanUpGraph = generateGraphs(data);
+
+			// Hide the dashboard if hidden
+			if (options.dashboard) {
+				document.getElementById('tech-radar__settings').style.display = 'none';
+			}
 		});
 	});
 
