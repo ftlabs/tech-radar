@@ -16,7 +16,7 @@ module.exports = function ({
 	const nodes = data.slice(0);
 	nodes.forEach(n => {
 		n.weight = 30;
-		n.charge = -30;
+		n.charge = -60;
 	});
 	const ringSize = height / (rings.length + 1);
 
@@ -199,6 +199,15 @@ module.exports = function ({
 			.style('fill', 'url(#radgrad)');
 	}
 
+	for (const lineOrigin of segmentLines) {
+		rootNode.append('line')
+			.attr('x1', lineOrigin.x)
+			.attr('y1', lineOrigin.y)
+			.attr('x2', 0)
+			.attr('y2', 0)
+			.style('stroke', 'rgba(255, 255, 255, 1)');
+	}
+
 
 	for (let i=0; i<rings.length; i++) {
 		rootNode.append('svg:text')
@@ -206,15 +215,6 @@ module.exports = function ({
 			.attr('class', 'd3-label')
 			.attr('x', '-16px')
 			.attr('y', (-(i + 1) * ringSize) + 'px');
-	}
-
-	for (const lineOrigin of segmentLines) {
-		rootNode.append('line')
-			.attr('x1', lineOrigin.x)
-			.attr('y1', lineOrigin.y)
-			.attr('x2', 0)
-			.attr('y2', 0)
-			.style('stroke', 'rgba(0, 0, 0, 0.5)');
 	}
 
 	// Nothing goes in the middle ring
