@@ -136,15 +136,17 @@ module.exports = function ({
 		.attr('stop-opacity', 1);
 
 	const rootNode = svg.select('.rootNode');
+	const baseColor = "#fff1e0";
+	const dampener = 1.1;
 	for (let i=0; i<rings.length; i++) {
 		rootNode.append('circle')
 			.attr('class', 'background')
 			.attr('r', (rings[i].max + 1) * ringSize)
-			.style('fill', rings[i].fill);
+			.style('fill', baseColor);
 		rootNode.append('circle')
 			.attr('class', 'background')
 			.attr('r', (rings[i].max + 1 ) * ringSize)
-			.style('fill', `url(#radgrad)`);
+			.style('fill', `rgba(0,0,0, 0.${ (i * dampener) | 0})`);
 	}
 
 
