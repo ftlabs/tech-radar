@@ -249,11 +249,16 @@ function process (data) {
 
 		data.forEach(datum => {
 			datum['datumValue'] = valueMap.get(datum[options.sortCol]);
+
+			if (datum['datumValue'] === undefined) {
+				datum['datumValue'] = phases.size + 0.2;
+				valueMap.set('sortcolorder_missing_entry', phases.size + 0.2);
+			}
 		});
 
 		labels = Array.from(valueMap.entries())
 		.sort((a,b) => b[1] - a[1])
-		.map(entry => entry[0].match(/^[a-z0-9]+/i)[0]);
+		.map(entry => entry[0].match(/^[a-z0-9_]+/i)[0]);
 	}
 
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
