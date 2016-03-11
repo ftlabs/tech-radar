@@ -8,7 +8,8 @@
 module.exports = function ({
 	data,
 	size,
-	rings
+	rings,
+	ringColor
 }) {
 
 	const width = (size || 400) + 40;
@@ -188,15 +189,12 @@ module.exports = function ({
 		.attr('stop-opacity', 1);
 
 	const rootNode = svg.select('.rootNode');
+
 	for (let i=0; i<rings.length; i++) {
 		rootNode.append('circle')
 			.attr('class', 'background')
 			.attr('r', (rings[i].max + 1) * ringSize)
 			.style('fill', rings[i].fill);
-		rootNode.append('circle')
-			.attr('class', 'background')
-			.attr('r', (rings[i].max + 1 ) * ringSize)
-			.style('fill', 'url(#radgrad)');
 	}
 
 	for (const lineOrigin of segmentLines) {

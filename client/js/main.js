@@ -2,6 +2,7 @@
 
 // Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
+const color = require('tinycolor2');
 function parseOptions (config, force = false) {
 
 	// configProperty: [optionsParameter, type]
@@ -13,7 +14,8 @@ function parseOptions (config, force = false) {
 		dashboard: ['dashboard', Boolean],
 		showtable: ['showTable', Boolean],
 		sortcolorder: ['sortColOrder', Array],
-		segment: ['segment', String]
+		segment: ['segment', String],
+		ringcolor: ['ringColor', String],
 	};
 
 	Object.keys(config).forEach(key => {
@@ -330,8 +332,16 @@ function generateChartRings (data, labels = []) {
 	let i = nRings;
 	for (const r of rings) {
 		r; // Suppress lint warning for r not being used
+		const rainbowFill = `hsla(${i * 360/nRings}, 60%, 75%, 1)`;
+		const baseColor = color(options.ringColor || '#fff1e0').toHsv();
+		const maxV = baseColor.v;
+
+		// don't go fully black stay 2 steps away
+		baseColor.v = i * (maxV/(nRings + 2));
+		const newColor = color(baseColor).toHslString();
+
 		rings[--i] = {
-			fill: `hsla(${i * 360/nRings}, 100%, 85%, 1)`,
+			fill: options.ringColor === 'rainbow' ? rainbowFill: newColor,
 			min: max - i - 1,
 			max: max - i,
 			index: i,
@@ -351,7 +361,8 @@ function generateGraphs (inData) {
 	const svg = graph({
 		data,
 		size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
-		rings: generateChartRings(data, labels)
+		rings: generateChartRings(data, labels),
+		ringColor : options.ringColor
 	});
 	svgTarget.appendChild(svg);
 
