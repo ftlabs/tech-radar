@@ -1,39 +1,85 @@
 'use strict';
 
+// Handle the mapping of queryParams/sheetConfig to options' properties.
+const options = {};
+function parseOptions (config, force = false) {
+
+	// configProperty: [optionsParameter, type]
+	const filter = {
+		id: ['docUIDs', Array],
+		sheet: ['sheets', Array],
+		sortcol: ['sortCol', String],
+		showcol: ['showCol', Array],
+		dashboard: ['dashboard', Boolean],
+		showtable: ['showTable', Boolean],
+		sortcolorder: ['sortColOrder', Array]
+	};
+
+	Object.keys(config).forEach(key => {
+		const handle = filter[key];
+		if (handle === undefined) return;
+
+		// COMPLEX
+		const queryStringData = queryString.parse(location.search);
+		if (!force &&                                                    // always overwrite if forcing it (initial load)
+			key in queryStringData &&									 // skip if present in query string unless
+			(
+				options[handle[0]] === undefined || 					 // the option is empty
+				(handle[1] === Array && options[handle[0]].length === 0) // or is an empty array
+			) !== true
+		) {
+			return;
+		}
+
+		switch (handle[1]) {
+		case Array:
+			let arr;
+			if (config[key].constructor === Array) {
+				arr = config[key];
+			} else {
+				arr = config[key].split(/, */).filter(item => (item !== ''));
+			}
+			options[handle[0]] = arr;
+			break;
+		case String:
+			options[handle[0]] = String(config[key]);
+			break;
+		case Number:
+			options[handle[0]] = Number(config[key]);
+			break;
+		case Boolean:
+			options[handle[0]] = config[key] !== 'false' && config[key] !== false;
+			break;
+		}
+	});
+
+	return options;
+}
+
 const graph = require('./lib/d3');
 const extend = require('util')._extend;
 const berthaRoot = 'https://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
 const isEqual = require('lodash.isequal');
-const {
-	docUIDs,
-	sheets,
-	showcol,
-	sortcol,
-	dashboard,
-	sortcolorder
-} = (function () {
-	const queryString = require('query-string');
+const queryString = require('query-string');
+parseOptions((function () {
 	const parsed = queryString.parse(location.search);
 	parsed.showcol = parsed.showcol || '';
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
+
+	// show the table by default
+	if (parsed.showtable === undefined) {
+		parsed.showtable = '';
+	}
 	if (parsed.id && parsed.sheet) {
-		parsed.showcol = stripDuplicates(['name', parsed.sortcol].concat(parsed.showcol.split(',')));
-		return {
-			docUIDs : parsed.id.split(','),
-			sheets : parsed.sheet.split(','),
-			sortcol: parsed.sortcol,
-			showcol: parsed.showcol,
-			dashboard: (parsed.dashboard !== undefined) || false,
-			sortcolorder : parsed.sortcolorder.split(',').filter(item => (item !== '') )
-		};
+		return parsed;
 	}
 	const errMessage = 'No ID and Sheet parameters.';
 	document.getElementById('error-text-target').textContent = errMessage;
 	throw Error(errMessage);
-}());
+}()), true);
 
 // String input from the filter field used to filter the text input
 let filterString = '';
@@ -51,7 +97,41 @@ function addScript (url) {
 function getDocsFromBertha (docs, republish = false) {
 
 	const requests = docs.map(doc => {
-		return fetch(`${berthaRoot}${republish ? berthaRepublish : berthaView}${doc.UID}/${doc.sheet}`);
+		return fetch(`${berthaRoot}${republish ? berthaRepublish : berthaView}${doc.UID}/${doc.sheet}`)
+		.then(response => response.json())
+		.then(function (json) {
+
+			// override options
+
+			// only override if it has configuration data
+			if (json[0].configvalue === undefined) return json;
+			if (json[0].name === undefined) return json;
+
+			const config = {};
+
+			for (const datum of json) {
+				if (
+					datum.configvalue !== null &&  // It has a config value set
+					datum.name !== null
+				) {
+
+					if (
+						datum.name === 'sortcol' && docs.length > 1 || // local sortcol is invalid if there are multiple documents
+						datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
+						datum.name === 'id'
+					) {
+						continue;
+					}
+
+					config[datum.name] = datum.configvalue;
+				}
+			}
+
+			// Set the options globally
+			parseOptions(config);
+
+			return json;
+		});
 	});
 
 	return Promise.all(requests);
@@ -66,25 +146,25 @@ function retrieveSheets (how, republish = false) {
 
 	if(how === 'multipleIDsWithSingleSheet'){
 		return getDocsFromBertha(
-			docUIDs.map(UID => ({
+			options.docUIDs.map(UID => ({
 				UID,
-				sheet: sheets[0]
+				sheet: options.sheets[0]
 			})),
 			republish
 		);
 	} else if(how === 'singleIDWithMultipleSheets'){
 		return getDocsFromBertha(
-			sheets.map(sheetName => ({
-				UID: docUIDs[0],
+			options.sheets.map(sheetName => ({
+				UID: options.docUIDs[0],
 				sheet : sheetName
 			})),
 			republish
 		);
 	} else if( how === 'oneIDPerSheet'){
 		return getDocsFromBertha(
-			docUIDs.map((UID, idx) => ({
+			options.docUIDs.map((UID, idx) => ({
 				UID,
-				sheet: sheets[idx]
+				sheet: options.sheets[idx]
 			})),
 			republish
 		);
@@ -92,13 +172,13 @@ function retrieveSheets (how, republish = false) {
 
 }
 
-function decideHowToAct (){
-	if(docUIDs.length > sheets.length){
-		return 'multipleIDsWithSingleSheet';
-	} else if(docUIDs.length === 1 && sheets.length){
-		return 'singleIDWithMultipleSheets';
+function decideHowToAct () {
+	if (options.docUIDs.length > options.sheets.length){
+		return Promise.resolve('multipleIDsWithSingleSheet');
+	} else if(options.docUIDs.length === 1 && options.sheets.length){
+		return Promise.resolve('singleIDWithMultipleSheets');
 	} else {
-		return 'oneIDPerSheet';
+		return Promise.resolve('oneIDPerSheet');
 	}
 }
 
@@ -110,8 +190,8 @@ function toggleCollapsedClass (e) {
 function process (data) {
 
 	if (data[0]) {
-		if (data[0][sortcol] === undefined) {
-			throw Error(`No column with the name '${sortcol}'. ${ sortcol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }\n Available headings: ${Object.keys(data[0]).join(', ')}`);
+		if (data[0][options.sortCol] === undefined) {
+			throw Error(`No column with the name '${options.sortCol}'. ${ options.sortCol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?' }\n Available headings: ${Object.keys(data[0]).join(', ')}`);
 		}
 	} else {
 		throw Error('Empty spreasheet from Bertha');
@@ -120,20 +200,20 @@ function process (data) {
 	for (const datum of data) {
 
 		// Ensure it is string so we can do analysis
-		datum[sortcol] = String(datum[sortcol]);
+		datum[options.sortCol] = String(datum[options.sortCol]);
 
 		// expose additional data;
 		datum.longDesc = '';
-		for (const col of showcol) {
+		for (const col of stripDuplicates(['name', options.sortCol].concat(options.showCol))) {
 			datum.longDesc = datum.longDesc + `${col}: ${datum[col]}` + '\n';
 		}
 	}
 
-	data = cloneData(data).filter(datum => !!datum[sortcol] && !!datum['name']);
+	data = cloneData(data).filter(datum => !!datum[options.sortCol] && !!datum['name'] && (datum['configvalue'] === undefined || datum['configvalue'] === null));
 
 	let sortType = 'alphabetical';
 	for (const datum of data) {
-		if (datum[sortcol].match(/^[0-9]/)) {
+		if (datum[options.sortCol].match(/^[0-9]/)) {
 
 			sortType = 'numerical';
 			break;
@@ -144,7 +224,7 @@ function process (data) {
 	if (sortType === 'numerical') {
 
 		data
-		.map(datum => (datum['datumValue'] = datum[sortcol].match(/^[0-9\.]+/), datum))
+		.map(datum => (datum['datumValue'] = datum[options.sortCol].match(/^[0-9\.]+/), datum))
 		.filter(datum => datum['datumValue'] !== null)
 
 		// Map 1.2.3 to 1.23 to for smarter sorting
@@ -155,22 +235,30 @@ function process (data) {
 	} else if (sortType === 'alphabetical') {
 		const phases = new Set();
 		const valueMap = new Map();
-		data.forEach(datum => phases.add(datum[sortcol]));
+		data.forEach(datum => phases.add(datum[options.sortCol]));
 
 		// If we don't have enough values passed to sort the
 		// order by, we'll default to ordering the rings alphabetically
-		if( sortcolorder.length === phases.size ){
-			sortcolorder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
+		if( options.sortColOrder.length === phases.size ){
+			options.sortColOrder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
 		} else {
+
 			// Create a map of 'My String' => 1, 'Mz String' => 2
 			[...phases].sort().forEach((d,i) => valueMap.set(d,i + 0.2));
 		}
 
 		data.forEach(datum => {
-			datum['datumValue'] = valueMap.get(datum[sortcol]);
+			datum['datumValue'] = valueMap.get(datum[options.sortCol]);
+
+			if (datum['datumValue'] === undefined) {
+				datum['datumValue'] = phases.size + 0.2;
+				valueMap.set('sortcolorder_missing_entry', phases.size + 0.2);
+			}
 		});
 
-		labels = Array.from(valueMap.keys()).map(key => key.match(/^[a-z0-9]+/i)[0]);
+		labels = Array.from(valueMap.entries())
+		.sort((a,b) => b[1] - a[1])
+		.map(entry => entry[0].match(/^[a-z0-9_]+/i)[0]);
 	}
 
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
@@ -287,6 +375,10 @@ function stripDuplicates (arr) {
 }
 
 function generateTable (inData) {
+
+	// if not suppose to show the table return a noop to clean it up.
+	if (options.showTable === false) return function () {};
+
 	const {data} = process(inData);
 	const table = document.createElement('table');
 	const thead = document.createElement('thead');
@@ -299,7 +391,7 @@ function generateTable (inData) {
 	});
 
 	// Get the headings removing duplicates and empty strings.
-	const filterHeadings = ['Key'].concat(showcol).concat(['Other Details']).filter(a => !!String(a));
+	const filterHeadings = stripDuplicates(['Key', 'name', options.sortCol].concat(options.showCol).concat(['Other Details']));
 
 	table.appendChild(thead);
 	thead.appendChild(theadTr);
@@ -338,7 +430,7 @@ function generateTable (inData) {
 				td.classList.add('hidden');
 			} else if (heading === 'Key') {
 				td.style.background = `hsl(${datum['hidden-graph-item-hue']}, 95%, 60%)`;
-			} else if (heading === sortcol) {
+			} else if (heading === options.sortCol) {
 				td.style.background = datum['hidden-graph-item-ring'].fill;
 				tdContent.textContent = datum[heading] || '';
 			} else {
@@ -410,18 +502,13 @@ Promise.all([
 ])
 .then(decideHowToAct)
 .then(howToAct => retrieveSheets(howToAct))
-.then(responses => {
-	return Promise.all( responses.map( response => {
-		return response.json();
-	} ) );
-})
 .then(data => mergeData(data))
 .then(function (data) {
 
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
 
-	if (dashboard) {
+	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
 		return;
 	}
@@ -439,16 +526,16 @@ Promise.all([
 
 		decideHowToAct()
 		.then(howToAct => retrieveSheets(howToAct, true))
-		.then(responses => {
-			return Promise.all( responses.map( response => {
-				return response.json();
-			} ) );
-		})
 		.then(data => mergeData(data))
 		.then(dataIn => {
 			data = dataIn;
 			cleanUpTable = generateTable(data);
 			cleanUpGraph = generateGraphs(data);
+
+			// Hide the dashboard if hidden
+			if (options.dashboard) {
+				document.getElementById('tech-radar__settings').style.display = 'none';
+			}
 		});
 	});
 
