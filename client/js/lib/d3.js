@@ -138,6 +138,7 @@ module.exports = function ({
 
 	const rootNode = svg.select('.rootNode');
 	const baseColor = ringColor ||  "#fff1e0";
+
 	const dampener = 1.1;
 	for (let i=0; i<rings.length; i++) {
 		rootNode.append('circle')
@@ -147,7 +148,7 @@ module.exports = function ({
 		rootNode.append('circle')
 			.attr('class', 'background')
 			.attr('r', (rings[i].max + 1 ) * ringSize)
-			.style('fill', `rgba(0,0,0, 0.${ ( (8 / rings.length) * i ) | 0})`);
+			.style('fill', `rgba(0,0,0, 0.${ (i * dampener) | 0})`);
 	}
 
 
