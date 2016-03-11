@@ -422,19 +422,19 @@
 				// If we don't have enough values passed to sort the
 				// order by, we'll default to ordering the rings alphabetically
 				if (options.sortColOrder.length === phases.size) {
-					options.sortColOrder.forEach(function (item, idx) {
-						return valueMap.set(item, idx + 0.2);
+					options.sortColOrder.forEach(function (item, i) {
+						return valueMap.set(item, i);
 					});
 				} else {
 	
 					// Create a map of 'My String' => 1, 'Mz String' => 2
 					[].concat(_toConsumableArray(phases)).sort().forEach(function (d, i) {
-						return valueMap.set(d, i + 0.2);
+						return valueMap.set(d, i);
 					});
 				}
 	
 				data.forEach(function (datum) {
-					datum['datumValue'] = valueMap.get(datum[options.sortCol]);
+					datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (0.5 * Math.random() + 0.2);
 				});
 	
 				labels = _Array$from(valueMap.entries()).sort(function (a, b) {
@@ -3847,14 +3847,13 @@
 		var data = _ref.data;
 		var size = _ref.size;
 		var rings = _ref.rings;
-		var ringColor = _ref.ringColor;
 	
-		var width = (size || 400) + 40;
+		var width = size || 400;
 		var height = size || 400;
 		var nodes = data.slice(0);
 		nodes.forEach(function (n) {
 			n.weight = 30;
-			n.charge = -60;
+			n.charge = -200;
 		});
 		var ringSize = height / (rings.length + 1);
 	
@@ -3870,8 +3869,8 @@
 	
 		var segmentLines = [];
 		// Draw an arc of attractive points with labels
-		var r = height;
 		for (var i = 0, l = rings[0].segments.length; i < l; i++) {
+			var r = height * 1.05;
 			var segment = rings[0].segments[i];
 			var thetaMin = 1 * 2 * Math.PI / 4; // slightly negative
 			var thetaMax = 2 * 2 * Math.PI / 4; // same amount from the otherside
@@ -3903,7 +3902,7 @@
 				target: 0,
 				source: i,
 				distance: n.distance || (1 + (n.datumValue || 0)) * ringSize,
-				linkStrength: 1,
+				linkStrength: 2,
 				fixed: n.fixed
 			};
 		}).filter(function (l) {
@@ -3921,7 +3920,7 @@
 						target: target,
 						source: j,
 						distance: 0,
-						linkStrength: 0.1
+						linkStrength: 0.5
 					});
 					break;
 				}
@@ -3933,11 +3932,11 @@
 	  */
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-		var svg = d3.select(svgNode).attr('width', width).attr('height', height).attr('viewBox', '0 0 ' + width + ' ' + height);
+		var svg = d3.select(svgNode).attr('width', width).attr('height', height).attr('viewBox', '-100 -50 ' + (width + 100) + ' ' + (height + 50));
 	
 		var force = d3.layout.force().nodes(nodes).links(links).charge(function (n) {
 			return n.charge;
-		}).linkStrength(function (l) {
+		}).chargeDistance(45).linkStrength(function (l) {
 			return l.linkStrength;
 		}).linkDistance(function (l) {
 			return l.distance;
@@ -3965,6 +3964,10 @@
 			});
 		});
 	
+		// .select('.d3-label')
+		// .attr('transform', d => {
+		// 	return `rotate(${90 + 180 * Math.atan(-d.y/d.x)/Math.PI})`;
+		// })
 		var node = svg.selectAll('.node').data(nodes).enter().append('svg:g').attr('class', function (d) {
 			return d.rootEl ? 'rootNode' : 'node';
 		});
@@ -4010,13 +4013,6 @@
 		}).attr('x', function (n) {
 			return n.dot !== false ? '-10px' : '0px';
 		}).attr('y', '5px');
-	
-		var gradient = svg.append('svg:defs').append('svg:radialGradient').attr('id', 'radgrad').attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '100%').attr('spreadMethod', 'pad');
-	
-		// Define the gradient colors
-		gradient.append('svg:stop').attr('offset', '90%').attr('stop-color', 'rgba(0, 0, 0, 0)').attr('stop-opacity', 1);
-	
-		gradient.append('svg:stop').attr('offset', '100%').attr('stop-color', 'rgba(0, 0, 0, 0.3)').attr('stop-opacity', 1);
 	
 		var rootNode = svg.select('.rootNode');
 	

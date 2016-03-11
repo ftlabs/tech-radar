@@ -21,7 +21,7 @@ svg {
   max-width: 100%;
   height: auto; }
   svg .d3-label {
-    fill: #000;
+    fill: #333;
     fill-opacity: 1;
     stroke-width: 1px;
     stroke-linecap: round;
@@ -39,7 +39,9 @@ svg {
     transition: transform 0.2s ease, -webkit-transform 0.2s ease;
     text-anchor: end; }
     svg .d3-label.no-dot {
-      text-anchor: middle; }
+      fill: black;
+      text-decoration: underline;
+      font-size: 18pt; }
   svg circle.background {
     pointer-events: none; }
   svg circle.node {
