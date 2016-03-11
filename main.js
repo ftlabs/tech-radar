@@ -78,7 +78,8 @@
 			showcol: ['showCol', Array],
 			dashboard: ['dashboard', Boolean],
 			showtable: ['showTable', Boolean],
-			sortcolorder: ['sortColOrder', Array]
+			sortcolorder: ['sortColOrder', Array],
+			segment: ['segment', String]
 		};
 	
 		_Object$keys(config).forEach(function (key) {
@@ -168,14 +169,7 @@
 				return response.json();
 			}).then(function (json) {
 	
-				// override options
-	
-				// only override if it has configuration data
-				if (json[0].configvalue === undefined) return json;
-				if (json[0].name === undefined) return json;
-	
-				var config = {};
-	
+				// supply some additional information about where the datum came from.
 				var _iteratorNormalCompletion = true;
 				var _didIteratorError = false;
 				var _iteratorError = undefined;
@@ -183,6 +177,41 @@
 				try {
 					for (var _iterator = _getIterator(json), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 						var datum = _step.value;
+	
+						datum['hidden-graph-item-source'] = doc.UID + '/' + doc.sheet;
+						datum['hidden-graph-item-id'] = '' + datum.name + doc.UID + '/' + doc.sheet;
+					}
+	
+					// override options
+	
+					// only override if it has configuration data
+				} catch (err) {
+					_didIteratorError = true;
+					_iteratorError = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion && _iterator['return']) {
+							_iterator['return']();
+						}
+					} finally {
+						if (_didIteratorError) {
+							throw _iteratorError;
+						}
+					}
+				}
+	
+				if (json[0].configvalue === undefined) return json;
+				if (json[0].name === undefined) return json;
+	
+				var config = {};
+	
+				var _iteratorNormalCompletion2 = true;
+				var _didIteratorError2 = false;
+				var _iteratorError2 = undefined;
+	
+				try {
+					for (var _iterator2 = _getIterator(json), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+						var datum = _step2.value;
 	
 						if (datum.configvalue !== null && // It has a config value set
 						datum.name !== null) {
@@ -199,16 +228,16 @@
 	
 					// Set the options globally
 				} catch (err) {
-					_didIteratorError = true;
-					_iteratorError = err;
+					_didIteratorError2 = true;
+					_iteratorError2 = err;
 				} finally {
 					try {
-						if (!_iteratorNormalCompletion && _iterator['return']) {
-							_iterator['return']();
+						if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+							_iterator2['return']();
 						}
 					} finally {
-						if (_didIteratorError) {
-							throw _iteratorError;
+						if (_didIteratorError2) {
+							throw _iteratorError2;
 						}
 					}
 				}
@@ -278,64 +307,6 @@
 			throw Error('Empty spreasheet from Bertha');
 		}
 	
-		var _iteratorNormalCompletion2 = true;
-		var _didIteratorError2 = false;
-		var _iteratorError2 = undefined;
-	
-		try {
-			for (var _iterator2 = _getIterator(data), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-				var datum = _step2.value;
-	
-				// Ensure it is string so we can do analysis
-				datum[options.sortCol] = String(datum[options.sortCol]);
-	
-				// expose additional data;
-				datum.longDesc = '';
-				var _iteratorNormalCompletion6 = true;
-				var _didIteratorError6 = false;
-				var _iteratorError6 = undefined;
-	
-				try {
-					for (var _iterator6 = _getIterator(stripDuplicates(['name', options.sortCol].concat(options.showCol))), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-						var col = _step6.value;
-	
-						datum.longDesc = datum.longDesc + (col + ': ' + datum[col]) + '\n';
-					}
-				} catch (err) {
-					_didIteratorError6 = true;
-					_iteratorError6 = err;
-				} finally {
-					try {
-						if (!_iteratorNormalCompletion6 && _iterator6['return']) {
-							_iterator6['return']();
-						}
-					} finally {
-						if (_didIteratorError6) {
-							throw _iteratorError6;
-						}
-					}
-				}
-			}
-		} catch (err) {
-			_didIteratorError2 = true;
-			_iteratorError2 = err;
-		} finally {
-			try {
-				if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-					_iterator2['return']();
-				}
-			} finally {
-				if (_didIteratorError2) {
-					throw _iteratorError2;
-				}
-			}
-		}
-	
-		data = cloneData(data).filter(function (datum) {
-			return !!datum[options.sortCol] && !!datum['name'] && (datum['configvalue'] === undefined || datum['configvalue'] === null);
-		});
-	
-		var sortType = 'alphabetical';
 		var _iteratorNormalCompletion3 = true;
 		var _didIteratorError3 = false;
 		var _iteratorError3 = undefined;
@@ -344,10 +315,34 @@
 			for (var _iterator3 = _getIterator(data), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 				var datum = _step3.value;
 	
-				if (datum[options.sortCol].match(/^[0-9]/)) {
+				// Ensure it is string so we can do analysis
+				datum[options.sortCol] = String(datum[options.sortCol]);
 	
-					sortType = 'numerical';
-					break;
+				// expose additional data;
+				datum.longDesc = '';
+				var _iteratorNormalCompletion7 = true;
+				var _didIteratorError7 = false;
+				var _iteratorError7 = undefined;
+	
+				try {
+					for (var _iterator7 = _getIterator(stripDuplicates(['name', options.sortCol].concat(options.showCol))), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+						var col = _step7.value;
+	
+						datum.longDesc = datum.longDesc + (col + ': ' + datum[col]) + '\n';
+					}
+				} catch (err) {
+					_didIteratorError7 = true;
+					_iteratorError7 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion7 && _iterator7['return']) {
+							_iterator7['return']();
+						}
+					} finally {
+						if (_didIteratorError7) {
+							throw _iteratorError7;
+						}
+					}
 				}
 			}
 		} catch (err) {
@@ -361,6 +356,40 @@
 			} finally {
 				if (_didIteratorError3) {
 					throw _iteratorError3;
+				}
+			}
+		}
+	
+		data = cloneData(data).filter(function (datum) {
+			return !!datum[options.sortCol] && !!datum['name'] && (datum['configvalue'] === undefined || datum['configvalue'] === null);
+		});
+	
+		var sortType = 'alphabetical';
+		var _iteratorNormalCompletion4 = true;
+		var _didIteratorError4 = false;
+		var _iteratorError4 = undefined;
+	
+		try {
+			for (var _iterator4 = _getIterator(data), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+				var datum = _step4.value;
+	
+				if (datum[options.sortCol].match(/^[0-9]/)) {
+	
+					sortType = 'numerical';
+					break;
+				}
+			}
+		} catch (err) {
+			_didIteratorError4 = true;
+			_iteratorError4 = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion4 && _iterator4['return']) {
+					_iterator4['return']();
+				}
+			} finally {
+				if (_didIteratorError4) {
+					throw _iteratorError4;
 				}
 			}
 		}
@@ -404,17 +433,12 @@
 	
 				data.forEach(function (datum) {
 					datum['datumValue'] = valueMap.get(datum[options.sortCol]);
-	
-					if (datum['datumValue'] === undefined) {
-						datum['datumValue'] = phases.size + 0.2;
-						valueMap.set('sortcolorder_missing_entry', phases.size + 0.2);
-					}
 				});
 	
 				labels = _Array$from(valueMap.entries()).sort(function (a, b) {
 					return b[1] - a[1];
 				}).map(function (entry) {
-					return entry[0].match(/^[a-z0-9_]+/i)[0];
+					return entry[0];
 				});
 			})();
 		}
@@ -426,13 +450,13 @@
 		// Generate chart rings and attatch that data
 		var chartRings = generateChartRings(data, labels);
 		data.forEach(function (datum) {
-			var _iteratorNormalCompletion4 = true;
-			var _didIteratorError4 = false;
-			var _iteratorError4 = undefined;
+			var _iteratorNormalCompletion5 = true;
+			var _didIteratorError5 = false;
+			var _iteratorError5 = undefined;
 	
 			try {
-				for (var _iterator4 = _getIterator(chartRings), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-					var r = _step4.value;
+				for (var _iterator5 = _getIterator(chartRings), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+					var r = _step5.value;
 	
 					if (datum.datumValue >= r.min && datum.datumValue < r.max) {
 						datum['hidden-graph-item-ring'] = r;
@@ -440,16 +464,16 @@
 					}
 				}
 			} catch (err) {
-				_didIteratorError4 = true;
-				_iteratorError4 = err;
+				_didIteratorError5 = true;
+				_iteratorError5 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion4 && _iterator4['return']) {
-						_iterator4['return']();
+					if (!_iteratorNormalCompletion5 && _iterator5['return']) {
+						_iterator5['return']();
 					}
 				} finally {
-					if (_didIteratorError4) {
-						throw _iteratorError4;
+					if (_didIteratorError5) {
+						throw _iteratorError5;
 					}
 				}
 			}
@@ -467,27 +491,27 @@
 			var possibleMatches = _Object$keys(datum).map(function (k) {
 				return k + ':' + datum[k];
 			});
-			var _iteratorNormalCompletion5 = true;
-			var _didIteratorError5 = false;
-			var _iteratorError5 = undefined;
+			var _iteratorNormalCompletion6 = true;
+			var _didIteratorError6 = false;
+			var _iteratorError6 = undefined;
 	
 			try {
-				for (var _iterator5 = _getIterator(possibleMatches), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-					var p = _step5.value;
+				for (var _iterator6 = _getIterator(possibleMatches), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+					var p = _step6.value;
 	
 					if (p.match(regex)) return true;
 				}
 			} catch (err) {
-				_didIteratorError5 = true;
-				_iteratorError5 = err;
+				_didIteratorError6 = true;
+				_iteratorError6 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion5 && _iterator5['return']) {
-						_iterator5['return']();
+					if (!_iteratorNormalCompletion6 && _iterator6['return']) {
+						_iterator6['return']();
 					}
 				} finally {
-					if (_didIteratorError5) {
-						throw _iteratorError5;
+					if (_didIteratorError6) {
+						throw _iteratorError6;
 					}
 				}
 			}
@@ -514,28 +538,31 @@
 	function generateChartRings(data) {
 		var labels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 	
+		var segmentBy = options.segment || 'hidden-graph-item-source';
+		var segments = new _Set();
 		var max = 0;
-		var _iteratorNormalCompletion7 = true;
-		var _didIteratorError7 = false;
-		var _iteratorError7 = undefined;
+		var _iteratorNormalCompletion8 = true;
+		var _didIteratorError8 = false;
+		var _iteratorError8 = undefined;
 	
 		try {
-			for (var _iterator7 = _getIterator(data), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-				var datum = _step7.value;
+			for (var _iterator8 = _getIterator(data), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+				var datum = _step8.value;
 	
 				max = Math.max(datum.datumValue, max);
+				segments.add(datum[segmentBy]);
 			}
 		} catch (err) {
-			_didIteratorError7 = true;
-			_iteratorError7 = err;
+			_didIteratorError8 = true;
+			_iteratorError8 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion7 && _iterator7['return']) {
-					_iterator7['return']();
+				if (!_iteratorNormalCompletion8 && _iterator8['return']) {
+					_iterator8['return']();
 				}
 			} finally {
-				if (_didIteratorError7) {
-					throw _iteratorError7;
+				if (_didIteratorError8) {
+					throw _iteratorError8;
 				}
 			}
 		}
@@ -550,13 +577,13 @@
 		var nRings = Math.ceil(max);
 		var rings = Array(nRings);
 		var i = nRings;
-		var _iteratorNormalCompletion8 = true;
-		var _didIteratorError8 = false;
-		var _iteratorError8 = undefined;
+		var _iteratorNormalCompletion9 = true;
+		var _didIteratorError9 = false;
+		var _iteratorError9 = undefined;
 	
 		try {
-			for (var _iterator8 = _getIterator(rings), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-				var r = _step8.value;
+			for (var _iterator9 = _getIterator(rings), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+				var r = _step9.value;
 	
 				r; // Suppress lint warning for r not being used
 				rings[--i] = {
@@ -564,20 +591,22 @@
 					min: max - i - 1,
 					max: max - i,
 					index: i,
-					groupLabel: labels[i]
+					groupLabel: labels[i],
+					segments: _Array$from(segments.values()),
+					segmentBy: segmentBy
 				};
 			}
 		} catch (err) {
-			_didIteratorError8 = true;
-			_iteratorError8 = err;
+			_didIteratorError9 = true;
+			_iteratorError9 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion8 && _iterator8['return']) {
-					_iterator8['return']();
+				if (!_iteratorNormalCompletion9 && _iterator9['return']) {
+					_iterator9['return']();
 				}
 			} finally {
-				if (_didIteratorError8) {
-					throw _iteratorError8;
+				if (_didIteratorError9) {
+					throw _iteratorError9;
 				}
 			}
 		}
@@ -654,55 +683,55 @@
 		thead.appendChild(theadTr);
 		table.appendChild(tbody);
 		table.classList.add('filter-table');
-		var _iteratorNormalCompletion9 = true;
-		var _didIteratorError9 = false;
-		var _iteratorError9 = undefined;
+		var _iteratorNormalCompletion10 = true;
+		var _didIteratorError10 = false;
+		var _iteratorError10 = undefined;
 	
 		try {
-			for (var _iterator9 = _getIterator(filterHeadings), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-				var heading = _step9.value;
+			for (var _iterator10 = _getIterator(filterHeadings), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+				var heading = _step10.value;
 	
 				var td = document.createElement('td');
 				td.textContent = heading;
 				theadTr.appendChild(td);
 			}
 		} catch (err) {
-			_didIteratorError9 = true;
-			_iteratorError9 = err;
+			_didIteratorError10 = true;
+			_iteratorError10 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion9 && _iterator9['return']) {
-					_iterator9['return']();
+				if (!_iteratorNormalCompletion10 && _iterator10['return']) {
+					_iterator10['return']();
 				}
 			} finally {
-				if (_didIteratorError9) {
-					throw _iteratorError9;
+				if (_didIteratorError10) {
+					throw _iteratorError10;
 				}
 			}
 		}
 	
-		var _iteratorNormalCompletion10 = true;
-		var _didIteratorError10 = false;
-		var _iteratorError10 = undefined;
+		var _iteratorNormalCompletion11 = true;
+		var _didIteratorError11 = false;
+		var _iteratorError11 = undefined;
 	
 		try {
-			for (var _iterator10 = _getIterator(data), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-				var datum = _step10.value;
+			for (var _iterator11 = _getIterator(data), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+				var datum = _step11.value;
 	
 				var tbodyTr = document.createElement('tr');
 				tbodyTr.addEventListener('click', toggleCollapsedClass);
 				tbody.appendChild(tbodyTr);
 				tbodyTr.classList.add('collapsed');
-				tbodyTr.id = datum.name;
+				tbodyTr.id = datum['hidden-graph-item-id'];
 				tbodyTr.addEventListener('mouseover', rowMouseOver);
 				tbodyTr.addEventListener('mouseout', rowMouseOut);
-				var _iteratorNormalCompletion11 = true;
-				var _didIteratorError11 = false;
-				var _iteratorError11 = undefined;
+				var _iteratorNormalCompletion12 = true;
+				var _didIteratorError12 = false;
+				var _iteratorError12 = undefined;
 	
 				try {
-					for (var _iterator11 = _getIterator(filterHeadings), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-						var heading = _step11.value;
+					for (var _iterator12 = _getIterator(filterHeadings), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+						var heading = _step12.value;
 	
 						var td = document.createElement('td');
 						td.classList.add(heading.replace(/[^a-z]/ig, '-'));
@@ -714,28 +743,28 @@
 							var newContent = '<ul class="details">';
 	
 							var itemKeys = _Object$keys(datum);
-							var _iteratorNormalCompletion12 = true;
-							var _didIteratorError12 = false;
-							var _iteratorError12 = undefined;
+							var _iteratorNormalCompletion13 = true;
+							var _didIteratorError13 = false;
+							var _iteratorError13 = undefined;
 	
 							try {
-								for (var _iterator12 = _getIterator(itemKeys), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-									var k = _step12.value;
+								for (var _iterator13 = _getIterator(itemKeys), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+									var k = _step13.value;
 	
 									if (k.match(/^hidden-graph-item/)) continue;
 									newContent += '<li><span class="key">' + k + ':</span> ' + datum[k] + '</li>';
 								}
 							} catch (err) {
-								_didIteratorError12 = true;
-								_iteratorError12 = err;
+								_didIteratorError13 = true;
+								_iteratorError13 = err;
 							} finally {
 								try {
-									if (!_iteratorNormalCompletion12 && _iterator12['return']) {
-										_iterator12['return']();
+									if (!_iteratorNormalCompletion13 && _iterator13['return']) {
+										_iterator13['return']();
 									}
 								} finally {
-									if (_didIteratorError12) {
-										throw _iteratorError12;
+									if (_didIteratorError13) {
+										throw _iteratorError13;
 									}
 								}
 							}
@@ -754,31 +783,31 @@
 						tbodyTr.appendChild(td);
 					}
 				} catch (err) {
-					_didIteratorError11 = true;
-					_iteratorError11 = err;
+					_didIteratorError12 = true;
+					_iteratorError12 = err;
 				} finally {
 					try {
-						if (!_iteratorNormalCompletion11 && _iterator11['return']) {
-							_iterator11['return']();
+						if (!_iteratorNormalCompletion12 && _iterator12['return']) {
+							_iterator12['return']();
 						}
 					} finally {
-						if (_didIteratorError11) {
-							throw _iteratorError11;
+						if (_didIteratorError12) {
+							throw _iteratorError12;
 						}
 					}
 				}
 			}
 		} catch (err) {
-			_didIteratorError10 = true;
-			_iteratorError10 = err;
+			_didIteratorError11 = true;
+			_iteratorError11 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion10 && _iterator10['return']) {
-					_iterator10['return']();
+				if (!_iteratorNormalCompletion11 && _iterator11['return']) {
+					_iterator11['return']();
 				}
 			} finally {
-				if (_didIteratorError10) {
-					throw _iteratorError10;
+				if (_didIteratorError11) {
+					throw _iteratorError11;
 				}
 			}
 		}
@@ -2609,10 +2638,12 @@
 
 /***/ },
 /* 79 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	/*** IMPORTS FROM imports-loader ***/
 	'use strict';
+	
+	var _getIterator = __webpack_require__(65)['default'];
 	
 	var define = false;
 	
@@ -2628,14 +2659,12 @@
 		var size = _ref.size;
 		var rings = _ref.rings;
 	
-		var width = size || 400;
+		var width = (size || 400) + 40;
 		var height = size || 400;
 		var nodes = data.slice(0);
 		nodes.forEach(function (n) {
-			n.x = width / 2 + Math.random() * 100 - 50;
-			n.y = height / 2 + Math.random() * 100 - 50;
-			n.weight = 40;
-			n.charge = 0;
+			n.weight = 30;
+			n.charge = -30;
 		});
 		var ringSize = height / (rings.length + 1);
 	
@@ -2649,14 +2678,64 @@
 			charge: 0
 		});
 	
+		var segmentLines = [];
+		// Draw an arc of attractive points with labels
+		var r = height;
+		for (var i = 0, l = rings[0].segments.length; i < l; i++) {
+			var segment = rings[0].segments[i];
+			var thetaMin = 1 * 2 * Math.PI / 4; // slightly negative
+			var thetaMax = 2 * 2 * Math.PI / 4; // same amount from the otherside
+			var arcWidth = thetaMax - thetaMin;
+			var segmentWidth = arcWidth / (l + 1);
+			var theta = thetaMin + (1 + i) * segmentWidth;
+			nodes.push({
+				name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
+				x: width + r * Math.cos(theta),
+				y: height - r * Math.sin(theta),
+				fixed: true,
+				charge: 0,
+				dot: false
+			});
+			segmentLines.push({
+				x: r * Math.cos(theta - segmentWidth / 2),
+				y: r * -Math.sin(theta - segmentWidth / 2)
+			});
+			if (i === l - 1) {
+				segmentLines.push({
+					x: r * Math.cos(theta + segmentWidth / 2),
+					y: r * -Math.sin(theta + segmentWidth / 2)
+				});
+			}
+		}
+	
 		var links = nodes.map(function (n, i) {
 			return {
 				target: 0,
 				source: i,
-				distance: (1 + (n.datumValue || 0)) * ringSize
+				distance: n.distance || (1 + (n.datumValue || 0)) * ringSize,
+				linkStrength: 1,
+				fixed: n.fixed
 			};
 		}).filter(function (l) {
-			return !!l.source;
+			return !l.fixed;
+		});
+	
+		// Attract the nodes to the segments
+		nodes.forEach(function (n, j) {
+			for (var i = 0, l = rings[0].segments.length; i < l; i++) {
+				if (n[rings[0].segmentBy] !== undefined && n[rings[0].segmentBy] === rings[0].segments[i]) {
+					var target = nodes.length - l + i;
+					n.x = nodes[target].x;
+					n.y = nodes[target].y;
+					links.push({
+						target: target,
+						source: j,
+						distance: 0,
+						linkStrength: 0.1
+					});
+					break;
+				}
+			}
 		});
 	
 		/**
@@ -2666,9 +2745,13 @@
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 		var svg = d3.select(svgNode).attr('width', width).attr('height', height).attr('viewBox', '0 0 ' + width + ' ' + height);
 	
-		var force = d3.layout.force().nodes(nodes).links(links).gravity(0.015).charge(-60).linkStrength(30).linkDistance(function (l) {
+		var force = d3.layout.force().nodes(nodes).links(links).charge(function (n) {
+			return n.charge;
+		}).linkStrength(function (l) {
+			return l.linkStrength;
+		}).linkDistance(function (l) {
 			return l.distance;
-		}).size([width, height]);
+		}).gravity(0).size([width, height]);
 	
 		force.on('tick', function () {
 	
@@ -2702,25 +2785,27 @@
 	
 		function mouseover(d) {
 			this.parentNode.classList.add('hovering');
-			var row = document.getElementById(d.name);
+			var row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
 			row.classList.add('hovering');
 		}
 	
 		function mouseout(d) {
 			this.parentNode.classList.remove('hovering');
-			var row = document.getElementById(d.name);
+			var row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
 			row.classList.remove('hovering');
 		}
 	
 		function click(d) {
-			var row = document.getElementById(d.name);
+			var row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
 			row.classList.toggle('collapsed');
 		}
 	
-		node.append('circle').attr('class', 'node').attr('r', 8).attr('id', function (n) {
+		node.append('circle').attr('class', function (n) {
+			return 'node' + (n.dot === false ? ' no-dot' : '');
+		}).attr('r', 8).attr('id', function (n) {
 			return n.name + '--graph-point';
 		}).style('fill', function (n) {
 			return 'hsla(' + n['hidden-graph-item-hue'] + ', 95%, 60%, 1)';
@@ -2728,9 +2813,13 @@
 			return n.longDesc;
 		});
 	
-		node.append('svg:text').text(function (d) {
-			return d.name || '';
-		}).attr('class', 'd3-label').attr('x', '-10px').attr('y', '5px');
+		node.append('svg:text').text(function (n) {
+			return n.name || '';
+		}).attr('class', function (n) {
+			return 'd3-label' + (n.dot === false ? ' no-dot' : '');
+		}).attr('x', function (n) {
+			return n.dot !== false ? '-10px' : '0px';
+		}).attr('y', '5px');
 	
 		var gradient = svg.append('svg:defs').append('svg:radialGradient').attr('id', 'radgrad').attr('x1', '0%').attr('y1', '0%').attr('x2', '100%').attr('y2', '100%').attr('spreadMethod', 'pad');
 	
@@ -2749,7 +2838,33 @@
 			rootNode.append('svg:text').text(rings[rings.length - i - 1].groupLabel || i).attr('class', 'd3-label').attr('x', '-16px').attr('y', -(i + 1) * ringSize + 'px');
 		}
 	
-		// Nothing goes in the middle ring
+		var _iteratorNormalCompletion = true;
+		var _didIteratorError = false;
+		var _iteratorError = undefined;
+	
+		try {
+			for (var _iterator = _getIterator(segmentLines), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+				var lineOrigin = _step.value;
+	
+				rootNode.append('line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(0, 0, 0, 0.5)');
+			}
+	
+			// Nothing goes in the middle ring
+		} catch (err) {
+			_didIteratorError = true;
+			_iteratorError = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion && _iterator['return']) {
+					_iterator['return']();
+				}
+			} finally {
+				if (_didIteratorError) {
+					throw _iteratorError;
+				}
+			}
+		}
+	
 		rootNode.append('circle').attr('class', 'background').attr('r', ringSize).style('fill', 'rgba(255, 255, 255, 1)');
 	
 		force.start().alpha(0.05);
@@ -5491,7 +5606,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.sort().map(function (val2) {
+				return val.slice().sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}

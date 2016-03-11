@@ -38,12 +38,17 @@ svg {
     transition: transform 0.2s ease;
     transition: transform 0.2s ease, -webkit-transform 0.2s ease;
     text-anchor: end; }
+    svg .d3-label.no-dot {
+      text-anchor: middle; }
   svg circle.background {
     pointer-events: none; }
   svg circle.node {
     fill: white;
     stroke-width: 2px;
     stroke: black; }
+    svg circle.node.no-dot {
+      display: none;
+      font-size: 16pt; }
 
 .hovering {
   font-weight: bold; }
