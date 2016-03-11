@@ -37,11 +37,6 @@ svg {
 	.d3-label {
 		fill: #333;
 		fill-opacity: 1;
-		stroke-width: 1px;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		stroke-opacity: 1;
-		stroke-alignment: outer;
 		z-index: 10;
 		font-size: 14pt;
 		font-weight: bold;
@@ -49,6 +44,15 @@ svg {
 		font-family: MetricWeb, helvetica, sans;
 		transition: transform 0.2s ease;
 		text-anchor: end;
+
+		&.bg {
+			stroke: white;
+			stroke-width: 3px;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+			stroke-opacity: 1;
+			stroke-alignment: outer;
+		}
 
 		&.no-dot {
 			fill: black;

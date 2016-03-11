@@ -170,6 +170,12 @@ module.exports = function ({
 
 	node.append('svg:text')
 		.text(n => n.name || '')
+		.attr('class', n => `d3-label bg${n.dot === false ? ' no-dot' : ''}`)
+		.attr('x', n => n.dot !== false ? '-10px' : '0px')
+		.attr('y', '5px');
+
+	node.append('svg:text')
+		.text(n => n.name || '')
 		.attr('class', n => `d3-label${n.dot === false ? ' no-dot' : ''}`)
 		.attr('x', n => n.dot !== false ? '-10px' : '0px')
 		.attr('y', '5px');
@@ -194,6 +200,11 @@ module.exports = function ({
 
 
 	for (let i=0; i<rings.length; i++) {
+		rootNode.append('svg:text')
+			.text(rings[rings.length - i - 1].groupLabel || i)
+			.attr('class', 'd3-label bg')
+			.attr('x', '-16px')
+			.attr('y', (-(i + 1) * ringSize) + 'px');
 		rootNode.append('svg:text')
 			.text(rings[rings.length - i - 1].groupLabel || i)
 			.attr('class', 'd3-label')
