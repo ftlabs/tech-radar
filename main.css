@@ -23,11 +23,6 @@ svg {
   svg .d3-label {
     fill: #333;
     fill-opacity: 1;
-    stroke-width: 1px;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-opacity: 1;
-    stroke-alignment: outer;
     z-index: 10;
     font-size: 14pt;
     font-weight: bold;
@@ -38,6 +33,13 @@ svg {
     transition: transform 0.2s ease;
     transition: transform 0.2s ease, -webkit-transform 0.2s ease;
     text-anchor: end; }
+    svg .d3-label.bg {
+      stroke: white;
+      stroke-width: 3px;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-opacity: 1;
+      stroke-alignment: outer; }
     svg .d3-label.no-dot {
       fill: black;
       text-decoration: underline;

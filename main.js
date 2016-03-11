@@ -591,9 +591,10 @@
 				var rainbowFill = 'hsla(' + i * 360 / nRings + ', 60%, 75%, 1)';
 				var baseColor = color(options.ringColor || '#fff1e0').toHsv();
 				var maxV = baseColor.v;
+				var minV = 0.5;
 	
 				// don't go fully black stay 2 steps away
-				baseColor.v = i * (maxV / (nRings + 2));
+				baseColor.v = i * ((maxV - minV) / nRings) + minV;
 				var newColor = color(baseColor).toHslString();
 	
 				rings[--i] = {
@@ -4009,6 +4010,14 @@
 		node.append('svg:text').text(function (n) {
 			return n.name || '';
 		}).attr('class', function (n) {
+			return 'd3-label bg' + (n.dot === false ? ' no-dot' : '');
+		}).attr('x', function (n) {
+			return n.dot !== false ? '-10px' : '0px';
+		}).attr('y', '5px');
+	
+		node.append('svg:text').text(function (n) {
+			return n.name || '';
+		}).attr('class', function (n) {
 			return 'd3-label' + (n.dot === false ? ' no-dot' : '');
 		}).attr('x', function (n) {
 			return n.dot !== false ? '-10px' : '0px';
@@ -4046,6 +4055,7 @@
 		}
 	
 		for (var i = 0; i < rings.length; i++) {
+			rootNode.append('svg:text').text(rings[rings.length - i - 1].groupLabel || i).attr('class', 'd3-label bg').attr('x', '-16px').attr('y', -(i + 1) * ringSize + 'px');
 			rootNode.append('svg:text').text(rings[rings.length - i - 1].groupLabel || i).attr('class', 'd3-label').attr('x', '-16px').attr('y', -(i + 1) * ringSize + 'px');
 		}
 	
