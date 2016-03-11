@@ -9,10 +9,9 @@ module.exports = function ({
 	data,
 	size,
 	rings,
-	ringColor
 }) {
 
-	const width = (size || 400) + 40;
+	const width = (size || 400);
 	const height = (size || 400);
 	const nodes = data.slice(0);
 	nodes.forEach(n => {
@@ -98,9 +97,12 @@ module.exports = function ({
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode)
-		.attr('width', width)
-		.attr('height', height)
-		.attr('viewBox', `0 0 ${width} ${height}`);
+		.attr('width', width + 100)
+		.attr('height', height + 100)
+		.attr('viewBox', `100 100 ${width} ${height}`);
+
+	svg
+	.style('margin', '-100px 0 0 -100px');
 
 	const force = d3.layout.force()
 		.nodes(nodes)
@@ -120,7 +122,12 @@ module.exports = function ({
 			d.x = d.x % (width * 4);
 			d.y = d.y % (height * 4);
 		});
-		node.attr('transform', d => `translate(${d.x}, ${d.y})`);
+		node
+			.attr('transform', d => `translate(${d.x}, ${d.y})`);
+			// .select('.d3-label')
+			// .attr('transform', d => {
+			// 	return `rotate(${90 * ((d.x - (width - height))/height)})`;
+			// });
 	});
 
 	const node = svg.selectAll('.node')
@@ -167,26 +174,6 @@ module.exports = function ({
 		.attr('class', n => `d3-label${n.dot === false ? ' no-dot' : ''}`)
 		.attr('x', n => n.dot !== false ? '-10px' : '0px')
 		.attr('y', '5px');
-
-	const gradient = svg.append('svg:defs')
-		.append('svg:radialGradient')
-		.attr('id', 'radgrad')
-		.attr('x1', '0%')
-		.attr('y1', '0%')
-		.attr('x2', '100%')
-		.attr('y2', '100%')
-		.attr('spreadMethod', 'pad');
-
-	// Define the gradient colors
-	gradient.append('svg:stop')
-		.attr('offset', '90%')
-		.attr('stop-color', 'rgba(0, 0, 0, 0)')
-		.attr('stop-opacity', 1);
-
-	gradient.append('svg:stop')
-		.attr('offset', '100%')
-		.attr('stop-color', 'rgba(0, 0, 0, 0.3)')
-		.attr('stop-opacity', 1);
 
 	const rootNode = svg.select('.rootNode');
 
