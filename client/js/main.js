@@ -3,7 +3,7 @@
 // Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
 const color = require('tinycolor2');
-const sheetTitles = [];
+const sheetTitles = new Set();
 function parseOptions (config, force = false) {
 
 	// configProperty: [optionsParameter, type]
@@ -142,7 +142,7 @@ function getDocsFromBertha (docs, republish = false) {
 			const sheetTitle = parseOptions(config).title || undefined;
 
 			if(sheetTitle !== undefined){
-				sheetTitles.push(sheetTitle)
+				sheetTitles.add(sheetTitle);
 			}
 
 			return json;
@@ -532,9 +532,7 @@ Promise.all([
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
 
-	if(sheetTitles.length > 0){
-		document.querySelector('.sheet-title').textContent = sheetTitles.join(' & ');
-	}
+	document.querySelector('.sheet-title').textContent = options.title || Array.from(sheetTitles).join(' & ');
 
 	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
