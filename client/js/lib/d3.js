@@ -9,6 +9,7 @@ module.exports = function ({
 	data,
 	size,
 	rings,
+	crystallisation,
 }) {
 
 	const width = (size || 400);
@@ -183,10 +184,18 @@ module.exports = function ({
 	const rootNode = svg.select('.rootNode');
 
 	for (let i=0; i<rings.length; i++) {
+
+		if(rings[i].groupLabel === crystallisation){
+			rings[i].fill = 'rgb(255, 0, 0)';
+		}
+
 		rootNode.append('circle')
 			.attr('class', 'background')
 			.attr('r', (rings[i].max + 1) * ringSize)
 			.style('fill', rings[i].fill);
+
+		console.log(rings[i]);
+
 	}
 
 	for (const lineOrigin of segmentLines) {

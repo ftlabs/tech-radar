@@ -16,6 +16,7 @@ function parseOptions (config, force = false) {
 		sortcolorder: ['sortColOrder', Array],
 		segment: ['segment', String],
 		ringcolor: ['ringColor', String],
+		crystallisation: ['crystallisation', String],
 	};
 
 	Object.keys(config).forEach(key => {
@@ -71,6 +72,7 @@ parseOptions((function () {
 	parsed.showcol = parsed.showcol || '';
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
+	parsed.crystallisation = parsed.crystallisation || null;
 
 	// show the table by default
 	if (parsed.showtable === undefined) {
@@ -363,7 +365,7 @@ function generateGraphs (inData) {
 		data,
 		size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
 		rings: generateChartRings(data, labels),
-		ringColor : options.ringColor
+		crystallisation : options.crystallisation
 	});
 	svgTarget.appendChild(svg);
 
