@@ -2,6 +2,7 @@
 
 // Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
+const color = require('tinycolor2');
 function parseOptions (config, force = false) {
 
 	// configProperty: [optionsParameter, type]
@@ -12,7 +13,9 @@ function parseOptions (config, force = false) {
 		showcol: ['showCol', Array],
 		dashboard: ['dashboard', Boolean],
 		showtable: ['showTable', Boolean],
-		sortcolorder: ['sortColOrder', Array]
+		sortcolorder: ['sortColOrder', Array],
+		segment: ['segment', String],
+		ringcolor: ['ringColor', String],
 	};
 
 	Object.keys(config).forEach(key => {
@@ -100,6 +103,12 @@ function getDocsFromBertha (docs, republish = false) {
 		return fetch(`${berthaRoot}${republish ? berthaRepublish : berthaView}${doc.UID}/${doc.sheet}`)
 		.then(response => response.json())
 		.then(function (json) {
+
+			// supply some additional information about where the datum came from.
+			for (const datum of json) {
+				datum['hidden-graph-item-source'] = `${doc.UID}/${doc.sheet}`;
+				datum['hidden-graph-item-id'] = `${datum.name}${doc.UID}/${doc.sheet}`;
+			}
 
 			// override options
 
@@ -240,25 +249,20 @@ function process (data) {
 		// If we don't have enough values passed to sort the
 		// order by, we'll default to ordering the rings alphabetically
 		if( options.sortColOrder.length === phases.size ){
-			options.sortColOrder.forEach( (item, idx) => valueMap.set(item, idx + 0.2) );
+			options.sortColOrder.forEach((item, i) => valueMap.set(item, i));
 		} else {
 
 			// Create a map of 'My String' => 1, 'Mz String' => 2
-			[...phases].sort().forEach((d,i) => valueMap.set(d,i + 0.2));
+			[...phases].sort().forEach((d,i) => valueMap.set(d,i));
 		}
 
 		data.forEach(datum => {
-			datum['datumValue'] = valueMap.get(datum[options.sortCol]);
-
-			if (datum['datumValue'] === undefined) {
-				datum['datumValue'] = phases.size + 0.2;
-				valueMap.set('sortcolorder_missing_entry', phases.size + 0.2);
-			}
+			datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (0.5*Math.random() + 0.2);
 		});
 
 		labels = Array.from(valueMap.entries())
 		.sort((a,b) => b[1] - a[1])
-		.map(entry => entry[0].match(/^[a-z0-9_]+/i)[0]);
+		.map(entry => entry[0]);
 	}
 
 	data = data.sort((a,b) => a['datumValue'] - b['datumValue']);
@@ -308,10 +312,12 @@ function process (data) {
 }
 
 function generateChartRings (data, labels = []) {
-
+	const segmentBy = options.segment || 'hidden-graph-item-source';
+	let segments = new Set();
 	let max = 0;
 	for (const datum of data) {
 		max = Math.max(datum.datumValue, max);
+		segments.add(datum[segmentBy]);
 	}
 
 	if (Math.ceil(max) - max < 0.1) {
@@ -326,12 +332,23 @@ function generateChartRings (data, labels = []) {
 	let i = nRings;
 	for (const r of rings) {
 		r; // Suppress lint warning for r not being used
+		const rainbowFill = `hsla(${i * 360/nRings}, 60%, 75%, 1)`;
+		const baseColor = color(options.ringColor || '#fff1e0').toHsv();
+		const maxV = baseColor.v;
+		const minV = 0.5;
+
+		// don't go fully black stay 2 steps away
+		baseColor.v = i * ((maxV - minV)/nRings) + minV;
+		const newColor = color(baseColor).toHslString();
+
 		rings[--i] = {
-			fill: `hsla(${i * 360/nRings}, 100%, 85%, 1)`,
+			fill: options.ringColor === 'rainbow' ? rainbowFill: newColor,
 			min: max - i - 1,
 			max: max - i,
 			index: i,
-			groupLabel: labels[i]
+			groupLabel: labels[i],
+			segments: Array.from(segments.values()),
+			segmentBy
 		};
 	}
 	return rings;
@@ -345,7 +362,8 @@ function generateGraphs (inData) {
 	const svg = graph({
 		data,
 		size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
-		rings: generateChartRings(data, labels)
+		rings: generateChartRings(data, labels),
+		ringColor : options.ringColor
 	});
 	svgTarget.appendChild(svg);
 
@@ -407,7 +425,7 @@ function generateTable (inData) {
 		tbodyTr.addEventListener('click', toggleCollapsedClass);
 		tbody.appendChild(tbodyTr);
 		tbodyTr.classList.add('collapsed');
-		tbodyTr.id = datum.name;
+		tbodyTr.id = datum['hidden-graph-item-id'];
 		tbodyTr.addEventListener('mouseover', rowMouseOver);
 		tbodyTr.addEventListener('mouseout', rowMouseOut);
 		for (const heading of filterHeadings) {
