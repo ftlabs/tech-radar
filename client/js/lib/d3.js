@@ -155,7 +155,7 @@ module.exports = function ({
 	function click (d) {
 
 		if(document.querySelector('.filter-table') !== null){
-			const row = document.getElementById(d.name);
+			const row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
 			row.classList.toggle('collapsed');	
 		} else {
