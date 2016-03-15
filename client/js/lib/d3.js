@@ -191,7 +191,6 @@ module.exports = function ({
 
 		const rev = ringColors.slice(crystallisationIndex + 1, ringColors.length).reverse();
 		for(let i = crystallisationIndex + 1, j = 0; i < ringColors.length; i += 1, j += 1){
-			debugger;
 			ringColors[i] = rev[j];
 		}
 
