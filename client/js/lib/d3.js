@@ -177,28 +177,6 @@ module.exports = function ({
 
 	const rootNode = svg.select('.rootNode');
 
-	let crystallisationIndex = -1;
-	const ringColors = rings.map((ring, idx) => {
-		if(ring.groupLabel === crystallisation){
-			crystallisationIndex = idx;
-		}
-		return ring.fill;
-	});
-
-	if(crystallisationIndex !== -1 && crystallisationIndex !== ringColors.length - 1){
-		ringColors.splice(crystallisationIndex, 0, ringColors[ ringColors.length - 1 ] );
-		ringColors.splice(ringColors.length - 1, 1);
-
-		const rev = ringColors.slice(crystallisationIndex + 1, ringColors.length).reverse();
-		for(let i = crystallisationIndex + 1, j = 0; i < ringColors.length; i += 1, j += 1){
-			ringColors[i] = rev[j];
-		}
-
-		rings.forEach((ring, idx) => {
-			ring.fill = ringColors[idx];
-		});
-	}
-
 	for (let i=0; i<rings.length; i++) {
 
 		rootNode.append('circle')
