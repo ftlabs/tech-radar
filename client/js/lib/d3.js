@@ -184,8 +184,6 @@ module.exports = function ({
 			.attr('r', (rings[i].max + 1) * ringSize)
 			.style('fill', rings[i].fill);
 
-		console.log(rings[i]);
-
 	}
 
 	for (const lineOrigin of segmentLines) {

@@ -72,7 +72,6 @@ parseOptions((function () {
 	parsed.showcol = parsed.showcol || '';
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
-	parsed.crystallisation = parsed.crystallisation || null;
 
 	// show the table by default
 	if (parsed.showtable === undefined) {
