@@ -121,13 +121,7 @@ module.exports = function ({
 			d.x = d.x % (width * 4);
 			d.y = d.y % (height * 4);
 		});
-		node
-			.attr('transform', d => `translate(${d.x}, ${d.y})`)
-			// .select('.d3-label')
-			// .attr('transform', d => {
-			// 	return `rotate(${90 + 180 * Math.atan(-d.y/d.x)/Math.PI})`;
-			// })
-			;
+		node.attr('transform', d => `translate(${d.x}, ${d.y})`);
 	});
 
 	const node = svg.selectAll('.node')
@@ -183,11 +177,30 @@ module.exports = function ({
 
 	const rootNode = svg.select('.rootNode');
 
-	for (let i=0; i<rings.length; i++) {
-
-		if(rings[i].groupLabel === crystallisation){
-			rings[i].fill = 'rgb(255, 0, 0)';
+	let crystallisationIndex = -1;
+	const ringColors = rings.map((ring, idx) => {
+		if(ring.groupLabel === crystallisation){
+			crystallisationIndex = idx;
 		}
+		return ring.fill;
+	});
+
+	if(crystallisationIndex !== -1 && crystallisationIndex !== ringColors.length - 1){
+		ringColors.splice(crystallisationIndex, 0, ringColors[ ringColors.length - 1 ] );
+		ringColors.splice(ringColors.length - 1, 1);
+
+		const rev = ringColors.slice(crystallisationIndex + 1, ringColors.length).reverse();
+		for(let i = crystallisationIndex + 1, j = 0; i < ringColors.length; i += 1, j += 1){
+			debugger;
+			ringColors[i] = rev[j];
+		}
+
+		rings.forEach((ring, idx) => {
+			ring.fill = ringColors[idx];
+		});
+	}
+
+	for (let i=0; i<rings.length; i++) {
 
 		rootNode.append('circle')
 			.attr('class', 'background')
