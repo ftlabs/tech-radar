@@ -77,7 +77,8 @@
 		segment: ['segment', String, 'Column to use to segment the data, defaults to the source spreadsheet.'],
 		ringcolor: ['ringColor', String, 'Colour to use for the ring (rainbow makes it multicolour)'],
 		proportionalrings: ['useProportionalRings', Boolean, 'Whether to scale rings according to number of items.'],
-		sorttype: ['sortType', String, '"alphabetical" or "numerical" (without quotes)']
+		sorttype: ['sortType', String, '"alphabetical" or "numerical" (without quotes)'],
+		crystallisation: ['crystallisation', String, 'Make this row the focus of attention.']
 	};
 	
 	var options = {};
@@ -456,7 +457,7 @@
 	
 				// If we don't have enough values passed to sort the
 				// order by, we'll default to ordering the rings alphabetically
-				if (options.sortColOrder.length === phases.size) {
+				if (options.sortColOrder.length) {
 					options.sortColOrder.forEach(function (item, i) {
 						return valueMap.set(item, i);
 					});
@@ -469,6 +470,9 @@
 				}
 	
 				data.forEach(function (datum) {
+					if (!valueMap.has(datum[options.sortCol])) {
+						valueMap.set(datum[options.sortCol], valueMap.size);
+					}
 					datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (0.5 * Math.random() + 0.2);
 				});
 	
@@ -580,9 +584,6 @@
 				var segment = Math.floor(datum.datumValue);
 				counts[segment] = (counts[segment] || 0) + 1;
 			}
-	
-			// add smidge so that integers get rounded up
-			// other wise it adds too many rings
 		} catch (err) {
 			_didIteratorError8 = true;
 			_iteratorError8 = err;
@@ -598,11 +599,20 @@
 			}
 		}
 	
+		if (labels.length === 0) {
+			labels = counts.map(function (l, i) {
+				return String(i);
+			});
+		};
+	
+		// add smidge so that integers get rounded up
+		// other wise it adds too many rings
 		if (Math.ceil(max + 0.0001) - max < 0.1) {
 	
 			// add an empty ring if needed
 			counts.push(0);
 		}
+		var nRings = counts.length;
 	
 		var smallestWidth = 0.5;
 		var mostPopulousRingPopulation = counts.reduce(function (a, b) {
@@ -618,25 +628,40 @@
 			return a + b.proportionalSize;
 		}, 0);
 	
+		var crystallisationIndex = labels.indexOf(options.crystallisation);
+	
+		var ringColors = counts.map(function (ring, i) {
+	
+			var rainbowFill = 'hsla(' + i * 360 / nRings + ', 60%, 75%, 1)';
+			if (options.color === 'rainbow') return rainbowFill;
+	
+			var baseColor = color(options.ringColor || '#fff1e0').toHsv();
+			var maxV = baseColor.v;
+			var minV = 0.5;
+	
+			// don't go fully black
+			baseColor.v = i * ((maxV - minV) / nRings) + minV;
+			var newColor = color(baseColor).toHslString();
+			return newColor;
+		});
+	
 		// Draw rings from the max value down to zero
-		var nRings = counts.length;
 		var totalWidth = 0;
 		return counts.map(function (_ref, i) {
 			var count = _ref.count;
 			var proportionalSize = _ref.proportionalSize;
 	
-			var rainbowFill = 'hsla(' + i * 360 / nRings + ', 60%, 75%, 1)';
-			var baseColor = color(options.ringColor || '#fff1e0').toHsv();
-			var maxV = baseColor.v;
-			var minV = 0.5;
-	
-			// don't go fully black stay 2 steps away
-			baseColor.v = i * ((maxV - minV) / nRings) + minV;
-			var newColor = color(baseColor).toHslString();
 			var width = options.useProportionalRings ? proportionalSize / totalProportionalSize : 1 / nRings;
 			totalWidth += width;
+			var fill = undefined;
+	
+			if (crystallisationIndex !== -1 && crystallisationIndex !== ringColors.length - 1) {
+				fill = ringColors[nRings - 1 - Math.abs(i - crystallisationIndex)];
+			} else {
+				fill = ringColors[i];
+			}
 			return {
-				fill: options.ringColor === 'rainbow' ? rainbowFill : newColor,
+				fill: fill,
 				min: i,
 				max: i + 1,
 				index: i,
@@ -667,7 +692,7 @@
 			data: data,
 			size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
 			rings: generateChartRings(data, labels),
-			ringColor: options.ringColor
+			crystallisation: options.crystallisation
 		});
 		svgTarget.appendChild(svg);
 	
@@ -3881,6 +3906,7 @@
 		var data = _ref.data;
 		var size = _ref.size;
 		var rings = _ref.rings;
+		var crystallisation = _ref.crystallisation;
 	
 		var boilDown = document.getElementById('boil-down');
 		var width = size || 400;
@@ -7001,6 +7027,7 @@
 				}
 	
 				if (schema[qp][1] === Array) {
+					input.value = options[schema[qp][0]].join(', ');
 					group.style.flexBasis = '60%';
 				}
 	
@@ -7042,6 +7069,9 @@
 		});
 		submit.classList.add('o-buttons');
 		submit.classList.add('o-buttons--standout');
+		var hiddenSubmit = submit.cloneNode();
+		hiddenSubmit.style.display = 'none';
+		formLocation.appendChild(hiddenSubmit);
 		formLocation.parentNode.appendChild(submit);
 		formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
 	};
