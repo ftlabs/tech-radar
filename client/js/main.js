@@ -583,7 +583,7 @@ Promise.all([
 
 	require('./lib/form')(
 		qpSchema,
-		data[0] ? Object.keys(data[0]) : [],
+		data[0] ? Object.keys(data[0]).filter(k => !k.match(/^(configvalue$|hidden-graph-item)/)) : [],
 		options
 	);
 
