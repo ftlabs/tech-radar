@@ -5,8 +5,41 @@ html, body {
 	height: 100%;
 }
 
-div {
+div, form {
 	box-sizing: content-box;
+}
+
+#tech-radar__form-container {
+
+	transition: height 0.6s ease;
+	overflow: hidden;
+	position: relative;
+
+	&.collapsed {
+    	height: 7em !important;
+		&:after {
+			content: '';
+			pointer-events: none;
+			background: linear-gradient(to bottom, rgba(246,233,216,0) 0%,rgba(246,233,216,1) 100%);
+			position: absolute;
+			left: 0;
+			bottom: 0;
+			right: 0;
+			height: 1em;
+		}
+	}
+
+}
+
+#tech-radar__qp-form {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+
+	& > div {
+		flex-grow: 1;
+	}
 }
 
 .filter-table {

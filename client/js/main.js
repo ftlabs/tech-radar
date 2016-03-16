@@ -21,7 +21,6 @@ const berthaRoot = 'https://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
 const isEqual = require('lodash.isequal');
-const color = require('tinycolor2');
 const queryString = require('query-string');
 let sheetTitles = new Set();
 let titleFromQueryParam = false;
@@ -70,6 +69,7 @@ function parseOptions (config, force = false) {
 	return options;
 }
 
+// read query params
 parseOptions((function () {
 	const parsed = queryString.parse(location.search);
 	parsed.showcol = parsed.showcol || '';
@@ -579,55 +579,11 @@ Promise.all([
 		return;
 	}
 
-	const formLocation = document.getElementById('tech-radar__qp-form');
-	const queryParams = Object.keys(qpSchema);
-	for (const qp of queryParams) {
-		const group = document.createElement('div');
-		const label = document.createElement('label');
-		let input = document.createElement('input');
-		const small = document.createElement('small');
-
-		input.type = 'text';
-		input.placeholder = qpSchema[qp][1].name;
-		label.title = qpSchema[qp][2];
-		small.textContent = qpSchema[qp][2];
-		input.value = options[qpSchema[qp][0]] || '';
-
-		if (qpSchema[qp][1] === Boolean) {
-			input.value = options[qpSchema[qp][0]] || 'false';
-		}
-
-		label.classList.add('o-forms-label');
-		input.classList.add('o-forms-text');
-		group.classList.add('o-forms-group');
-		small.classList.add('o-forms-additional-info');
-
-		if (qp === 'sortcol' && data[0]) {
-			input = document.createElement('select');
-			input.classList.add('o-forms-select');
-			Object.keys(data[0]).forEach(key => {
-				const o = document.createElement('option');
-				if (key === options.sortCol) {
-					o.selected = 'selected';
-				}
-				o.textContent = key;
-				o.value = key;
-				input.appendChild(o);
-			});
-		}
-
-		input.name = qp;
-		label.textContent = `${qp}`;
-		group.appendChild(label);
-		group.appendChild(small);
-		group.appendChild(input);
-		formLocation.appendChild(group);
-	}
-	const submit = document.createElement('input');
-	submit.type = 'submit';
-	submit.classList.add('o-buttons');
-	submit.classList.add('o-buttons--standout');
-	formLocation.appendChild(submit);
+	require('./lib/form')(
+		qpSchema,
+		data[0] ? Object.keys(data[0]) : [],
+		options
+	);
 
 	const buttons = document.getElementById('tech-radar__buttons');
 
