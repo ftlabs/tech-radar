@@ -11,7 +11,7 @@ module.exports = function ({
 	rings,
 }) {
 
-	const boilDown = document.getElementById('boil-down');	
+	const boilDown = document.getElementById('boil-down');
 	const width = (size || 400);
 	const height = (size || 400);
 	const nodes = data.slice(0);
@@ -65,8 +65,8 @@ module.exports = function ({
 	const links = nodes.map((n, i) => ({
 		target: 0,
 		source: i,
-		distance: n.distance || (1 + (n.datumValue || 0)) * ringSize,
-		linkStrength: 2,
+		distance: (1 + (n.datumValue || 0)) * ringSize,
+		linkStrength: 20,
 		fixed: n.fixed
 	}))
 	.filter(l => !l.fixed);
@@ -100,7 +100,7 @@ module.exports = function ({
 	const svg = d3.select(svgNode)
 		.attr('width', width)
 		.attr('height', height)
-		.attr('viewBox', `-100 -50 ${width + 100} ${height + 50}`);
+		.attr('viewBox', `0 0 ${width} ${height}`);
 
 	const force = d3.layout.force()
 		.nodes(nodes)
@@ -134,7 +134,8 @@ module.exports = function ({
 		.data(nodes)
 		.enter()
 		.append('svg:g')
-		.attr('class', d => d.rootEl ? 'rootNode' : 'node');
+		.attr('class', d => d.rootEl ? 'rootNode' : 'node')
+		.attr('id', n => `${n['hidden-graph-item-id']}--graph-point`);
 
 	node.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
@@ -157,16 +158,16 @@ module.exports = function ({
 		if(document.querySelector('.filter-table') !== null){
 			const row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
-			row.classList.toggle('collapsed');	
+			row.classList.toggle('collapsed');
 		} else {
 
-			boilDown.innerHTML = "";
+			boilDown.innerHTML = '';
 			d.longDesc.split('\n').forEach(line => {
 
 				const aspects = line.split(':');
 
-				if (aspects[0] === "longdesc"){
-					return
+				if (aspects[0] === 'longdesc'){
+					return;
 				}
 
 				const heading = document.createElement('h3');
@@ -187,7 +188,6 @@ module.exports = function ({
 	node.append('circle')
 		.attr('class', n => `node${n.dot === false ? ' no-dot' : ''}`)
 		.attr('r', 8)
-		.attr('id', n => `${n.name}--graph-point`)
 		.style('fill', n => `hsla(${n['hidden-graph-item-hue']}, 95%, 60%, 1)`)
 		.on('mouseover', mouseover)
 		.on('mouseout', mouseout)
@@ -209,11 +209,11 @@ module.exports = function ({
 
 	const rootNode = svg.select('.rootNode');
 
-	for (let i=0; i<rings.length; i++) {
+	for (const ring of rings) {
 		rootNode.append('circle')
 			.attr('class', 'background')
-			.attr('r', (rings[i].max + 1) * ringSize)
-			.style('fill', rings[i].fill);
+			.attr('r', (ring.max + 1) * ringSize)
+			.style('fill', ring.fill);
 	}
 
 	for (const lineOrigin of segmentLines) {
@@ -227,16 +227,19 @@ module.exports = function ({
 
 
 	for (let i=0; i<rings.length; i++) {
+		const ring = rings[i];
 		rootNode.append('svg:text')
-			.text(rings[rings.length - i - 1].groupLabel || i)
+			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label bg')
 			.attr('x', '-16px')
-			.attr('y', (-(i + 1) * ringSize) + 'px');
+
+			// +1 because there is an extra inner ring for spacing
+			.attr('y', ((ring.min + 1) * -ringSize) + 'px');
 		rootNode.append('svg:text')
-			.text(rings[rings.length - i - 1].groupLabel || i)
+			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label')
 			.attr('x', '-16px')
-			.attr('y', (-(i + 1) * ringSize) + 'px');
+			.attr('y', ((ring.min + 1) * -ringSize) + 'px');
 	}
 
 	// Nothing goes in the middle ring
