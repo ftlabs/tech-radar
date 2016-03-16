@@ -15,11 +15,20 @@ module.exports = function ({
 	const width = (size || 400);
 	const height = (size || 400);
 	const nodes = data.slice(0);
+	const innerWidth = 0.1;
+	const totalRingSize = height;
+	const chargeDistance = size/4;
+
 	nodes.forEach(n => {
-		n.weight = 30;
-		n.charge = -200;
+		n.ring = rings[Math.floor(n.datumValue)];
+		const positionInRing = (n.datumValue % 1) * n.ring.width;
+		const startPositionOfRing = (n.ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth;
+		n.pseudoDatumValue = positionInRing + startPositionOfRing;
+		n.weight = 0.1;
+
+		// Initial boost of repulsion which drives them apart
+		n.charge = -60;
 	});
-	const ringSize = height / (rings.length + 1);
 
 	nodes.unshift({
 		name: 'root',
@@ -30,7 +39,6 @@ module.exports = function ({
 		rootEl: true,
 		charge: 0
 	});
-
 
 	const segmentLines = [];
 	// Draw an arc of attractive points with labels
@@ -62,10 +70,14 @@ module.exports = function ({
 		}
 	}
 
+	// remove first and last line
+	segmentLines.pop();
+	segmentLines.shift();
+
 	const links = nodes.map((n, i) => ({
 		target: 0,
 		source: i,
-		distance: (1 + (n.datumValue || 0)) * ringSize,
+		distance:(n.pseudoDatumValue || 0) * totalRingSize,
 		linkStrength: 20,
 		fixed: n.fixed
 	}))
@@ -85,7 +97,7 @@ module.exports = function ({
 					target,
 					source: j,
 					distance: 0,
-					linkStrength: 0.5
+					linkStrength: 0.03 * Math.pow(1.5, l)
 				});
 				break;
 			}
@@ -106,7 +118,7 @@ module.exports = function ({
 		.nodes(nodes)
 		.links(links)
 		.charge(n => n.charge)
-		.chargeDistance(45)
+		.chargeDistance(chargeDistance)
 		.linkStrength(l => l.linkStrength)
 		.linkDistance(l => l.distance)
 		.gravity(0)
@@ -122,12 +134,7 @@ module.exports = function ({
 			d.y = d.y % (height * 4);
 		});
 		node
-			.attr('transform', d => `translate(${d.x}, ${d.y})`)
-			// .select('.d3-label')
-			// .attr('transform', d => {
-			// 	return `rotate(${90 + 180 * Math.atan(-d.y/d.x)/Math.PI})`;
-			// })
-			;
+			.attr('transform', d => `translate(${d.x}, ${d.y})`);
 	});
 
 	const node = svg.selectAll('.node')
@@ -209,12 +216,14 @@ module.exports = function ({
 
 	const rootNode = svg.select('.rootNode');
 
+	rings.reverse();
 	for (const ring of rings) {
 		rootNode.append('circle')
 			.attr('class', 'background')
-			.attr('r', (ring.max + 1) * ringSize)
+			.attr('r', ((ring.proportionalSizeEnd * (1 - innerWidth)) + innerWidth) * totalRingSize)
 			.style('fill', ring.fill);
 	}
+	rings.reverse();
 
 	for (const lineOrigin of segmentLines) {
 		rootNode.append('line')
@@ -231,20 +240,18 @@ module.exports = function ({
 			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label bg')
 			.attr('x', '-16px')
-
-			// +1 because there is an extra inner ring for spacing
-			.attr('y', ((ring.min + 1) * -ringSize) + 'px');
+			.attr('y', (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 		rootNode.append('svg:text')
 			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label')
 			.attr('x', '-16px')
-			.attr('y', ((ring.min + 1) * -ringSize) + 'px');
+			.attr('y', (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 	}
 
 	// Nothing goes in the middle ring
 	rootNode.append('circle')
 		.attr('class', 'background')
-		.attr('r', ringSize)
+		.attr('r', totalRingSize * innerWidth)
 		.style('fill', 'rgba(255, 255, 255, 1)');
 
 	force.start().alpha(0.05);

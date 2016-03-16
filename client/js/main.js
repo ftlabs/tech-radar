@@ -109,7 +109,7 @@ function getDocsFromBertha (docs, republish = false) {
 			// supply some additional information about where the datum came from.
 			for (const datum of json) {
 				datum['hidden-graph-item-source'] = `${doc.UID}/${doc.sheet}`;
-				datum['hidden-graph-item-id'] = `${datum.name}${doc.UID}/${doc.sheet}`;
+				datum['hidden-graph-item-id'] = `${datum.name}---${doc.UID}---${doc.sheet}`;
 			}
 
 			// override options
@@ -208,7 +208,15 @@ function process (data) {
 		throw Error('Empty spreasheet from Bertha');
 	}
 
+	// starting point for colours
+	let hue = 0.1;
 	for (const datum of data) {
+		if (!datum['hidden-graph-item-hue']) {
+			datum['hidden-graph-item-hue'] = 360 * hue;
+
+			// Add the golden ratio to get the next colour, gives great distribution.
+			hue = (hue + 0.618033988749895) % 1;
+		};
 
 		// Ensure it is string so we can do analysis
 		datum[options.sortCol] = String(datum[options.sortCol]);
@@ -220,13 +228,23 @@ function process (data) {
 		}
 	}
 
-	data = cloneData(data).filter(datum => !!datum[options.sortCol] && !!datum['name'] && (datum['configvalue'] === undefined || datum['configvalue'] === null));
+	data = cloneData(data)
+	.filter(datum =>
+		!!datum[options.sortCol] &&
+		!!datum['name'] &&
+		(
+			datum['configvalue'] === undefined ||
+			datum['configvalue'] === null
+		)
+	);
 
-	let sortType = 'alphabetical';
+	let sortType = 'numerical';
+
+	// Default to numerical but if any of the sortcol values
+	// are Integers or Alphabetical then treat alphabetical
 	for (const datum of data) {
-		if (datum[options.sortCol].match(/^[0-9]/)) {
-
-			sortType = 'numerical';
+		if (!datum[options.sortCol].match(/^[0-9]\./)) {
+			sortType = 'alphabetical';
 			break;
 		}
 	}
@@ -263,7 +281,7 @@ function process (data) {
 		});
 
 		labels = Array.from(valueMap.entries())
-		.sort((a,b) => b[1] - a[1])
+		.sort((a,b) => a[1] - b[1])
 		.map(entry => entry[0]);
 	}
 
@@ -295,18 +313,6 @@ function process (data) {
 		}
 	});
 
-	// starting point for colours
-	let hue = 0.1;
-	data.forEach(datum => {
-
-		if (datum['hidden-graph-item-hue']) return;
-
-		datum['hidden-graph-item-hue'] = 360 * hue;
-
-		// Add the golden ratio to get the next colour, gives great distribution.
-		hue = (hue + 0.618033988749895) % 1;
-	});
-
 	return {
 		data,
 		labels
@@ -332,13 +338,21 @@ function generateChartRings (data, labels = []) {
 		// add an empty ring if needed
 		counts.push(0);
 	}
+
+	const smallestWidth = 0.5;
+	const mostPopulousRingPopulation = counts.reduce((a,b) => Math.max(a || 0, b || 0), -Infinity);
 	for(let i = 0; i < counts.length; i++) {
-		counts[i] = counts[i] || 0;
+		counts[i] = {
+			count: counts[i] || 0,
+			proportionalSize: (counts[i] || smallestWidth)/mostPopulousRingPopulation
+		};
 	}
+	const totalProportionalSize = counts.reduce(function (a,b) { return a + b.proportionalSize; }, 0);
 
 	// Draw rings from the max value down to zero
 	let nRings = counts.length;
-	return counts.map(function (count, i) {
+	let totalWidth = 0;
+	return counts.map(function ({count, proportionalSize}, i) {
 		const rainbowFill = `hsla(${i * 360/nRings}, 60%, 75%, 1)`;
 		const baseColor = color(options.ringColor || '#fff1e0').toHsv();
 		const maxV = baseColor.v;
@@ -347,18 +361,22 @@ function generateChartRings (data, labels = []) {
 		// don't go fully black stay 2 steps away
 		baseColor.v = i * ((maxV - minV)/nRings) + minV;
 		const newColor = color(baseColor).toHslString();
-
+		const width = proportionalSize/totalProportionalSize;
+		totalWidth += width;
 		return {
 			fill: options.ringColor === 'rainbow' ? rainbowFill: newColor,
 			min: i,
 			max: i+1,
 			index: i,
-			groupLabel: i,
+			groupLabel: labels[i],
 			segments: Array.from(segments.values()),
 			segmentBy,
-			noPoints: counts[i]
+			noPoints: count,
+			width,
+			proportionalSizeStart: totalWidth - width,
+			proportionalSizeEnd: totalWidth
 		};
-	}).reverse();
+	});
 }
 
 function generateGraphs (inData) {
