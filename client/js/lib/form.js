@@ -64,6 +64,7 @@ module.exports = function (schema, dataFormat, options) {
 	}
 	const submit = document.createElement('input');
 	submit.type = 'submit';
+	submit.addEventListener('click', () => formLocation.submit());
 	submit.classList.add('o-buttons');
 	submit.classList.add('o-buttons--standout');
 	formLocation.parentNode.appendChild(submit);
