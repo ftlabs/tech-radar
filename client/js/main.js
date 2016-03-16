@@ -2,8 +2,6 @@
 
 // Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
-const color = require('tinycolor2');
-const sheetTitles = new Set();
 function parseOptions (config, force = false) {
 
 	// configProperty: [optionsParameter, type]
@@ -67,14 +65,18 @@ const berthaRoot = 'https://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
 const berthaRepublish = 'republish/publish/gss/';
 const isEqual = require('lodash.isequal');
+const color = require('tinycolor2');
 const queryString = require('query-string');
+let sheetTitles = new Set();
+let titleFromQueryParam = false;
 parseOptions((function () {
 	const parsed = queryString.parse(location.search);
 	parsed.showcol = parsed.showcol || '';
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
 
-	if(parsed.title !== undefined){
+	if (parsed.title !== undefined) {
+		titleFromQueryParam = true;
 		document.querySelector('.sheet-title').textContent = parsed.title;
 	}
 
@@ -143,15 +145,20 @@ function getDocsFromBertha (docs, republish = false) {
 			}
 
 			// Set the options globally
-			const sheetTitle = parseOptions(config).title || undefined;
+			parseOptions(config);
 
-			if(sheetTitle !== undefined){
-				sheetTitles.add(sheetTitle);
+			if (config.title !== undefined) {
+				sheetTitles.add(config.title);
 			}
 
 			return json;
 		});
 	});
+
+	if (!titleFromQueryParam) {
+		options.title = document.querySelector('.sheet-title').textContent = Array.from(sheetTitles).join(' & ');
+		sheetTitles.clear();
+	}
 
 	return Promise.all(requests);
 
@@ -365,6 +372,10 @@ function generateChartRings (data, labels = []) {
 }
 
 function generateGraphs (inData) {
+
+	// Set graph title
+	document.querySelector('.sheet-title').textContent = options.title;
+
 	const {data, labels} = process(inData);
 	const svgTarget = document.getElementById('tech-radar__graph-target');
 	const header = document.querySelector('.o-header');
@@ -535,10 +546,6 @@ Promise.all([
 
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
-
-	if(document.querySelector('.sheet-title').textContent === "") {
-		document.querySelector('.sheet-title').textContent = Array.from(sheetTitles).join(' & ');
-	}
 
 	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
