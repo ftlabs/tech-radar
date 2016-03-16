@@ -925,7 +925,9 @@
 			return;
 		}
 	
-		__webpack_require__(93)(qpSchema, data[0] ? _Object$keys(data[0]) : [], options);
+		__webpack_require__(93)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
+			return !k.match(/^(configvalue$|hidden-graph-item)/);
+		}) : [], options);
 	
 		var buttons = document.getElementById('tech-radar__buttons');
 	
