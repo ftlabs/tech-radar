@@ -1,27 +1,24 @@
 'use strict';
 
+// configProperty: [optionsParameter, type]
+const qpSchema = {
+	id: ['docUIDs', Array, 'Comma seperated list of IDs of spreadsheet documents to load'],
+	sheet: ['sheets', Array, 'Comma seperated list of sheets to load from those documents'],
+	sortcol: ['sortCol', String, 'Which column to sort by'],
+	showcol: ['showCol', Array, 'Comma seperated list of columns to show'],
+	dashboard: ['dashboard', Boolean, 'Whether to display these settings.'],
+	showtable: ['showTable', Boolean, 'Whether to display the data table'],
+	sortcolorder: ['sortColOrder', Array, 'Comma seperated list, order to sort the rings'],
+	segment: ['segment', String, 'Column to use to segment the data, defaults to the source spreadsheet.'],
+	ringcolor: ['ringColor', String, 'Colour to use for the ring (rainbow makes it multicolour)']
+};
+
 // Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
 function parseOptions (config, force = false) {
 
-	// configProperty: [optionsParameter, type]
-	const filter = {
-		id: ['docUIDs', Array],
-		sheet: ['sheets', Array],
-		sortcol: ['sortCol', String],
-		showcol: ['showCol', Array],
-		dashboard: ['dashboard', Boolean],
-		showtable: ['showTable', Boolean],
-		sortcolorder: ['sortColOrder', Array],
-		segment: ['segment', String],
-		ringcolor: ['ringColor', String],
-		title : ['title', String],
-		proportionalrings: ['useProportionalRings', Boolean],
-		sorttype: ['sortType', String]
-	};
-
 	Object.keys(config).forEach(key => {
-		const handle = filter[key];
+		const handle = qpSchema[key];
 		if (handle === undefined) return;
 
 		// COMPLEX
@@ -579,6 +576,56 @@ Promise.all([
 		document.getElementById('tech-radar__settings').style.display = 'none';
 		return;
 	}
+
+	const formLocation = document.getElementById('tech-radar__qp-form');
+	const queryParams = Object.keys(qpSchema);
+	for (const qp of queryParams) {
+		const group = document.createElement('div');
+		const label = document.createElement('label');
+		let input = document.createElement('input');
+		const small = document.createElement('small');
+
+		input.type = 'text';
+		input.placeholder = qpSchema[qp][1].name;
+		label.title = qpSchema[qp][2];
+		small.textContent = qpSchema[qp][2];
+		input.value = options[qpSchema[qp][0]] || '';
+
+		if (qpSchema[qp][1] === Boolean) {
+			input.value = options[qpSchema[qp][0]] || 'false';
+		}
+
+		label.classList.add('o-forms-label');
+		input.classList.add('o-forms-text');
+		group.classList.add('o-forms-group');
+		small.classList.add('o-forms-additional-info');
+
+		if (qp === 'sortcol' && data[0]) {
+			input = document.createElement('select');
+			input.classList.add('o-forms-select');
+			Object.keys(data[0]).forEach(key => {
+				const o = document.createElement('option');
+				if (key === options.sortCol) {
+					o.selected = 'selected';
+				}
+				o.textContent = key;
+				o.value = key;
+				input.appendChild(o);
+			});
+		}
+
+		input.name = qp;
+		label.textContent = `${qp}`;
+		group.appendChild(label);
+		group.appendChild(small);
+		group.appendChild(input);
+		formLocation.appendChild(group);
+	}
+	const submit = document.createElement('input');
+	submit.type = 'submit';
+	submit.classList.add('o-buttons');
+	submit.classList.add('o-buttons--standout');
+	formLocation.appendChild(submit);
 
 	const buttons = document.getElementById('tech-radar__buttons');
 
