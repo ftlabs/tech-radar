@@ -17,7 +17,8 @@ function parseOptions (config, force = false) {
 		sortcolorder: ['sortColOrder', Array],
 		segment: ['segment', String],
 		ringcolor: ['ringColor', String],
-		title : ['title', String],
+		proportionalrings: ['useProportionalRings', Boolean],
+		sorttype: ['sortType', String]
 	};
 
 	Object.keys(config).forEach(key => {
@@ -243,10 +244,14 @@ function process (data) {
 	// Default to numerical but if any of the sortcol values
 	// are Integers or Alphabetical then treat alphabetical
 	for (const datum of data) {
-		if (!datum[options.sortCol].match(/^[0-9]\./)) {
+		if (!datum[options.sortCol].match(/^[0-9]/)) {
 			sortType = 'alphabetical';
 			break;
 		}
+	}
+
+	if (options.sortType === 'alphabetical' || options.sortType === 'numerical') {
+		sortType = options.sortType;
 	}
 
 	let labels = [];
@@ -361,7 +366,7 @@ function generateChartRings (data, labels = []) {
 		// don't go fully black stay 2 steps away
 		baseColor.v = i * ((maxV - minV)/nRings) + minV;
 		const newColor = color(baseColor).toHslString();
-		const width = proportionalSize/totalProportionalSize;
+		const width = options.useProportionalRings ? proportionalSize/totalProportionalSize : 1/nRings;
 		totalWidth += width;
 		return {
 			fill: options.ringColor === 'rainbow' ? rainbowFill: newColor,
@@ -371,7 +376,6 @@ function generateChartRings (data, labels = []) {
 			groupLabel: labels[i],
 			segments: Array.from(segments.values()),
 			segmentBy,
-			noPoints: count,
 			width,
 			proportionalSizeStart: totalWidth - width,
 			proportionalSizeEnd: totalWidth

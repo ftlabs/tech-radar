@@ -23,21 +23,44 @@ If you head to `http://localhost:3010/` you'll be presented with a rainbow, but 
 
 ## Constructing the URL
 
-There are four parameters :
+### There are 2 mandatory parameters :
 
 1. sheet - sheet name (mandatory)
 2. id - spreadsheet id (mandatory)
-3. sortcol - column to sort by and to graph, defaults to 'phase'
-4. showcol - a comma seperated list of other columns to reveal in the table
 
-The mandatory parameters point to a specific Google spreadsheet (that has been published to JSON via Bertha). 
+The mandatory parameters point to a specific Google spreadsheet (that has been published to JSON via Bertha).
 
 Open the spreadsheet you want to display and copy the UID of the document. This will be the value for the `id` parameter.
 The `sheet` parameter is the name of the sheet in the spreadsheet document that contains the information you wish to display.
 
-`sortcol` - It will try to sort the column numerically and will do so if any of the items start with a number. Failing to find any numbers it will sort it alphabetically. The groups will be drawn on the graph.
+The rest:
 
-`showcol` - Other columns to show as headers in the table, all other information can be revealed with a click.
+Arrays are comma seperated values e.g. `param=item1,item2,item3`
+Strings are just single values e.g. `param=myString`
+Booleans are the value `false` or any other value, e.g. `&bool=false` is false; `&bool` or `&bool=true` are true,
+
+* sortcol (String) - It will try to sort the column numerically and will do so if any of the items start with a number. Failing to find any numbers it will sort it alphabetically. The groups will be drawn on the graph.
+* showcol (Array) - Other columns to show as headers in the table, all other information can be revealed with a click.
+* dashboard (Boolean) - whether to hide the options and settings
+* showtable (Boolean) - whether to show the table of data
+* sortcolorder (Array) - a sorted array of names to sort the sortcol by, e.g. `group1, group2, group10`
+* segment (String) - break the data into segments based on a group of a different column than sortcol e.g. `sortcolorder=date`
+* ringcolor (String) - A url encoded CSS colour for the base colour for the string e.g.
+..* named: 'red', 'fuchsia', 'peru', 'tomato'
+..* hexadecimal: '%23FFFFFF', '%23FACADE', '%23BADA55', '%23C0FFEE'
+..* hsl: 'hsl(200%2C50%25%2C50%25)'
+..* **special case: 'rainbow'**
+* proportionalrings (Boolean) - Whether to make the rings with more elements have more room.
+* sorttype (String) - 'alphabetical' or 'numerical', if sorted numerically items not beginning with a number will have a value of zero.
+
+Any of the above parameters can also be entered in the spreadsheet under name and configvalue columns e.g.
+
+| Name          | configvalue   | date        | phase       | cost        |
+| ------------- |:-------------:| -----------:| -----------:| -----------:|
+| sortcol       | date          |             |             |             |
+| color         | rainbow       |             |             |             |
+| showcol       | phase, cost   |             |             |             |
+| Data Item 1   |               | 04031982    | development | 99.95       |
 
 Example URL:
 
