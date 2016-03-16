@@ -12,7 +12,8 @@ const qpSchema = {
 	segment: ['segment', String, 'Column to use to segment the data, defaults to the source spreadsheet.'],
 	ringcolor: ['ringColor', String, 'Colour to use for the ring (rainbow makes it multicolour)'],
 	proportionalrings: ['useProportionalRings', Boolean, 'Whether to scale rings according to number of items.'],
-	sorttype: ['sortType', String, '"alphabetical" or "numerical" (without quotes)']
+	sorttype: ['sortType', String, '"alphabetical" or "numerical" (without quotes)'],
+	crystallisation: ['crystallisation', String, 'Make this row the focus of attention.'],
 };
 
 const options = {};
@@ -290,7 +291,7 @@ function process (data) {
 
 		// If we don't have enough values passed to sort the
 		// order by, we'll default to ordering the rings alphabetically
-		if( options.sortColOrder.length === phases.size ){
+		if ( options.sortColOrder.length ) {
 			options.sortColOrder.forEach((item, i) => valueMap.set(item, i));
 		} else {
 
@@ -299,6 +300,9 @@ function process (data) {
 		}
 
 		data.forEach(datum => {
+			if (!valueMap.has(datum[options.sortCol])) {
+				valueMap.set(datum[options.sortCol], valueMap.size);
+			}
 			datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (0.5*Math.random() + 0.2);
 		});
 
@@ -353,6 +357,10 @@ function generateChartRings (data, labels = []) {
 		counts[segment] = (counts[segment] || 0) + 1;
 	}
 
+	if (labels.length === 0	) {
+		labels = counts.map((l,i) => String(i));
+	};
+
 	// add smidge so that integers get rounded up
 	// other wise it adds too many rings
 	if (Math.ceil(max + 0.0001) - max < 0.1) {
@@ -360,6 +368,7 @@ function generateChartRings (data, labels = []) {
 		// add an empty ring if needed
 		counts.push(0);
 	}
+	let nRings = counts.length;
 
 	const smallestWidth = 0.5;
 	const mostPopulousRingPopulation = counts.reduce((a,b) => Math.max(a || 0, b || 0), -Infinity);
@@ -371,22 +380,40 @@ function generateChartRings (data, labels = []) {
 	}
 	const totalProportionalSize = counts.reduce(function (a,b) { return a + b.proportionalSize; }, 0);
 
-	// Draw rings from the max value down to zero
-	let nRings = counts.length;
-	let totalWidth = 0;
-	return counts.map(function ({count, proportionalSize}, i) {
+	let crystallisationIndex = labels.indexOf(options.crystallisation);
+
+	const ringColors = counts.map((ring, i) => {
+
 		const rainbowFill = `hsla(${i * 360/nRings}, 60%, 75%, 1)`;
+		if (options.color === 'rainbow') return rainbowFill;
+
 		const baseColor = color(options.ringColor || '#fff1e0').toHsv();
 		const maxV = baseColor.v;
 		const minV = 0.5;
 
-		// don't go fully black stay 2 steps away
+		// don't go fully black
 		baseColor.v = i * ((maxV - minV)/nRings) + minV;
 		const newColor = color(baseColor).toHslString();
+		return newColor;
+	});
+
+	// Draw rings from the max value down to zero
+	let totalWidth = 0;
+	return counts.map(function ({count, proportionalSize}, i) {
 		const width = options.useProportionalRings ? proportionalSize/totalProportionalSize : 1/nRings;
 		totalWidth += width;
+		let fill;
+
+		if (
+			crystallisationIndex !== -1 &&
+			crystallisationIndex !== ringColors.length - 1
+		) {
+			fill = ringColors[nRings -1 - Math.abs(i - crystallisationIndex)];
+		} else {
+			fill = ringColors[i];
+		}
 		return {
-			fill: options.ringColor === 'rainbow' ? rainbowFill: newColor,
+			fill,
 			min: i,
 			max: i+1,
 			index: i,
@@ -413,7 +440,7 @@ function generateGraphs (inData) {
 		data,
 		size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
 		rings: generateChartRings(data, labels),
-		ringColor : options.ringColor
+		crystallisation : options.crystallisation
 	});
 	svgTarget.appendChild(svg);
 

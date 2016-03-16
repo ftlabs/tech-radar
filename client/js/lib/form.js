@@ -43,6 +43,7 @@ module.exports = function (schema, dataFormat, options) {
 		}
 
 		if (schema[qp][1] === Array) {
+			input.value = options[schema[qp][0]].join(', ');
 			group.style.flexBasis = '60%';
 		}
 
@@ -67,6 +68,9 @@ module.exports = function (schema, dataFormat, options) {
 	submit.addEventListener('click', () => formLocation.submit());
 	submit.classList.add('o-buttons');
 	submit.classList.add('o-buttons--standout');
+	const hiddenSubmit = submit.cloneNode();
+	hiddenSubmit.style.display = 'none';
+	formLocation.appendChild(hiddenSubmit);
 	formLocation.parentNode.appendChild(submit);
 	formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
 };

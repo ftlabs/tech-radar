@@ -9,6 +9,7 @@ module.exports = function ({
 	data,
 	size,
 	rings,
+	crystallisation,
 }) {
 
 	const boilDown = document.getElementById('boil-down');
@@ -133,8 +134,7 @@ module.exports = function ({
 			d.x = d.x % (width * 4);
 			d.y = d.y % (height * 4);
 		});
-		node
-			.attr('transform', d => `translate(${d.x}, ${d.y})`);
+		node.attr('transform', d => `translate(${d.x}, ${d.y})`);
 	});
 
 	const node = svg.selectAll('.node')
