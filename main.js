@@ -81,7 +81,9 @@
 			showtable: ['showTable', Boolean],
 			sortcolorder: ['sortColOrder', Array],
 			segment: ['segment', String],
-			ringcolor: ['ringColor', String]
+			ringcolor: ['ringColor', String],
+			proportionalrings: ['useProportionalRings', Boolean],
+			sorttype: ['sortType', String]
 		};
 	
 		_Object$keys(config).forEach(function (key) {
@@ -181,7 +183,7 @@
 						var datum = _step.value;
 	
 						datum['hidden-graph-item-source'] = doc.UID + '/' + doc.sheet;
-						datum['hidden-graph-item-id'] = '' + datum.name + doc.UID + '/' + doc.sheet;
+						datum['hidden-graph-item-id'] = datum.name + '---' + doc.UID + '---' + doc.sheet;
 					}
 	
 					// override options
@@ -309,6 +311,8 @@
 			throw Error('Empty spreasheet from Bertha');
 		}
 	
+		// starting point for colours
+		var hue = 0.1;
 		var _iteratorNormalCompletion3 = true;
 		var _didIteratorError3 = false;
 		var _iteratorError3 = undefined;
@@ -316,6 +320,13 @@
 		try {
 			for (var _iterator3 = _getIterator(data), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 				var datum = _step3.value;
+	
+				if (!datum['hidden-graph-item-hue']) {
+					datum['hidden-graph-item-hue'] = 360 * hue;
+	
+					// Add the golden ratio to get the next colour, gives great distribution.
+					hue = (hue + 0.618033988749895) % 1;
+				};
 	
 				// Ensure it is string so we can do analysis
 				datum[options.sortCol] = String(datum[options.sortCol]);
@@ -366,7 +377,10 @@
 			return !!datum[options.sortCol] && !!datum['name'] && (datum['configvalue'] === undefined || datum['configvalue'] === null);
 		});
 	
-		var sortType = 'alphabetical';
+		var sortType = 'numerical';
+	
+		// Default to numerical but if any of the sortcol values
+		// are Integers or Alphabetical then treat alphabetical
 		var _iteratorNormalCompletion4 = true;
 		var _didIteratorError4 = false;
 		var _iteratorError4 = undefined;
@@ -375,9 +389,8 @@
 			for (var _iterator4 = _getIterator(data), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 				var datum = _step4.value;
 	
-				if (datum[options.sortCol].match(/^[0-9]/)) {
-	
-					sortType = 'numerical';
+				if (!datum[options.sortCol].match(/^[0-9]/)) {
+					sortType = 'alphabetical';
 					break;
 				}
 			}
@@ -394,6 +407,10 @@
 					throw _iteratorError4;
 				}
 			}
+		}
+	
+		if (options.sortType === 'alphabetical' || options.sortType === 'numerical') {
+			sortType = options.sortType;
 		}
 	
 		var labels = [];
@@ -438,7 +455,7 @@
 				});
 	
 				labels = _Array$from(valueMap.entries()).sort(function (a, b) {
-					return b[1] - a[1];
+					return a[1] - b[1];
 				}).map(function (entry) {
 					return entry[0];
 				});
@@ -519,18 +536,6 @@
 			}
 		});
 	
-		// starting point for colours
-		var hue = 0.1;
-		data.forEach(function (datum) {
-	
-			if (datum['hidden-graph-item-hue']) return;
-	
-			datum['hidden-graph-item-hue'] = 360 * hue;
-	
-			// Add the golden ratio to get the next colour, gives great distribution.
-			hue = (hue + 0.618033988749895) % 1;
-		});
-	
 		return {
 			data: data,
 			labels: labels
@@ -543,6 +548,7 @@
 		var segmentBy = options.segment || 'hidden-graph-item-source';
 		var segments = new _Set();
 		var max = 0;
+		var counts = [];
 		var _iteratorNormalCompletion8 = true;
 		var _didIteratorError8 = false;
 		var _iteratorError8 = undefined;
@@ -553,7 +559,12 @@
 	
 				max = Math.max(datum.datumValue, max);
 				segments.add(datum[segmentBy]);
+				var segment = Math.floor(datum.datumValue);
+				counts[segment] = (counts[segment] || 0) + 1;
 			}
+	
+			// add smidge so that integers get rounded up
+			// other wise it adds too many rings
 		} catch (err) {
 			_didIteratorError8 = true;
 			_iteratorError8 = err;
@@ -569,60 +580,56 @@
 			}
 		}
 	
-		if (Math.ceil(max) - max < 0.1) {
-			max = Math.ceil(max) + 1;
-		} else {
-			max = Math.ceil(max);
+		if (Math.ceil(max + 0.0001) - max < 0.1) {
+	
+			// add an empty ring if needed
+			counts.push(0);
 		}
+	
+		var smallestWidth = 0.5;
+		var mostPopulousRingPopulation = counts.reduce(function (a, b) {
+			return Math.max(a || 0, b || 0);
+		}, -Infinity);
+		for (var i = 0; i < counts.length; i++) {
+			counts[i] = {
+				count: counts[i] || 0,
+				proportionalSize: (counts[i] || smallestWidth) / mostPopulousRingPopulation
+			};
+		}
+		var totalProportionalSize = counts.reduce(function (a, b) {
+			return a + b.proportionalSize;
+		}, 0);
 	
 		// Draw rings from the max value down to zero
-		var nRings = Math.ceil(max);
-		var rings = Array(nRings);
-		var i = nRings;
-		var _iteratorNormalCompletion9 = true;
-		var _didIteratorError9 = false;
-		var _iteratorError9 = undefined;
+		var nRings = counts.length;
+		var totalWidth = 0;
+		return counts.map(function (_ref, i) {
+			var count = _ref.count;
+			var proportionalSize = _ref.proportionalSize;
 	
-		try {
-			for (var _iterator9 = _getIterator(rings), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-				var r = _step9.value;
+			var rainbowFill = 'hsla(' + i * 360 / nRings + ', 60%, 75%, 1)';
+			var baseColor = color(options.ringColor || '#fff1e0').toHsv();
+			var maxV = baseColor.v;
+			var minV = 0.5;
 	
-				r; // Suppress lint warning for r not being used
-				var rainbowFill = 'hsla(' + i * 360 / nRings + ', 60%, 75%, 1)';
-				var baseColor = color(options.ringColor || '#fff1e0').toHsv();
-				var maxV = baseColor.v;
-				var minV = 0.5;
-	
-				// don't go fully black stay 2 steps away
-				baseColor.v = i * ((maxV - minV) / nRings) + minV;
-				var newColor = color(baseColor).toHslString();
-	
-				rings[--i] = {
-					fill: options.ringColor === 'rainbow' ? rainbowFill : newColor,
-					min: max - i - 1,
-					max: max - i,
-					index: i,
-					groupLabel: labels[i],
-					segments: _Array$from(segments.values()),
-					segmentBy: segmentBy
-				};
-			}
-		} catch (err) {
-			_didIteratorError9 = true;
-			_iteratorError9 = err;
-		} finally {
-			try {
-				if (!_iteratorNormalCompletion9 && _iterator9['return']) {
-					_iterator9['return']();
-				}
-			} finally {
-				if (_didIteratorError9) {
-					throw _iteratorError9;
-				}
-			}
-		}
-	
-		return rings;
+			// don't go fully black stay 2 steps away
+			baseColor.v = i * ((maxV - minV) / nRings) + minV;
+			var newColor = color(baseColor).toHslString();
+			var width = options.useProportionalRings ? proportionalSize / totalProportionalSize : 1 / nRings;
+			totalWidth += width;
+			return {
+				fill: options.ringColor === 'rainbow' ? rainbowFill : newColor,
+				min: i,
+				max: i + 1,
+				index: i,
+				groupLabel: labels[i],
+				segments: _Array$from(segments.values()),
+				segmentBy: segmentBy,
+				width: width,
+				proportionalSizeStart: totalWidth - width,
+				proportionalSizeEnd: totalWidth
+			};
+		});
 	}
 	
 	function generateGraphs(inData) {
@@ -652,7 +659,7 @@
 		var pointId = e.currentTarget.id + '--graph-point';
 		var point = document.getElementById(pointId);
 		if (!point) return;
-		point.parentNode.classList.add('hovering');
+		point.classList.add('hovering');
 	}
 	
 	function rowMouseOut(e) {
@@ -660,7 +667,7 @@
 		var pointId = e.currentTarget.id + '--graph-point';
 		var point = document.getElementById(pointId);
 		if (!point) return;
-		point.parentNode.classList.remove('hovering');
+		point.classList.remove('hovering');
 	}
 	
 	function stripDuplicates(arr) {
@@ -695,40 +702,40 @@
 		thead.appendChild(theadTr);
 		table.appendChild(tbody);
 		table.classList.add('filter-table');
-		var _iteratorNormalCompletion10 = true;
-		var _didIteratorError10 = false;
-		var _iteratorError10 = undefined;
+		var _iteratorNormalCompletion9 = true;
+		var _didIteratorError9 = false;
+		var _iteratorError9 = undefined;
 	
 		try {
-			for (var _iterator10 = _getIterator(filterHeadings), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-				var heading = _step10.value;
+			for (var _iterator9 = _getIterator(filterHeadings), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+				var heading = _step9.value;
 	
 				var td = document.createElement('td');
 				td.textContent = heading;
 				theadTr.appendChild(td);
 			}
 		} catch (err) {
-			_didIteratorError10 = true;
-			_iteratorError10 = err;
+			_didIteratorError9 = true;
+			_iteratorError9 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion10 && _iterator10['return']) {
-					_iterator10['return']();
+				if (!_iteratorNormalCompletion9 && _iterator9['return']) {
+					_iterator9['return']();
 				}
 			} finally {
-				if (_didIteratorError10) {
-					throw _iteratorError10;
+				if (_didIteratorError9) {
+					throw _iteratorError9;
 				}
 			}
 		}
 	
-		var _iteratorNormalCompletion11 = true;
-		var _didIteratorError11 = false;
-		var _iteratorError11 = undefined;
+		var _iteratorNormalCompletion10 = true;
+		var _didIteratorError10 = false;
+		var _iteratorError10 = undefined;
 	
 		try {
-			for (var _iterator11 = _getIterator(data), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-				var datum = _step11.value;
+			for (var _iterator10 = _getIterator(data), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+				var datum = _step10.value;
 	
 				var tbodyTr = document.createElement('tr');
 				tbodyTr.addEventListener('click', toggleCollapsedClass);
@@ -737,13 +744,13 @@
 				tbodyTr.id = datum['hidden-graph-item-id'];
 				tbodyTr.addEventListener('mouseover', rowMouseOver);
 				tbodyTr.addEventListener('mouseout', rowMouseOut);
-				var _iteratorNormalCompletion12 = true;
-				var _didIteratorError12 = false;
-				var _iteratorError12 = undefined;
+				var _iteratorNormalCompletion11 = true;
+				var _didIteratorError11 = false;
+				var _iteratorError11 = undefined;
 	
 				try {
-					for (var _iterator12 = _getIterator(filterHeadings), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-						var heading = _step12.value;
+					for (var _iterator11 = _getIterator(filterHeadings), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+						var heading = _step11.value;
 	
 						var td = document.createElement('td');
 						td.classList.add(heading.replace(/[^a-z]/ig, '-'));
@@ -755,28 +762,28 @@
 							var newContent = '<ul class="details">';
 	
 							var itemKeys = _Object$keys(datum);
-							var _iteratorNormalCompletion13 = true;
-							var _didIteratorError13 = false;
-							var _iteratorError13 = undefined;
+							var _iteratorNormalCompletion12 = true;
+							var _didIteratorError12 = false;
+							var _iteratorError12 = undefined;
 	
 							try {
-								for (var _iterator13 = _getIterator(itemKeys), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-									var k = _step13.value;
+								for (var _iterator12 = _getIterator(itemKeys), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+									var k = _step12.value;
 	
 									if (k.match(/^hidden-graph-item/)) continue;
 									newContent += '<li><span class="key">' + k + ':</span> ' + datum[k] + '</li>';
 								}
 							} catch (err) {
-								_didIteratorError13 = true;
-								_iteratorError13 = err;
+								_didIteratorError12 = true;
+								_iteratorError12 = err;
 							} finally {
 								try {
-									if (!_iteratorNormalCompletion13 && _iterator13['return']) {
-										_iterator13['return']();
+									if (!_iteratorNormalCompletion12 && _iterator12['return']) {
+										_iterator12['return']();
 									}
 								} finally {
-									if (_didIteratorError13) {
-										throw _iteratorError13;
+									if (_didIteratorError12) {
+										throw _iteratorError12;
 									}
 								}
 							}
@@ -795,31 +802,31 @@
 						tbodyTr.appendChild(td);
 					}
 				} catch (err) {
-					_didIteratorError12 = true;
-					_iteratorError12 = err;
+					_didIteratorError11 = true;
+					_iteratorError11 = err;
 				} finally {
 					try {
-						if (!_iteratorNormalCompletion12 && _iterator12['return']) {
-							_iterator12['return']();
+						if (!_iteratorNormalCompletion11 && _iterator11['return']) {
+							_iterator11['return']();
 						}
 					} finally {
-						if (_didIteratorError12) {
-							throw _iteratorError12;
+						if (_didIteratorError11) {
+							throw _iteratorError11;
 						}
 					}
 				}
 			}
 		} catch (err) {
-			_didIteratorError11 = true;
-			_iteratorError11 = err;
+			_didIteratorError10 = true;
+			_iteratorError10 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion11 && _iterator11['return']) {
-					_iterator11['return']();
+				if (!_iteratorNormalCompletion10 && _iterator10['return']) {
+					_iterator10['return']();
 				}
 			} finally {
-				if (_didIteratorError11) {
-					throw _iteratorError11;
+				if (_didIteratorError10) {
+					throw _iteratorError10;
 				}
 			}
 		}
@@ -3849,14 +3856,24 @@
 		var size = _ref.size;
 		var rings = _ref.rings;
 	
+		var boilDown = document.getElementById('boil-down');
 		var width = size || 400;
 		var height = size || 400;
 		var nodes = data.slice(0);
+		var innerWidth = 0.1;
+		var totalRingSize = height;
+		var chargeDistance = size / 4;
+	
 		nodes.forEach(function (n) {
-			n.weight = 30;
-			n.charge = -200;
+			n.ring = rings[Math.floor(n.datumValue)];
+			var positionInRing = n.datumValue % 1 * n.ring.width;
+			var startPositionOfRing = n.ring.proportionalSizeStart * (1 - innerWidth) + innerWidth;
+			n.pseudoDatumValue = positionInRing + startPositionOfRing;
+			n.weight = 0.1;
+	
+			// Initial boost of repulsion which drives them apart
+			n.charge = -60;
 		});
-		var ringSize = height / (rings.length + 1);
 	
 		nodes.unshift({
 			name: 'root',
@@ -3898,12 +3915,16 @@
 			}
 		}
 	
+		// remove first and last line
+		segmentLines.pop();
+		segmentLines.shift();
+	
 		var links = nodes.map(function (n, i) {
 			return {
 				target: 0,
 				source: i,
-				distance: n.distance || (1 + (n.datumValue || 0)) * ringSize,
-				linkStrength: 2,
+				distance: (n.pseudoDatumValue || 0) * totalRingSize,
+				linkStrength: 20,
 				fixed: n.fixed
 			};
 		}).filter(function (l) {
@@ -3921,7 +3942,7 @@
 						target: target,
 						source: j,
 						distance: 0,
-						linkStrength: 0.5
+						linkStrength: 0.03 * Math.pow(1.5, l)
 					});
 					break;
 				}
@@ -3933,11 +3954,11 @@
 	  */
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-		var svg = d3.select(svgNode).attr('width', width).attr('height', height).attr('viewBox', '-100 -50 ' + (width + 100) + ' ' + (height + 50));
+		var svg = d3.select(svgNode).attr('width', width).attr('height', height).attr('viewBox', '0 0 ' + width + ' ' + height);
 	
 		var force = d3.layout.force().nodes(nodes).links(links).charge(function (n) {
 			return n.charge;
-		}).chargeDistance(45).linkStrength(function (l) {
+		}).chargeDistance(chargeDistance).linkStrength(function (l) {
 			return l.linkStrength;
 		}).linkDistance(function (l) {
 			return l.distance;
@@ -3965,12 +3986,10 @@
 			});
 		});
 	
-		// .select('.d3-label')
-		// .attr('transform', d => {
-		// 	return `rotate(${90 + 180 * Math.atan(-d.y/d.x)/Math.PI})`;
-		// })
 		var node = svg.selectAll('.node').data(nodes).enter().append('svg:g').attr('class', function (d) {
 			return d.rootEl ? 'rootNode' : 'node';
+		}).attr('id', function (n) {
+			return n['hidden-graph-item-id'] + '--graph-point';
 		});
 	
 		node.style('display', function (d) {
@@ -3992,16 +4011,37 @@
 		}
 	
 		function click(d) {
-			var row = document.getElementById(d['hidden-graph-item-id']);
-			if (!row) return;
-			row.classList.toggle('collapsed');
+	
+			if (document.querySelector('.filter-table') !== null) {
+				var row = document.getElementById(d['hidden-graph-item-id']);
+				if (!row) return;
+				row.classList.toggle('collapsed');
+			} else {
+	
+				boilDown.innerHTML = '';
+				d.longDesc.split('\n').forEach(function (line) {
+	
+					var aspects = line.split(':');
+	
+					if (aspects[0] === 'longdesc') {
+						return;
+					}
+	
+					var heading = document.createElement('h3');
+					var info = document.createElement('p');
+	
+					heading.textContent = aspects[0];
+					info.textContent = aspects[1];
+	
+					boilDown.appendChild(heading);
+					boilDown.appendChild(info);
+				});
+			}
 		}
 	
 		node.append('circle').attr('class', function (n) {
 			return 'node' + (n.dot === false ? ' no-dot' : '');
-		}).attr('r', 8).attr('id', function (n) {
-			return n.name + '--graph-point';
-		}).style('fill', function (n) {
+		}).attr('r', 8).style('fill', function (n) {
 			return 'hsla(' + n['hidden-graph-item-hue'] + ', 95%, 60%, 1)';
 		}).on('mouseover', mouseover).on('mouseout', mouseout).on('click', click).append('svg:title').text(function (n) {
 			return n.longDesc;
@@ -4025,19 +4065,16 @@
 	
 		var rootNode = svg.select('.rootNode');
 	
-		for (var i = 0; i < rings.length; i++) {
-			rootNode.append('circle').attr('class', 'background').attr('r', (rings[i].max + 1) * ringSize).style('fill', rings[i].fill);
-		}
-	
+		rings.reverse();
 		var _iteratorNormalCompletion = true;
 		var _didIteratorError = false;
 		var _iteratorError = undefined;
 	
 		try {
-			for (var _iterator = _getIterator(segmentLines), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-				var lineOrigin = _step.value;
+			for (var _iterator = _getIterator(rings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+				var ring = _step.value;
 	
-				rootNode.append('line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
+				rootNode.append('circle').attr('class', 'background').attr('r', (ring.proportionalSizeEnd * (1 - innerWidth) + innerWidth) * totalRingSize).style('fill', ring.fill);
 			}
 		} catch (err) {
 			_didIteratorError = true;
@@ -4054,13 +4091,62 @@
 			}
 		}
 	
-		for (var i = 0; i < rings.length; i++) {
-			rootNode.append('svg:text').text(rings[rings.length - i - 1].groupLabel || i).attr('class', 'd3-label bg').attr('x', '-16px').attr('y', -(i + 1) * ringSize + 'px');
-			rootNode.append('svg:text').text(rings[rings.length - i - 1].groupLabel || i).attr('class', 'd3-label').attr('x', '-16px').attr('y', -(i + 1) * ringSize + 'px');
+		rings.reverse();
+	
+		var _iteratorNormalCompletion2 = true;
+		var _didIteratorError2 = false;
+		var _iteratorError2 = undefined;
+	
+		try {
+			for (var _iterator2 = _getIterator(segmentLines), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+				var lineOrigin = _step2.value;
+	
+				rootNode.append('line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
+			}
+		} catch (err) {
+			_didIteratorError2 = true;
+			_iteratorError2 = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+					_iterator2['return']();
+				}
+			} finally {
+				if (_didIteratorError2) {
+					throw _iteratorError2;
+				}
+			}
 		}
 	
-		// Nothing goes in the middle ring
-		rootNode.append('circle').attr('class', 'background').attr('r', ringSize).style('fill', 'rgba(255, 255, 255, 1)');
+		var _iteratorNormalCompletion3 = true;
+		var _didIteratorError3 = false;
+		var _iteratorError3 = undefined;
+	
+		try {
+			for (var _iterator3 = _getIterator(rings), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+				var ring = _step3.value;
+	
+				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label bg').attr('x', '-16px').attr('y', (ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label').attr('x', '-16px').attr('y', (ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+			}
+	
+			// Nothing goes in the middle ring
+		} catch (err) {
+			_didIteratorError3 = true;
+			_iteratorError3 = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+					_iterator3['return']();
+				}
+			} finally {
+				if (_didIteratorError3) {
+					throw _iteratorError3;
+				}
+			}
+		}
+	
+		rootNode.append('circle').attr('class', 'background').attr('r', totalRingSize * innerWidth).style('fill', 'rgba(255, 255, 255, 1)');
 	
 		force.start().alpha(0.05);
 	
