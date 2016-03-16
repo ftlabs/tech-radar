@@ -393,26 +393,23 @@ function generateChartRings (data, labels = []) {
 		return newColor;
 	});
 
-	if (
-		crystallisationIndex !== -1 &&
-		crystallisationIndex !== ringColors.length - 1
-	) {
-		ringColors.splice(crystallisationIndex, 0, ringColors[ ringColors.length - 1 ] );
-		ringColors.splice(ringColors.length - 1, 1);
-
-		const rev = ringColors.slice(crystallisationIndex + 1, ringColors.length).reverse();
-		for (let i = crystallisationIndex + 1, j = 0; i < ringColors.length; i += 1, j += 1 ) {
-			ringColors[i] = rev[j];
-		}
-	}
-
 	// Draw rings from the max value down to zero
 	let totalWidth = 0;
 	return counts.map(function ({count, proportionalSize}, i) {
 		const width = options.useProportionalRings ? proportionalSize/totalProportionalSize : 1/nRings;
 		totalWidth += width;
+		let fill;
+
+		if (
+			crystallisationIndex !== -1 &&
+			crystallisationIndex !== ringColors.length - 1
+		) {
+			fill = ringColors[nRings -1 - Math.abs(i - crystallisationIndex)];
+		} else {
+			fill = ringColors[i];
+		}
 		return {
-			fill: ringColors[i],
+			fill,
 			min: i,
 			max: i+1,
 			index: i,
