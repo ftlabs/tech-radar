@@ -633,7 +633,7 @@
 		var ringColors = counts.map(function (ring, i) {
 	
 			var rainbowFill = 'hsla(' + i * 360 / nRings + ', 60%, 75%, 1)';
-			if (options.color === 'rainbow') return rainbowFill;
+			if (options.ringColor === 'rainbow') return rainbowFill;
 	
 			var baseColor = color(options.ringColor || '#fff1e0').toHsv();
 			var maxV = baseColor.v;
