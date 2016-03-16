@@ -13,8 +13,20 @@ const qpSchema = {
 	ringcolor: ['ringColor', String, 'Colour to use for the ring (rainbow makes it multicolour)']
 };
 
-// Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
+const color = require('tinycolor2');
+const graph = require('./lib/d3');
+const extend = require('util')._extend;
+const berthaRoot = 'https://bertha.ig.ft.com/';
+const berthaView = 'view/publish/gss/';
+const berthaRepublish = 'republish/publish/gss/';
+const isEqual = require('lodash.isequal');
+const color = require('tinycolor2');
+const queryString = require('query-string');
+let sheetTitles = new Set();
+let titleFromQueryParam = false;
+
+// Handle the mapping of queryParams/sheetConfig to options' properties.
 function parseOptions (config, force = false) {
 
 	Object.keys(config).forEach(key => {
@@ -58,16 +70,6 @@ function parseOptions (config, force = false) {
 	return options;
 }
 
-const graph = require('./lib/d3');
-const extend = require('util')._extend;
-const berthaRoot = 'https://bertha.ig.ft.com/';
-const berthaView = 'view/publish/gss/';
-const berthaRepublish = 'republish/publish/gss/';
-const isEqual = require('lodash.isequal');
-const color = require('tinycolor2');
-const queryString = require('query-string');
-let sheetTitles = new Set();
-let titleFromQueryParam = false;
 parseOptions((function () {
 	const parsed = queryString.parse(location.search);
 	parsed.showcol = parsed.showcol || '';
