@@ -3,7 +3,6 @@
 // Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
 const color = require('tinycolor2');
-const sheetTitles = [];
 function parseOptions (config, force = false) {
 
 	// configProperty: [optionsParameter, type]
@@ -554,10 +553,6 @@ Promise.all([
 
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
-
-	if(sheetTitles.length > 0){
-		document.querySelector('.sheet-title').textContent = sheetTitles.join(' & ');
-	}
 
 	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
