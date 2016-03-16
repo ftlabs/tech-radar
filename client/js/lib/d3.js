@@ -11,6 +11,7 @@ module.exports = function ({
 	rings,
 }) {
 
+	const boilDown = document.getElementById('boil-down');	
 	const width = (size || 400);
 	const height = (size || 400);
 	const nodes = data.slice(0);
@@ -152,9 +153,35 @@ module.exports = function ({
 	}
 
 	function click (d) {
-		const row = document.getElementById(d['hidden-graph-item-id']);
-		if (!row) return;
-		row.classList.toggle('collapsed');
+
+		if(document.querySelector('.filter-table') !== null){
+			const row = document.getElementById(d['hidden-graph-item-id']);
+			if (!row) return;
+			row.classList.toggle('collapsed');	
+		} else {
+
+			boilDown.innerHTML = "";
+			d.longDesc.split('\n').forEach(line => {
+
+				const aspects = line.split(':');
+
+				if (aspects[0] === "longdesc"){
+					return
+				}
+
+				const heading = document.createElement('h3');
+				const info = document.createElement('p');
+
+				heading.textContent = aspects[0];
+				info.textContent = aspects[1];
+
+				boilDown.appendChild(heading);
+				boilDown.appendChild(info);
+
+			});
+
+		}
+
 	}
 
 	node.append('circle')
