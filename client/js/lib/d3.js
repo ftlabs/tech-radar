@@ -226,8 +226,7 @@ module.exports = function ({
 	}
 
 
-	for (let i=0; i<rings.length; i++) {
-		const ring = rings[i];
+	for (const ring of rings) {
 		rootNode.append('svg:text')
 			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label bg')
