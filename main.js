@@ -70,6 +70,7 @@
 		id: ['docUIDs', Array, 'Comma seperated list of IDs of spreadsheet documents to load'],
 		sheet: ['sheets', Array, 'Comma seperated list of sheets to load from those documents'],
 		sortcol: ['sortCol', String, 'Which column to sort by'],
+		title: ['title', String, 'Title to display'],
 		showcol: ['showCol', Array, 'Comma seperated list of columns to show'],
 		dashboard: ['dashboard', Boolean, 'Whether to display these settings.'],
 		showtable: ['showTable', Boolean, 'Whether to display the data table'],
