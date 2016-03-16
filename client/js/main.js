@@ -74,6 +74,10 @@ parseOptions((function () {
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
 
+	if(parsed.title !== undefined){
+		document.querySelector('.sheet-title').textContent = parsed.title;
+	}
+
 	// show the table by default
 	if (parsed.showtable === undefined) {
 		parsed.showtable = '';
@@ -532,7 +536,9 @@ Promise.all([
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
 
-	document.querySelector('.sheet-title').textContent = options.title || Array.from(sheetTitles).join(' & ');
+	if(document.querySelector('.sheet-title').textContent === "") {
+		document.querySelector('.sheet-title').textContent = Array.from(sheetTitles).join(' & ');
+	}
 
 	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
