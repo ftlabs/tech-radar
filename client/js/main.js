@@ -385,7 +385,7 @@ function generateChartRings (data, labels = []) {
 	const ringColors = counts.map((ring, i) => {
 
 		const rainbowFill = `hsla(${i * 360/nRings}, 60%, 75%, 1)`;
-		if (options.color === 'rainbow') return rainbowFill;
+		if (options.ringColor === 'rainbow') return rainbowFill;
 
 		const baseColor = color(options.ringColor || '#fff1e0').toHsv();
 		const maxV = baseColor.v;
