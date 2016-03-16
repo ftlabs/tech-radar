@@ -3,6 +3,7 @@
 // Handle the mapping of queryParams/sheetConfig to options' properties.
 const options = {};
 const color = require('tinycolor2');
+const sheetTitles = [];
 function parseOptions (config, force = false) {
 
 	// configProperty: [optionsParameter, type]
@@ -16,6 +17,7 @@ function parseOptions (config, force = false) {
 		sortcolorder: ['sortColOrder', Array],
 		segment: ['segment', String],
 		ringcolor: ['ringColor', String],
+		title : ['title', String],
 	};
 
 	Object.keys(config).forEach(key => {
@@ -315,23 +317,28 @@ function generateChartRings (data, labels = []) {
 	const segmentBy = options.segment || 'hidden-graph-item-source';
 	let segments = new Set();
 	let max = 0;
+	const counts = [];
 	for (const datum of data) {
 		max = Math.max(datum.datumValue, max);
 		segments.add(datum[segmentBy]);
+		const segment = Math.floor(datum.datumValue);
+		counts[segment] = (counts[segment] || 0) + 1;
 	}
 
-	if (Math.ceil(max) - max < 0.1) {
-		max = Math.ceil(max) + 1;
-	} else {
-		max = Math.ceil(max);
+	// add smidge so that integers get rounded up
+	// other wise it adds too many rings
+	if (Math.ceil(max + 0.0001) - max < 0.1) {
+
+		// add an empty ring if needed
+		counts.push(0);
+	}
+	for(let i = 0; i < counts.length; i++) {
+		counts[i] = counts[i] || 0;
 	}
 
 	// Draw rings from the max value down to zero
-	let nRings = Math.ceil(max);
-	const rings = Array(nRings);
-	let i = nRings;
-	for (const r of rings) {
-		r; // Suppress lint warning for r not being used
+	let nRings = counts.length;
+	return counts.map(function (count, i) {
 		const rainbowFill = `hsla(${i * 360/nRings}, 60%, 75%, 1)`;
 		const baseColor = color(options.ringColor || '#fff1e0').toHsv();
 		const maxV = baseColor.v;
@@ -341,17 +348,17 @@ function generateChartRings (data, labels = []) {
 		baseColor.v = i * ((maxV - minV)/nRings) + minV;
 		const newColor = color(baseColor).toHslString();
 
-		rings[--i] = {
+		return {
 			fill: options.ringColor === 'rainbow' ? rainbowFill: newColor,
-			min: max - i - 1,
-			max: max - i,
+			min: i,
+			max: i+1,
 			index: i,
-			groupLabel: labels[i],
+			groupLabel: i,
 			segments: Array.from(segments.values()),
-			segmentBy
+			segmentBy,
+			noPoints: counts[i]
 		};
-	}
-	return rings;
+	}).reverse();
 }
 
 function generateGraphs (inData) {
@@ -377,7 +384,7 @@ function rowMouseOver (e) {
 	const pointId = e.currentTarget.id + '--graph-point';
 	const point = document.getElementById(pointId);
 	if (!point) return;
-	point.parentNode.classList.add('hovering');
+	point.classList.add('hovering');
 }
 
 function rowMouseOut (e) {
@@ -385,7 +392,7 @@ function rowMouseOut (e) {
 	const pointId = e.currentTarget.id + '--graph-point';
 	const point = document.getElementById(pointId);
 	if (!point) return;
-	point.parentNode.classList.remove('hovering');
+	point.classList.remove('hovering');
 }
 
 function stripDuplicates (arr) {
@@ -525,6 +532,10 @@ Promise.all([
 
 	let cleanUpTable = generateTable(data);
 	let cleanUpGraph = generateGraphs(data);
+
+	if(sheetTitles.length > 0){
+		document.querySelector('.sheet-title').textContent = sheetTitles.join(' & ');
+	}
 
 	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
