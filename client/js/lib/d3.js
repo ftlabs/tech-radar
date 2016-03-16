@@ -12,14 +12,24 @@ module.exports = function ({
 	crystallisation,
 }) {
 
+	const boilDown = document.getElementById('boil-down');
 	const width = (size || 400);
 	const height = (size || 400);
 	const nodes = data.slice(0);
+	const innerWidth = 0.1;
+	const totalRingSize = height;
+	const chargeDistance = size/4;
+
 	nodes.forEach(n => {
-		n.weight = 30;
-		n.charge = -200;
+		n.ring = rings[Math.floor(n.datumValue)];
+		const positionInRing = (n.datumValue % 1) * n.ring.width;
+		const startPositionOfRing = (n.ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth;
+		n.pseudoDatumValue = positionInRing + startPositionOfRing;
+		n.weight = 0.1;
+
+		// Initial boost of repulsion which drives them apart
+		n.charge = -60;
 	});
-	const ringSize = height / (rings.length + 1);
 
 	nodes.unshift({
 		name: 'root',
@@ -30,7 +40,6 @@ module.exports = function ({
 		rootEl: true,
 		charge: 0
 	});
-
 
 	const segmentLines = [];
 	// Draw an arc of attractive points with labels
@@ -62,11 +71,15 @@ module.exports = function ({
 		}
 	}
 
+	// remove first and last line
+	segmentLines.pop();
+	segmentLines.shift();
+
 	const links = nodes.map((n, i) => ({
 		target: 0,
 		source: i,
-		distance: n.distance || (1 + (n.datumValue || 0)) * ringSize,
-		linkStrength: 2,
+		distance:(n.pseudoDatumValue || 0) * totalRingSize,
+		linkStrength: 20,
 		fixed: n.fixed
 	}))
 	.filter(l => !l.fixed);
@@ -85,7 +98,7 @@ module.exports = function ({
 					target,
 					source: j,
 					distance: 0,
-					linkStrength: 0.5
+					linkStrength: 0.03 * Math.pow(1.5, l)
 				});
 				break;
 			}
@@ -100,13 +113,13 @@ module.exports = function ({
 	const svg = d3.select(svgNode)
 		.attr('width', width)
 		.attr('height', height)
-		.attr('viewBox', `-100 -50 ${width + 100} ${height + 50}`);
+		.attr('viewBox', `0 0 ${width} ${height}`);
 
 	const force = d3.layout.force()
 		.nodes(nodes)
 		.links(links)
 		.charge(n => n.charge)
-		.chargeDistance(45)
+		.chargeDistance(chargeDistance)
 		.linkStrength(l => l.linkStrength)
 		.linkDistance(l => l.distance)
 		.gravity(0)
@@ -128,7 +141,8 @@ module.exports = function ({
 		.data(nodes)
 		.enter()
 		.append('svg:g')
-		.attr('class', d => d.rootEl ? 'rootNode' : 'node');
+		.attr('class', d => d.rootEl ? 'rootNode' : 'node')
+		.attr('id', n => `${n['hidden-graph-item-id']}--graph-point`);
 
 	node.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
@@ -147,15 +161,40 @@ module.exports = function ({
 	}
 
 	function click (d) {
-		const row = document.getElementById(d['hidden-graph-item-id']);
-		if (!row) return;
-		row.classList.toggle('collapsed');
+
+		if(document.querySelector('.filter-table') !== null){
+			const row = document.getElementById(d['hidden-graph-item-id']);
+			if (!row) return;
+			row.classList.toggle('collapsed');
+		} else {
+
+			boilDown.innerHTML = '';
+			d.longDesc.split('\n').forEach(line => {
+
+				const aspects = line.split(':');
+
+				if (aspects[0] === 'longdesc'){
+					return;
+				}
+
+				const heading = document.createElement('h3');
+				const info = document.createElement('p');
+
+				heading.textContent = aspects[0];
+				info.textContent = aspects[1];
+
+				boilDown.appendChild(heading);
+				boilDown.appendChild(info);
+
+			});
+
+		}
+
 	}
 
 	node.append('circle')
 		.attr('class', n => `node${n.dot === false ? ' no-dot' : ''}`)
 		.attr('r', 8)
-		.attr('id', n => `${n.name}--graph-point`)
 		.style('fill', n => `hsla(${n['hidden-graph-item-hue']}, 95%, 60%, 1)`)
 		.on('mouseover', mouseover)
 		.on('mouseout', mouseout)
@@ -177,14 +216,14 @@ module.exports = function ({
 
 	const rootNode = svg.select('.rootNode');
 
-	for (let i=0; i<rings.length; i++) {
-
+	rings.reverse();
+	for (const ring of rings) {
 		rootNode.append('circle')
 			.attr('class', 'background')
-			.attr('r', (rings[i].max + 1) * ringSize)
-			.style('fill', rings[i].fill);
-
+			.attr('r', ((ring.proportionalSizeEnd * (1 - innerWidth)) + innerWidth) * totalRingSize)
+			.style('fill', ring.fill);
 	}
+	rings.reverse();
 
 	for (const lineOrigin of segmentLines) {
 		rootNode.append('line')
@@ -196,23 +235,23 @@ module.exports = function ({
 	}
 
 
-	for (let i=0; i<rings.length; i++) {
+	for (const ring of rings) {
 		rootNode.append('svg:text')
-			.text(rings[rings.length - i - 1].groupLabel || i)
+			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label bg')
 			.attr('x', '-16px')
-			.attr('y', (-(i + 1) * ringSize) + 'px');
+			.attr('y', (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 		rootNode.append('svg:text')
-			.text(rings[rings.length - i - 1].groupLabel || i)
+			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label')
 			.attr('x', '-16px')
-			.attr('y', (-(i + 1) * ringSize) + 'px');
+			.attr('y', (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 	}
 
 	// Nothing goes in the middle ring
 	rootNode.append('circle')
 		.attr('class', 'background')
-		.attr('r', ringSize)
+		.attr('r', totalRingSize * innerWidth)
 		.style('fill', 'rgba(255, 255, 255, 1)');
 
 	force.start().alpha(0.05);
