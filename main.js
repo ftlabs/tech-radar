@@ -7033,6 +7033,9 @@
 	
 		var submit = document.createElement('input');
 		submit.type = 'submit';
+		submit.addEventListener('click', function () {
+			return formLocation.submit();
+		});
 		submit.classList.add('o-buttons');
 		submit.classList.add('o-buttons--standout');
 		formLocation.parentNode.appendChild(submit);
