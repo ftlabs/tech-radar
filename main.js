@@ -75,7 +75,9 @@
 		showtable: ['showTable', Boolean, 'Whether to display the data table'],
 		sortcolorder: ['sortColOrder', Array, 'Comma seperated list, order to sort the rings'],
 		segment: ['segment', String, 'Column to use to segment the data, defaults to the source spreadsheet.'],
-		ringcolor: ['ringColor', String, 'Colour to use for the ring (rainbow makes it multicolour)']
+		ringcolor: ['ringColor', String, 'Colour to use for the ring (rainbow makes it multicolour)'],
+		proportionalrings: ['useProportionalRings', Boolean, 'Whether to scale rings according to number of items.'],
+		sorttype: ['sortType', String, '"alphabetical" or "numerical" (without quotes)']
 	};
 	
 	var options = {};
