@@ -49,6 +49,30 @@ div, form {
     -ms-flex-positive: 1;
     flex-grow: 1; }
 
+#tech-radar__graph-target {
+  -webkit-box-flex: 1;
+  -webkit-flex-grow: 1;
+  -ms-flex-positive: 1;
+  flex-grow: 1;
+  margin-left: -250px;
+  min-width: 500px;
+  text-align: right; }
+
+#tech-radar__display {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: reverse;
+  -webkit-flex-direction: row-reverse;
+  -ms-flex-direction: row-reverse;
+  flex-direction: row-reverse;
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end; }
+
 .filter-table {
   white-space: nowrap; }
   .filter-table thead {
@@ -95,9 +119,13 @@ svg {
       display: none;
       font-size: 16pt; }
 
-.hovering {
+use {
+  pointer-events: none; }
+
+g.node.hovering {
+  z-index: 10;
   font-weight: bold; }
-  .hovering .d3-label {
+  g.node.hovering .d3-label {
     font-size: 150%; }
 
 .details {

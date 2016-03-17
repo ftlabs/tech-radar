@@ -131,7 +131,7 @@
 					options[handle[0]] = Number(config[key]);
 					break;
 				case Boolean:
-					options[handle[0]] = config[key] !== 'false' && config[key] !== false;
+					options[handle[0]] = config[key].toLowerCase() !== 'false' && config[key] !== false;
 					break;
 			}
 		});
@@ -146,7 +146,7 @@
 		parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 		parsed.sortcolorder = parsed.sortcolorder || '';
 	
-		if (parsed.title !== undefined) {
+		if (parsed.title !== undefined && parsed.title !== '') {
 			titleFromQueryParam = true;
 			document.querySelector('.sheet-title').textContent = parsed.title;
 		}
@@ -215,18 +215,47 @@
 					}
 				}
 	
-				if (json[0].configvalue === undefined) return json;
-				if (json[0].name === undefined) return json;
+				if (json[0].configvalue === undefined || json[0].name === undefined) {
+					var _iteratorNormalCompletion2 = true;
+					var _didIteratorError2 = false;
+					var _iteratorError2 = undefined;
+	
+					try {
+	
+						for (var _iterator2 = _getIterator(json), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+							var datum = _step2.value;
+	
+							datum.sheetTitle = doc.sheet;
+						}
+					} catch (err) {
+						_didIteratorError2 = true;
+						_iteratorError2 = err;
+					} finally {
+						try {
+							if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+								_iterator2['return']();
+							}
+						} finally {
+							if (_didIteratorError2) {
+								throw _iteratorError2;
+							}
+						}
+					}
+	
+					sheetTitles.add(doc.sheet);
+	
+					return json;
+				}
 	
 				var config = {};
 	
-				var _iteratorNormalCompletion2 = true;
-				var _didIteratorError2 = false;
-				var _iteratorError2 = undefined;
+				var _iteratorNormalCompletion3 = true;
+				var _didIteratorError3 = false;
+				var _iteratorError3 = undefined;
 	
 				try {
-					for (var _iterator2 = _getIterator(json), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-						var datum = _step2.value;
+					for (var _iterator3 = _getIterator(json), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+						var datum = _step3.value;
 	
 						if (datum.configvalue !== null && // It has a config value set
 						datum.name !== null) {
@@ -243,36 +272,62 @@
 	
 					// Set the options globally
 				} catch (err) {
-					_didIteratorError2 = true;
-					_iteratorError2 = err;
+					_didIteratorError3 = true;
+					_iteratorError3 = err;
 				} finally {
 					try {
-						if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-							_iterator2['return']();
+						if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+							_iterator3['return']();
 						}
 					} finally {
-						if (_didIteratorError2) {
-							throw _iteratorError2;
+						if (_didIteratorError3) {
+							throw _iteratorError3;
 						}
 					}
 				}
 	
 				parseOptions(config);
 	
-				if (config.title !== undefined) {
-					sheetTitles.add(config.title);
+				var _iteratorNormalCompletion4 = true;
+				var _didIteratorError4 = false;
+				var _iteratorError4 = undefined;
+	
+				try {
+					for (var _iterator4 = _getIterator(json), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+						var datum = _step4.value;
+	
+						datum.sheetTitle = config.title || doc.sheet;
+					}
+				} catch (err) {
+					_didIteratorError4 = true;
+					_iteratorError4 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion4 && _iterator4['return']) {
+							_iterator4['return']();
+						}
+					} finally {
+						if (_didIteratorError4) {
+							throw _iteratorError4;
+						}
+					}
 				}
+	
+				sheetTitles.add(config.title || doc.sheet);
 	
 				return json;
 			});
 		});
 	
-		if (!titleFromQueryParam) {
-			options.title = document.querySelector('.sheet-title').textContent = _Array$from(sheetTitles).join(' & ');
-			sheetTitles.clear();
-		}
+		return _Promise.all(requests).then(function (requests) {
 	
-		return _Promise.all(requests);
+			if (!titleFromQueryParam) {
+				options.title = document.querySelector('.sheet-title').textContent = _Array$from(sheetTitles).join(' & ');
+				sheetTitles.clear();
+			}
+	
+			return requests;
+		});
 	}
 	
 	function retrieveSheets(how) {
@@ -333,13 +388,13 @@
 	
 		// starting point for colours
 		var hue = 0.1;
-		var _iteratorNormalCompletion3 = true;
-		var _didIteratorError3 = false;
-		var _iteratorError3 = undefined;
+		var _iteratorNormalCompletion5 = true;
+		var _didIteratorError5 = false;
+		var _iteratorError5 = undefined;
 	
 		try {
-			for (var _iterator3 = _getIterator(data), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-				var datum = _step3.value;
+			for (var _iterator5 = _getIterator(data), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+				var datum = _step5.value;
 	
 				if (!datum['hidden-graph-item-hue']) {
 					datum['hidden-graph-item-hue'] = 360 * hue;
@@ -353,42 +408,42 @@
 	
 				// expose additional data;
 				datum.longDesc = '';
-				var _iteratorNormalCompletion7 = true;
-				var _didIteratorError7 = false;
-				var _iteratorError7 = undefined;
+				var _iteratorNormalCompletion9 = true;
+				var _didIteratorError9 = false;
+				var _iteratorError9 = undefined;
 	
 				try {
-					for (var _iterator7 = _getIterator(stripDuplicates(['name', options.sortCol].concat(options.showCol))), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-						var col = _step7.value;
+					for (var _iterator9 = _getIterator(stripDuplicates(['name', options.sortCol].concat(options.showCol))), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+						var col = _step9.value;
 	
 						datum.longDesc = datum.longDesc + (col + ': ' + datum[col]) + '\n';
 					}
 				} catch (err) {
-					_didIteratorError7 = true;
-					_iteratorError7 = err;
+					_didIteratorError9 = true;
+					_iteratorError9 = err;
 				} finally {
 					try {
-						if (!_iteratorNormalCompletion7 && _iterator7['return']) {
-							_iterator7['return']();
+						if (!_iteratorNormalCompletion9 && _iterator9['return']) {
+							_iterator9['return']();
 						}
 					} finally {
-						if (_didIteratorError7) {
-							throw _iteratorError7;
+						if (_didIteratorError9) {
+							throw _iteratorError9;
 						}
 					}
 				}
 			}
 		} catch (err) {
-			_didIteratorError3 = true;
-			_iteratorError3 = err;
+			_didIteratorError5 = true;
+			_iteratorError5 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion3 && _iterator3['return']) {
-					_iterator3['return']();
+				if (!_iteratorNormalCompletion5 && _iterator5['return']) {
+					_iterator5['return']();
 				}
 			} finally {
-				if (_didIteratorError3) {
-					throw _iteratorError3;
+				if (_didIteratorError5) {
+					throw _iteratorError5;
 				}
 			}
 		}
@@ -401,13 +456,13 @@
 	
 		// Default to numerical but if any of the sortcol values
 		// are Integers or Alphabetical then treat alphabetical
-		var _iteratorNormalCompletion4 = true;
-		var _didIteratorError4 = false;
-		var _iteratorError4 = undefined;
+		var _iteratorNormalCompletion6 = true;
+		var _didIteratorError6 = false;
+		var _iteratorError6 = undefined;
 	
 		try {
-			for (var _iterator4 = _getIterator(data), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-				var datum = _step4.value;
+			for (var _iterator6 = _getIterator(data), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+				var datum = _step6.value;
 	
 				if (!datum[options.sortCol].match(/^[0-9]/)) {
 					sortType = 'alphabetical';
@@ -415,16 +470,16 @@
 				}
 			}
 		} catch (err) {
-			_didIteratorError4 = true;
-			_iteratorError4 = err;
+			_didIteratorError6 = true;
+			_iteratorError6 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion4 && _iterator4['return']) {
-					_iterator4['return']();
+				if (!_iteratorNormalCompletion6 && _iterator6['return']) {
+					_iterator6['return']();
 				}
 			} finally {
-				if (_didIteratorError4) {
-					throw _iteratorError4;
+				if (_didIteratorError6) {
+					throw _iteratorError6;
 				}
 			}
 		}
@@ -492,13 +547,13 @@
 		// Generate chart rings and attatch that data
 		var chartRings = generateChartRings(data, labels);
 		data.forEach(function (datum) {
-			var _iteratorNormalCompletion5 = true;
-			var _didIteratorError5 = false;
-			var _iteratorError5 = undefined;
+			var _iteratorNormalCompletion7 = true;
+			var _didIteratorError7 = false;
+			var _iteratorError7 = undefined;
 	
 			try {
-				for (var _iterator5 = _getIterator(chartRings), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-					var r = _step5.value;
+				for (var _iterator7 = _getIterator(chartRings), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+					var r = _step7.value;
 	
 					if (datum.datumValue >= r.min && datum.datumValue < r.max) {
 						datum['hidden-graph-item-ring'] = r;
@@ -506,16 +561,16 @@
 					}
 				}
 			} catch (err) {
-				_didIteratorError5 = true;
-				_iteratorError5 = err;
+				_didIteratorError7 = true;
+				_iteratorError7 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion5 && _iterator5['return']) {
-						_iterator5['return']();
+					if (!_iteratorNormalCompletion7 && _iterator7['return']) {
+						_iterator7['return']();
 					}
 				} finally {
-					if (_didIteratorError5) {
-						throw _iteratorError5;
+					if (_didIteratorError7) {
+						throw _iteratorError7;
 					}
 				}
 			}
@@ -533,27 +588,27 @@
 			var possibleMatches = _Object$keys(datum).map(function (k) {
 				return k + ':' + datum[k];
 			});
-			var _iteratorNormalCompletion6 = true;
-			var _didIteratorError6 = false;
-			var _iteratorError6 = undefined;
+			var _iteratorNormalCompletion8 = true;
+			var _didIteratorError8 = false;
+			var _iteratorError8 = undefined;
 	
 			try {
-				for (var _iterator6 = _getIterator(possibleMatches), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-					var p = _step6.value;
+				for (var _iterator8 = _getIterator(possibleMatches), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+					var p = _step8.value;
 	
 					if (p.match(regex)) return true;
 				}
 			} catch (err) {
-				_didIteratorError6 = true;
-				_iteratorError6 = err;
+				_didIteratorError8 = true;
+				_iteratorError8 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion6 && _iterator6['return']) {
-						_iterator6['return']();
+					if (!_iteratorNormalCompletion8 && _iterator8['return']) {
+						_iterator8['return']();
 					}
 				} finally {
-					if (_didIteratorError6) {
-						throw _iteratorError6;
+					if (_didIteratorError8) {
+						throw _iteratorError8;
 					}
 				}
 			}
@@ -572,13 +627,13 @@
 		var segments = new _Set();
 		var max = 0;
 		var counts = [];
-		var _iteratorNormalCompletion8 = true;
-		var _didIteratorError8 = false;
-		var _iteratorError8 = undefined;
+		var _iteratorNormalCompletion10 = true;
+		var _didIteratorError10 = false;
+		var _iteratorError10 = undefined;
 	
 		try {
-			for (var _iterator8 = _getIterator(data), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-				var datum = _step8.value;
+			for (var _iterator10 = _getIterator(data), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+				var datum = _step10.value;
 	
 				max = Math.max(datum.datumValue, max);
 				segments.add(datum[segmentBy]);
@@ -586,16 +641,16 @@
 				counts[segment] = (counts[segment] || 0) + 1;
 			}
 		} catch (err) {
-			_didIteratorError8 = true;
-			_iteratorError8 = err;
+			_didIteratorError10 = true;
+			_iteratorError10 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion8 && _iterator8['return']) {
-					_iterator8['return']();
+				if (!_iteratorNormalCompletion10 && _iterator10['return']) {
+					_iterator10['return']();
 				}
 			} finally {
-				if (_didIteratorError8) {
-					throw _iteratorError8;
+				if (_didIteratorError10) {
+					throw _iteratorError10;
 				}
 			}
 		}
@@ -750,40 +805,40 @@
 		thead.appendChild(theadTr);
 		table.appendChild(tbody);
 		table.classList.add('filter-table');
-		var _iteratorNormalCompletion9 = true;
-		var _didIteratorError9 = false;
-		var _iteratorError9 = undefined;
+		var _iteratorNormalCompletion11 = true;
+		var _didIteratorError11 = false;
+		var _iteratorError11 = undefined;
 	
 		try {
-			for (var _iterator9 = _getIterator(filterHeadings), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-				var heading = _step9.value;
+			for (var _iterator11 = _getIterator(filterHeadings), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+				var heading = _step11.value;
 	
 				var td = document.createElement('td');
 				td.textContent = heading;
 				theadTr.appendChild(td);
 			}
 		} catch (err) {
-			_didIteratorError9 = true;
-			_iteratorError9 = err;
+			_didIteratorError11 = true;
+			_iteratorError11 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion9 && _iterator9['return']) {
-					_iterator9['return']();
+				if (!_iteratorNormalCompletion11 && _iterator11['return']) {
+					_iterator11['return']();
 				}
 			} finally {
-				if (_didIteratorError9) {
-					throw _iteratorError9;
+				if (_didIteratorError11) {
+					throw _iteratorError11;
 				}
 			}
 		}
 	
-		var _iteratorNormalCompletion10 = true;
-		var _didIteratorError10 = false;
-		var _iteratorError10 = undefined;
+		var _iteratorNormalCompletion12 = true;
+		var _didIteratorError12 = false;
+		var _iteratorError12 = undefined;
 	
 		try {
-			for (var _iterator10 = _getIterator(data), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-				var datum = _step10.value;
+			for (var _iterator12 = _getIterator(data), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+				var datum = _step12.value;
 	
 				var tbodyTr = document.createElement('tr');
 				tbodyTr.addEventListener('click', toggleCollapsedClass);
@@ -792,13 +847,13 @@
 				tbodyTr.id = datum['hidden-graph-item-id'];
 				tbodyTr.addEventListener('mouseover', rowMouseOver);
 				tbodyTr.addEventListener('mouseout', rowMouseOut);
-				var _iteratorNormalCompletion11 = true;
-				var _didIteratorError11 = false;
-				var _iteratorError11 = undefined;
+				var _iteratorNormalCompletion13 = true;
+				var _didIteratorError13 = false;
+				var _iteratorError13 = undefined;
 	
 				try {
-					for (var _iterator11 = _getIterator(filterHeadings), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-						var heading = _step11.value;
+					for (var _iterator13 = _getIterator(filterHeadings), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+						var heading = _step13.value;
 	
 						var td = document.createElement('td');
 						td.classList.add(heading.replace(/[^a-z]/ig, '-'));
@@ -810,28 +865,28 @@
 							var newContent = '<ul class="details">';
 	
 							var itemKeys = _Object$keys(datum);
-							var _iteratorNormalCompletion12 = true;
-							var _didIteratorError12 = false;
-							var _iteratorError12 = undefined;
+							var _iteratorNormalCompletion14 = true;
+							var _didIteratorError14 = false;
+							var _iteratorError14 = undefined;
 	
 							try {
-								for (var _iterator12 = _getIterator(itemKeys), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-									var k = _step12.value;
+								for (var _iterator14 = _getIterator(itemKeys), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+									var k = _step14.value;
 	
 									if (k.match(/^hidden-graph-item/)) continue;
 									newContent += '<li><span class="key">' + k + ':</span> ' + datum[k] + '</li>';
 								}
 							} catch (err) {
-								_didIteratorError12 = true;
-								_iteratorError12 = err;
+								_didIteratorError14 = true;
+								_iteratorError14 = err;
 							} finally {
 								try {
-									if (!_iteratorNormalCompletion12 && _iterator12['return']) {
-										_iterator12['return']();
+									if (!_iteratorNormalCompletion14 && _iterator14['return']) {
+										_iterator14['return']();
 									}
 								} finally {
-									if (_didIteratorError12) {
-										throw _iteratorError12;
+									if (_didIteratorError14) {
+										throw _iteratorError14;
 									}
 								}
 							}
@@ -850,31 +905,31 @@
 						tbodyTr.appendChild(td);
 					}
 				} catch (err) {
-					_didIteratorError11 = true;
-					_iteratorError11 = err;
+					_didIteratorError13 = true;
+					_iteratorError13 = err;
 				} finally {
 					try {
-						if (!_iteratorNormalCompletion11 && _iterator11['return']) {
-							_iterator11['return']();
+						if (!_iteratorNormalCompletion13 && _iterator13['return']) {
+							_iterator13['return']();
 						}
 					} finally {
-						if (_didIteratorError11) {
-							throw _iteratorError11;
+						if (_didIteratorError13) {
+							throw _iteratorError13;
 						}
 					}
 				}
 			}
 		} catch (err) {
-			_didIteratorError10 = true;
-			_iteratorError10 = err;
+			_didIteratorError12 = true;
+			_iteratorError12 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion10 && _iterator10['return']) {
-					_iterator10['return']();
+				if (!_iteratorNormalCompletion12 && _iterator12['return']) {
+					_iterator12['return']();
 				}
 			} finally {
-				if (_didIteratorError10) {
-					throw _iteratorError10;
+				if (_didIteratorError12) {
+					throw _iteratorError12;
 				}
 			}
 		}
@@ -3907,7 +3962,6 @@
 		var data = _ref.data;
 		var size = _ref.size;
 		var rings = _ref.rings;
-		var crystallisation = _ref.crystallisation;
 	
 		var boilDown = document.getElementById('boil-down');
 		var width = size || 400;
@@ -3925,7 +3979,7 @@
 			n.weight = 0.1;
 	
 			// Initial boost of repulsion which drives them apart
-			n.charge = -60;
+			n.charge = -80;
 		});
 	
 		nodes.unshift({
@@ -3995,7 +4049,7 @@
 						target: target,
 						source: j,
 						distance: 0,
-						linkStrength: 0.03 * Math.pow(1.5, l)
+						linkStrength: 0.03 * Math.pow(1.2, l)
 					});
 					break;
 				}
@@ -4007,7 +4061,7 @@
 	  */
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-		var svg = d3.select(svgNode).attr('width', width).attr('height', height).attr('viewBox', '0 0 ' + width + ' ' + height);
+		var svg = d3.select(svgNode).attr('width', width + 500).attr('height', height + 50).attr('viewBox', '-500 -50 ' + (width + 500) + ' ' + (height + 50));
 	
 		var force = d3.layout.force().nodes(nodes).links(links).charge(function (n) {
 			return n.charge;
@@ -4050,6 +4104,7 @@
 		});
 	
 		function mouseover(d) {
+			renderOnTop.attr('xlink:href', '#' + (d['hidden-graph-item-id'] + '--graph-point'));
 			this.parentNode.classList.add('hovering');
 			var row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
@@ -4057,6 +4112,7 @@
 		}
 	
 		function mouseout(d) {
+			renderOnTop.attr('xlink:href', '#');
 			this.parentNode.classList.remove('hovering');
 			var row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
@@ -4202,6 +4258,8 @@
 		rootNode.append('circle').attr('class', 'background').attr('r', totalRingSize * innerWidth).style('fill', 'rgba(255, 255, 255, 1)');
 	
 		force.start().alpha(0.05);
+	
+		var renderOnTop = svg.append('svg:g').append('svg:use');
 	
 		return svgNode;
 	};
@@ -6940,7 +6998,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.slice().sort().map(function (val2) {
+				return val.sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
@@ -7039,6 +7097,10 @@
 	
 				if (qp === 'sortcol') {
 					input = makeSelect(dataFormat, options.sortCol);
+				}
+	
+				if (qp === 'segment') {
+					input = makeSelect(dataFormat, options.segment);
 				}
 	
 				input.name = qp;
