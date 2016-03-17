@@ -8,7 +8,8 @@
 module.exports = function ({
 	data,
 	size,
-	rings
+	rings,
+	options
 }) {
 
 	const boilDown = document.getElementById('boil-down');
@@ -17,7 +18,7 @@ module.exports = function ({
 	const nodes = data.slice(0);
 	const innerWidth = 0.1;
 	const totalRingSize = height;
-	const chargeDistance = size/4;
+	const chargeDistance = size/2;
 
 	nodes.forEach(n => {
 		n.ring = rings[Math.floor(n.datumValue)];
@@ -27,7 +28,7 @@ module.exports = function ({
 		n.weight = 0.1;
 
 		// Initial boost of repulsion which drives them apart
-		n.charge = -80;
+		n.charge = -100 * (options.nodeRepulsion || 3) * Math.pow((Math.floor(n.datumValue) + 2)/rings.length, 2);
 	});
 
 	nodes.unshift({
@@ -97,7 +98,7 @@ module.exports = function ({
 					target,
 					source: j,
 					distance: 0,
-					linkStrength: 0.03 * Math.pow(1.2, l)
+					linkStrength: 0.01 * (options.nodeAttraction || 3) * Math.pow(1.2, l)
 				});
 				break;
 			}

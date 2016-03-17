@@ -15,6 +15,8 @@ const qpSchema = {
 	proportionalrings: ['useProportionalRings', Boolean, 'Whether to scale rings according to number of items.'],
 	sorttype: ['sortType', String, '"alphabetical" or "numerical" (without quotes)'],
 	crystallisation: ['crystallisation', String, 'Make this row the focus of attention.'],
+	noderepulsion: ['nodeRepulsion', Number, 'How strongly the nodes repel each other (default, 3)'],
+	nodeattraction: ['nodeAttraction', Number, 'How strongly the nodes are pulled to the center of the segment (default, 3)'],
 };
 
 const options = {};
@@ -454,7 +456,7 @@ function generateGraphs (inData) {
 		data,
 		size: Math.min(svgTarget.clientWidth, document.body.clientHeight - header.clientHeight - footer.clientHeight),
 		rings: generateChartRings(data, labels),
-		crystallisation : options.crystallisation
+		options
 	});
 	svgTarget.appendChild(svg);
 
