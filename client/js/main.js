@@ -65,7 +65,7 @@ function parseOptions (config, force = false) {
 			options[handle[0]] = Number(config[key]);
 			break;
 		case Boolean:
-			options[handle[0]] = config[key] !== 'false' && config[key] !== false;
+			options[handle[0]] = config[key].toLowerCase() !== 'false' && config[key] !== false;
 			break;
 		}
 	});
@@ -80,7 +80,7 @@ parseOptions((function () {
 	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
 	parsed.sortcolorder = (parsed.sortcolorder || '');
 
-	if (parsed.title !== undefined) {
+	if (parsed.title !== undefined && parsed.title !== '') {
 		titleFromQueryParam = true;
 		document.querySelector('.sheet-title').textContent = parsed.title;
 	}
@@ -126,8 +126,15 @@ function getDocsFromBertha (docs, republish = false) {
 			// override options
 
 			// only override if it has configuration data
-			if (json[0].configvalue === undefined) return json;
-			if (json[0].name === undefined) return json;
+			if (json[0].configvalue === undefined || json[0].name === undefined) {
+
+				for (const datum of json) {
+					datum.sheetTitle = doc.sheet;
+				}
+				sheetTitles.add(doc.sheet);
+
+				return json;
+			}
 
 			const config = {};
 
@@ -152,20 +159,26 @@ function getDocsFromBertha (docs, republish = false) {
 			// Set the options globally
 			parseOptions(config);
 
-			if (config.title !== undefined) {
-				sheetTitles.add(config.title);
+			for (const datum of json) {
+				datum.sheetTitle = config.title || doc.sheet;
 			}
+
+			sheetTitles.add(config.title || doc.sheet);
 
 			return json;
 		});
 	});
 
-	if (!titleFromQueryParam) {
-		options.title = document.querySelector('.sheet-title').textContent = Array.from(sheetTitles).join(' & ');
-		sheetTitles.clear();
-	}
+	return Promise.all(requests)
+	.then(requests => {
 
-	return Promise.all(requests);
+		if (!titleFromQueryParam) {
+			options.title = document.querySelector('.sheet-title').textContent = Array.from(sheetTitles).join(' & ');
+			sheetTitles.clear();
+		}
+
+		return requests;
+	});
 
 }
 

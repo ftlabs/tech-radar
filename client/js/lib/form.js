@@ -56,6 +56,10 @@ module.exports = function (schema, dataFormat, options) {
 			input = makeSelect(dataFormat, options.sortCol);
 		}
 
+		if (qp === 'segment') {
+			input = makeSelect(dataFormat, options.segment);
+		}
+
 		input.name = qp;
 		label.textContent = `${qp}`;
 		group.appendChild(label);
