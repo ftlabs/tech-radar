@@ -8,8 +8,7 @@
 module.exports = function ({
 	data,
 	size,
-	rings,
-	crystallisation,
+	rings
 }) {
 
 	const boilDown = document.getElementById('boil-down');
@@ -28,7 +27,7 @@ module.exports = function ({
 		n.weight = 0.1;
 
 		// Initial boost of repulsion which drives them apart
-		n.charge = -60;
+		n.charge = -80;
 	});
 
 	nodes.unshift({
@@ -98,7 +97,7 @@ module.exports = function ({
 					target,
 					source: j,
 					distance: 0,
-					linkStrength: 0.03 * Math.pow(1.5, l)
+					linkStrength: 0.03 * Math.pow(1.2, l)
 				});
 				break;
 			}
@@ -111,9 +110,9 @@ module.exports = function ({
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode)
-		.attr('width', width)
-		.attr('height', height)
-		.attr('viewBox', `0 0 ${width} ${height}`);
+		.attr('width', width + 500)
+		.attr('height', height + 50)
+		.attr('viewBox', `-500 -50 ${width + 500} ${height + 50}`);
 
 	const force = d3.layout.force()
 		.nodes(nodes)
@@ -147,6 +146,7 @@ module.exports = function ({
 	node.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
 	function mouseover (d) {
+		renderOnTop.attr('xlink:href', '#' + `${d['hidden-graph-item-id']}--graph-point`);
 		this.parentNode.classList.add('hovering');
 		const row = document.getElementById(d['hidden-graph-item-id']);
 		if (!row) return;
@@ -154,6 +154,7 @@ module.exports = function ({
 	}
 
 	function mouseout (d) {
+		renderOnTop.attr('xlink:href', '#');
 		this.parentNode.classList.remove('hovering');
 		const row = document.getElementById(d['hidden-graph-item-id']);
 		if (!row) return;
@@ -255,6 +256,10 @@ module.exports = function ({
 		.style('fill', 'rgba(255, 255, 255, 1)');
 
 	force.start().alpha(0.05);
+
+	const renderOnTop = svg
+	.append('svg:g')
+	.append('svg:use');
 
 	return svgNode;
 };

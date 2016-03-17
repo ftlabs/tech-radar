@@ -42,6 +42,19 @@ div, form {
 	}
 }
 
+#tech-radar__graph-target {
+	flex-grow: 1;
+	margin-left: -250px;
+	min-width: 500px;
+	text-align: right;
+}
+
+#tech-radar__display {
+	display: flex;
+	flex-direction: row-reverse;
+	justify-content: flex-end;
+}
+
 .filter-table {
 
 	white-space: nowrap;
@@ -110,11 +123,18 @@ svg {
 	}
 }
 
-.hovering {
-	font-weight: bold;
+use {
+	pointer-events: none;
+}
 
-	.d3-label {
-		font-size: 150%;
+g.node {
+	&.hovering {
+		z-index: 10;
+		font-weight: bold;
+
+		.d3-label {
+			font-size: 150%;
+		}
 	}
 }
 
