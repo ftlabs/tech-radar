@@ -84,7 +84,7 @@ svg {
 	font-weight: bold;
 
 	.d3-label {
-		fill: #333;
+		fill: black;
 		fill-opacity: 1;
 		z-index: 10;
 		pointer-events: none;
@@ -100,7 +100,17 @@ svg {
 			stroke-alignment: outer;
 		}
 
-		&.no-dot {
+		&.ring-label {
+			fill: white;
+			font-size: 18pt;
+
+			&.bg{
+				stroke: black;
+				stroke-width: 5px;
+			}
+		}
+
+		&.segment-label {
 			fill: black;
 			text-decoration: underline;
 			font-size: 18pt;
@@ -124,7 +134,7 @@ svg {
 		stroke-width: 2px;
 		stroke: black;
 
-		&.no-dot {
+		&.segment-label {
 			display: none;
 			font-size: 16pt;
 		}
