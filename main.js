@@ -72,7 +72,7 @@
 		sortcol: ['sortCol', String, 'phase', 'Which column to sort by'],
 		title: ['title', String, '', 'Title to display'],
 		showcol: ['showCol', Array, [], 'Comma seperated list of columns to show'],
-		dashboard: ['dashboard', Boolean, true, 'Whether to display these settings.'],
+		dashboard: ['dashboard', Boolean, false, 'Whether to display these settings.'],
 		showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
 		sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
 		segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
