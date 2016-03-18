@@ -84,15 +84,15 @@ div, form {
 
 svg {
   max-width: 100%;
-  height: auto; }
+  height: auto;
+  font-size: 1.3em;
+  font-family: MetricWeb, helvetica, sans;
+  font-weight: bold; }
   svg .d3-label {
     fill: #333;
     fill-opacity: 1;
     z-index: 10;
-    font-size: 14pt;
-    font-weight: bold;
     pointer-events: none;
-    font-family: MetricWeb, helvetica, sans;
     -webkit-transition: -webkit-transform 0.2s ease;
     transition: -webkit-transform 0.2s ease;
     transition: transform 0.2s ease;
@@ -109,6 +109,9 @@ svg {
       fill: black;
       text-decoration: underline;
       font-size: 18pt; }
+  svg .hovering .d3-label {
+    font-weight: bold;
+    font-size: 130%; }
   svg circle.background {
     pointer-events: none; }
   svg circle.node {
@@ -121,12 +124,6 @@ svg {
 
 use {
   pointer-events: none; }
-
-g.node.hovering {
-  z-index: 10;
-  font-weight: bold; }
-  g.node.hovering .d3-label {
-    font-size: 150%; }
 
 .details {
   padding-left: 0; }
