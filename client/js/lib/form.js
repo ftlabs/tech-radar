@@ -34,21 +34,33 @@ module.exports = function (schema, dataFormat, options) {
 		let input = document.createElement('input');
 		const small = document.createElement('small');
 
-		input.type = 'text';
-		input.placeholder = schema[qp][1].name + ` (${schema[qp][2]})`;
-		label.title = schema[qp][3];
-		small.textContent = schema[qp][3];
-		input.value = options[schema[qp][0]] || '';
+		const thisSchema = schema[qp];
+		const optionKey = thisSchema[0];
+		const optionType = thisSchema[1];
+		const optionDefault = thisSchema[2];
+		const desc = thisSchema[3];
+		const optionValue = options[optionKey];
 
-		if (schema[qp][1] === Boolean) {
+		input.type = 'text';
+
+		// show the default value if it is something worth showing
+		input.placeholder = optionType.name + (!!String(optionDefault) ? ` (${thisSchema[2]})` : '');
+		label.title = desc;
+		small.textContent = desc;
+		input.value = optionValue || '';
+		if (optionValue === optionDefault) {
+			input.value = '';
+		}
+
+		if (optionType === Boolean) {
 			input = makeSelect(
 				['true', 'false'],
-				String(!!options[schema[qp][0]])
+				String(!!optionValue === optionDefault ? 'Default' : !!optionValue)
 			);
 		}
 
-		if (schema[qp][1] === Array) {
-			input.value = options[schema[qp][0]].join(', ');
+		if (optionType === Array) {
+			input.value = optionValue.join(', ');
 			group.style.flexBasis = '60%';
 		}
 
@@ -58,11 +70,11 @@ module.exports = function (schema, dataFormat, options) {
 		small.classList.add('o-forms-additional-info');
 
 		if (qp === 'sortcol') {
-			input = makeSelect(dataFormat, options.sortCol);
+			input = makeSelect(dataFormat, options.sortCol === optionDefault ? 'Default' : options.sortCol);
 		}
 
 		if (qp === 'segment') {
-			input = makeSelect(dataFormat, options.segment);
+			input = makeSelect(dataFormat, options.segment === optionDefault ? 'Default' : options.segment);
 		}
 
 		input.name = qp;
@@ -75,7 +87,9 @@ module.exports = function (schema, dataFormat, options) {
 	}
 	const submit = document.createElement('input');
 	submit.type = 'submit';
-	submit.addEventListener('click', () => formLocation.submit());
+	submit.addEventListener('click', () => {
+		validate();
+	});
 	submit.classList.add('o-buttons');
 	submit.classList.add('o-buttons--standout');
 	const hiddenSubmit = submit.cloneNode();
@@ -84,8 +98,22 @@ module.exports = function (schema, dataFormat, options) {
 	formLocation.parentNode.appendChild(submit);
 	formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
 
-	formLocation.addEventListener('submit', function () {
-		inputs.forEach(el => el.disabled = !el.value);
-		setTimeout(() => inputs.forEach(el => el.disabled = false), 0);
+	function validate () {
+		inputs.forEach(el => {
+			const shouldDisable = (
+				el.value === '' ||
+				el.value === 'Default'
+			);
+			if (shouldDisable) {
+				el.disabled = 'disabled';
+			}
+		});
+		formLocation.submit();
+	}
+
+	formLocation.addEventListener('submit', function submitCatcher (e) {
+		e.preventDefault();
+		validate();
+		return false;
 	});
 };
