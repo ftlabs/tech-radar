@@ -1,25 +1,28 @@
 'use strict';
 
-// configProperty: [optionsParameter, type]
+// configProperty: [optionsParameter, type, default value, description]
 const qpSchema = {
-	id: ['docUIDs', Array, 'Comma seperated list of IDs of spreadsheet documents to load'],
-	sheet: ['sheets', Array, 'Comma seperated list of sheets to load from those documents'],
-	sortcol: ['sortCol', String, 'Which column to sort by'],
-	title: ['title', String, 'Title to display'],
-	showcol: ['showCol', Array, 'Comma seperated list of columns to show'],
-	dashboard: ['dashboard', Boolean, 'Whether to display these settings.'],
-	showtable: ['showTable', Boolean, 'Whether to display the data table'],
-	sortcolorder: ['sortColOrder', Array, 'Comma seperated list, order to sort the rings'],
-	segment: ['segment', String, 'Column to use to segment the data, defaults to the source spreadsheet.'],
-	ringcolor: ['ringColor', String, 'Colour to use for the ring (rainbow makes it multicolour)'],
-	proportionalrings: ['useProportionalRings', Boolean, 'Whether to scale rings according to number of items.'],
-	sorttype: ['sortType', String, '"alphabetical" or "numerical" (without quotes)'],
-	crystallisation: ['crystallisation', String, 'Make this row the focus of attention.'],
-	noderepulsion: ['nodeRepulsion', Number, 'How strongly the nodes repel each other (default, 3)'],
-	nodeattraction: ['nodeAttraction', Number, 'How strongly the nodes are pulled to the center of the segment (default, 3)'],
+	id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load'],
+	sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents'],
+	sortcol: ['sortCol', String, 'phase', 'Which column to sort by'],
+	title: ['title', String, '', 'Title to display'],
+	showcol: ['showCol', Array, [], 'Comma seperated list of columns to show'],
+	dashboard: ['dashboard', Boolean, true, 'Whether to display these settings.'],
+	showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
+	sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
+	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
+	ringcolor: ['ringColor', String, '', 'Colour to use for the ring (rainbow makes it multicolour)'],
+	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
+	sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)'],
+	crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.'],
+	noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)'],
+	nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)'],
 };
 
 const options = {};
+Object.keys(qpSchema).forEach(key => {
+	options[qpSchema[key][0]] = qpSchema[key][2];
+});
 const color = require('tinycolor2');
 const graph = require('./lib/d3');
 const extend = require('util')._extend;
@@ -35,6 +38,10 @@ let titleFromQueryParam = false;
 function parseOptions (config, force = false) {
 
 	Object.keys(config).forEach(key => {
+
+		// Don't set empty values
+		if (config[key] === '') return;
+
 		const handle = qpSchema[key];
 		if (handle === undefined) return;
 
@@ -78,9 +85,6 @@ function parseOptions (config, force = false) {
 // read query params
 parseOptions((function () {
 	const parsed = queryString.parse(location.search);
-	parsed.showcol = parsed.showcol || '';
-	parsed.sortcol = (parsed.sortcol || 'phase').toLowerCase();
-	parsed.sortcolorder = (parsed.sortcolorder || '');
 
 	if (parsed.title !== undefined && parsed.title !== '') {
 		titleFromQueryParam = true;
@@ -88,12 +92,10 @@ parseOptions((function () {
 	}
 
 	// show the table by default
-	if (parsed.showtable === undefined) {
-		parsed.showtable = '';
-	}
 	if (parsed.id && parsed.sheet) {
 		return parsed;
 	}
+
 	const errMessage = 'No ID and Sheet parameters.';
 	document.getElementById('error-text-target').textContent = errMessage;
 	throw Error(errMessage);
@@ -120,9 +122,10 @@ function getDocsFromBertha (docs, republish = false) {
 		.then(function (json) {
 
 			// supply some additional information about where the datum came from.
+			let i = 0;
 			for (const datum of json) {
 				datum['hidden-graph-item-source'] = `${doc.UID}/${doc.sheet}`;
-				datum['hidden-graph-item-id'] = `${datum.name}---${doc.UID}---${doc.sheet}`;
+				datum['hidden-graph-item-id'] = (`${datum.name}---${doc.UID}---${doc.sheet}---${i++}`).replace(/[^a-z_\-0-9]/ig, '_'); 
 			}
 
 			// override options

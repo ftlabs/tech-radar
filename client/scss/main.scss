@@ -79,15 +79,15 @@ div, form {
 svg {
 	max-width: 100%;
 	height: auto;
+	font-size: 1.3em;
+	font-family: MetricWeb, helvetica, sans;
+	font-weight: bold;
 
 	.d3-label {
 		fill: #333;
 		fill-opacity: 1;
 		z-index: 10;
-		font-size: 14pt;
-		font-weight: bold;
 		pointer-events: none;
-		font-family: MetricWeb, helvetica, sans;
 		transition: transform 0.2s ease;
 		text-anchor: end;
 
@@ -104,6 +104,14 @@ svg {
 			fill: black;
 			text-decoration: underline;
 			font-size: 18pt;
+		}
+	}
+
+	// Hide it do that the use label is shown instead
+	.hovering {
+		.d3-label {
+			font-weight: bold;
+			font-size: 130%;
 		}
 	}
 
@@ -125,17 +133,6 @@ svg {
 
 use {
 	pointer-events: none;
-}
-
-g.node {
-	&.hovering {
-		z-index: 10;
-		font-weight: bold;
-
-		.d3-label {
-			font-size: 150%;
-		}
-	}
 }
 
 .details {

@@ -33,11 +33,15 @@ The mandatory parameters point to a specific Google spreadsheet (that has been p
 Open the spreadsheet you want to display and copy the UID of the document. This will be the value for the `id` parameter.
 The `sheet` parameter is the name of the sheet in the spreadsheet document that contains the information you wish to display.
 
+An empty value (e.g. `&sortcol=&dashboard=&ringcolor=`) just fallback to the default value.
+
 The rest:
+
 
 Arrays are comma seperated values e.g. `param=item1,item2,item3`
 Strings are just single values e.g. `param=myString`
-Booleans are the value `false` or any other value, e.g. `&bool=false` is false; `&bool` or `&bool=true` are true,
+Booleans are the value `false` or any other value, e.g. `&bool=false` is false; `&bool=true` is true,
+Numbers are any positive real number. E.g. `&number=0.1`, `&number=50`
 
 * sortcol (String) - It will try to sort the column numerically and will do so if any of the items start with a number. Failing to find any numbers it will sort it alphabetically. The groups will be drawn on the graph.
 * showcol (Array) - Other columns to show as headers in the table, all other information can be revealed with a click.
@@ -52,6 +56,10 @@ Booleans are the value `false` or any other value, e.g. `&bool=false` is false; 
 ..* **special case: 'rainbow'**
 * proportionalrings (Boolean) - Whether to make the rings with more elements have more room.
 * sorttype (String) - 'alphabetical' or 'numerical', if sorted numerically items not beginning with a number will have a value of zero.
+* title (String) - Title on the Display
+* crystallisation (String) - Ring to highlight
+* noderepulsion (Number) - How strongly the nodes repel each other (default, 3)
+* nodeattraction (Number) - How strongly the nodes are pulled to the center of the segment (default, 3)
 
 Any of the above parameters can also be entered in the spreadsheet under name and configvalue columns e.g.
 
