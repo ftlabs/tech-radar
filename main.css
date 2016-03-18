@@ -89,7 +89,7 @@ svg {
   font-family: MetricWeb, helvetica, sans;
   font-weight: bold; }
   svg .d3-label {
-    fill: #333;
+    fill: black;
     fill-opacity: 1;
     z-index: 10;
     pointer-events: none;
@@ -105,7 +105,13 @@ svg {
       stroke-linejoin: round;
       stroke-opacity: 1;
       stroke-alignment: outer; }
-    svg .d3-label.no-dot {
+    svg .d3-label.ring-label {
+      fill: white;
+      font-size: 18pt; }
+      svg .d3-label.ring-label.bg {
+        stroke: black;
+        stroke-width: 5px; }
+    svg .d3-label.segment-label {
       fill: black;
       text-decoration: underline;
       font-size: 18pt; }
@@ -118,7 +124,7 @@ svg {
     fill: white;
     stroke-width: 2px;
     stroke: black; }
-    svg circle.node.no-dot {
+    svg circle.node.segment-label {
       display: none;
       font-size: 16pt; }
 

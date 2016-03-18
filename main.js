@@ -76,7 +76,7 @@
 		showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
 		sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
 		segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
-		ringcolor: ['ringColor', String, '', 'Colour to use for the ring (rainbow makes it multicolour)'],
+		ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)'],
 		proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
 		sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)'],
 		crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.'],
@@ -4059,8 +4059,8 @@
 				y: y,
 				weight: weight,
 				text: text,
-				charge: -250,
-				chargeDistance: 90,
+				charge: -2500,
+				chargeDistance: totalRingSize / rings.length,
 				id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 			};
 	
@@ -4104,7 +4104,7 @@
 	  */
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-		var svg = d3.select(svgNode).attr('width', width + 500).attr('height', height + 50).attr('viewBox', '-500 -50 ' + (width + 500) + ' ' + (height + 50));
+		var svg = d3.select(svgNode).attr('width', width + 500 + 50).attr('height', height + 100).attr('viewBox', '-500 -50 ' + (width + 500 + 50) + ' ' + (height + 100));
 	
 		var force = d3.layout.force().nodes(nodes).links(links).charge(function (n) {
 			return n.charge;
@@ -4118,7 +4118,7 @@
 			return n.charge || 0;
 		}).chargeDistance(function (n) {
 			return n.chargeDistance || 10;
-		}).gravity(0).linkStrength(1).linkDistance(0.1).size([width, height]);
+		}).gravity(0).linkStrength(1).linkDistance(3).size([width, height]);
 	
 		force.on('tick', function () {
 	
@@ -4223,7 +4223,7 @@
 		}
 	
 		node.append('circle').attr('class', function (n) {
-			return 'node' + (n.dot === false ? ' no-dot' : '');
+			return 'node' + (n.dot === false ? ' segment-label' : '');
 		}).attr('r', 8).style('fill', function (n) {
 			return 'hsla(' + n['hidden-graph-item-hue'] + ', 95%, 60%, 1)';
 		}).on('mouseover', mouseover).on('mouseout', mouseout).on('click', click).append('svg:title').text(function (n) {
@@ -4232,11 +4232,11 @@
 	
 		node.append('svg:text').text(function (n) {
 			return n.dot === false ? n.name : '';
-		}).attr('class', 'd3-label bg no-dot').attr('x', '-10px').attr('y', '5px');
+		}).attr('class', 'd3-label bg segment-label').attr('x', '-10px').attr('y', '5px');
 	
 		node.append('svg:text').text(function (n) {
 			return n.dot === false ? n.name : '';
-		}).attr('class', 'd3-label no-dot').attr('x', '-10px').attr('y', '5px');
+		}).attr('class', 'd3-label segment-label').attr('x', '-10px').attr('y', '5px');
 	
 		var rootNode = svg.select('.rootNode');
 	
@@ -4249,7 +4249,7 @@
 			for (var _iterator = _getIterator(rings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 				var ring = _step.value;
 	
-				rootNode.append('circle').attr('class', 'background').attr('r', (ring.proportionalSizeEnd * (1 - innerWidth) + innerWidth) * totalRingSize).style('fill', ring.fill);
+				rootNode.append('svg:circle').attr('class', 'background').attr('r', (ring.proportionalSizeEnd * (1 - innerWidth) + innerWidth) * totalRingSize).style('fill', ring.fill);
 			}
 		} catch (err) {
 			_didIteratorError = true;
@@ -4268,6 +4268,10 @@
 	
 		rings.reverse();
 	
+		// Add rectangles to hide other quadrants of the circle.
+		rootNode.append('svg:rect').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', 'rgba(255, 255, 255, 1)');
+		rootNode.append('svg:rect').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', 'rgba(255, 255, 255, 1)');
+	
 		var _iteratorNormalCompletion2 = true;
 		var _didIteratorError2 = false;
 		var _iteratorError2 = undefined;
@@ -4276,8 +4280,10 @@
 			for (var _iterator2 = _getIterator(segmentLines), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 				var lineOrigin = _step2.value;
 	
-				rootNode.append('line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
+				rootNode.append('svg:line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
 			}
+	
+			// Nothing goes in the middle ring
 		} catch (err) {
 			_didIteratorError2 = true;
 			_iteratorError2 = err;
@@ -4293,6 +4299,8 @@
 			}
 		}
 	
+		rootNode.append('svg:circle').attr('class', 'background').attr('r', totalRingSize * innerWidth).style('fill', 'rgba(255, 255, 255, 1)');
+	
 		var _iteratorNormalCompletion3 = true;
 		var _didIteratorError3 = false;
 		var _iteratorError3 = undefined;
@@ -4301,11 +4309,9 @@
 			for (var _iterator3 = _getIterator(rings), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 				var ring = _step3.value;
 	
-				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label bg').attr('x', '-16px').attr('y', (ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
-				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label').attr('x', '-16px').attr('y', (ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label bg').attr('x', '45').attr('y', -10 + (ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label').attr('x', '45').attr('y', -10 + (ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
 			}
-	
-			// Nothing goes in the middle ring
 		} catch (err) {
 			_didIteratorError3 = true;
 			_iteratorError3 = err;
@@ -4320,8 +4326,6 @@
 				}
 			}
 		}
-	
-		rootNode.append('circle').attr('class', 'background').attr('r', totalRingSize * innerWidth).style('fill', 'rgba(255, 255, 255, 1)');
 	
 		force.start().alpha(0.05);
 		labelForce.start().alpha(0.05);
@@ -7065,7 +7069,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.slice().sort().map(function (val2) {
+				return val.sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
