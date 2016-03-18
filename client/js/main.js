@@ -7,7 +7,7 @@ const qpSchema = {
 	sortcol: ['sortCol', String, 'phase', 'Which column to sort by'],
 	title: ['title', String, '', 'Title to display'],
 	showcol: ['showCol', Array, [], 'Comma seperated list of columns to show'],
-	dashboard: ['dashboard', Boolean, true, 'Whether to display these settings.'],
+	dashboard: ['dashboard', Boolean, false, 'Whether to display these settings.'],
 	showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
 	sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
 	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
@@ -125,7 +125,7 @@ function getDocsFromBertha (docs, republish = false) {
 			let i = 0;
 			for (const datum of json) {
 				datum['hidden-graph-item-source'] = `${doc.UID}/${doc.sheet}`;
-				datum['hidden-graph-item-id'] = (`${datum.name}---${doc.UID}---${doc.sheet}---${i++}`).replace(/[^a-z_\-0-9]/ig, '_'); 
+				datum['hidden-graph-item-id'] = (`${datum.name}---${doc.UID}---${doc.sheet}---${i++}`).replace(/[^a-z_\-0-9]/ig, '_');
 			}
 
 			// override options
