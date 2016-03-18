@@ -3,6 +3,10 @@
 function makeSelect (items, selected) {
 	const input = document.createElement('select');
 	input.classList.add('o-forms-select');
+	const noSelection = document.createElement('option');
+	noSelection.value = '';
+	noSelection.textContent = 'Default';
+	input.appendChild(noSelection);
 	items.forEach(key => {
 		const o = document.createElement('option');
 		if (key === selected) {
@@ -15,6 +19,7 @@ function makeSelect (items, selected) {
 	return input;
 }
 
+const inputs = [];
 module.exports = function (schema, dataFormat, options) {
 
 	const formLocation = document.getElementById('tech-radar__qp-form');
@@ -30,9 +35,9 @@ module.exports = function (schema, dataFormat, options) {
 		const small = document.createElement('small');
 
 		input.type = 'text';
-		input.placeholder = schema[qp][1].name;
-		label.title = schema[qp][2];
-		small.textContent = schema[qp][2];
+		input.placeholder = schema[qp][1].name + ` (${schema[qp][2]})`;
+		label.title = schema[qp][3];
+		small.textContent = schema[qp][3];
 		input.value = options[schema[qp][0]] || '';
 
 		if (schema[qp][1] === Boolean) {
@@ -66,6 +71,7 @@ module.exports = function (schema, dataFormat, options) {
 		group.appendChild(small);
 		group.appendChild(input);
 		formLocation.appendChild(group);
+		inputs.push(input);
 	}
 	const submit = document.createElement('input');
 	submit.type = 'submit';
@@ -77,4 +83,9 @@ module.exports = function (schema, dataFormat, options) {
 	formLocation.appendChild(hiddenSubmit);
 	formLocation.parentNode.appendChild(submit);
 	formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
+
+	formLocation.addEventListener('submit', function () {
+		inputs.forEach(el => el.disabled = !el.value);
+		setTimeout(() => inputs.forEach(el => el.disabled = false), 0);
+	});
 };

@@ -84,6 +84,43 @@ module.exports = function ({
 	}))
 	.filter(l => !l.fixed);
 
+	const labelAnchorNodes = [];
+	const labelAnchorLinks = [];
+	links.forEach((l, i) => {
+		const nodeToAttachTo = nodes[l.source];
+		const x = nodeToAttachTo.x;
+		const y = nodeToAttachTo.y;
+		const weight = 0.1;
+		const text = nodeToAttachTo.name;
+
+		// Has the text
+		const label = {
+			x,
+			y,
+			weight,
+			text,
+			charge: -250,
+			chargeDistance: 90,
+			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
+		};
+
+		// Pulls the label towards the node
+		const anchorToNode = {
+			x,
+			y,
+			weight,
+			fixed: true
+		};
+		labelAnchorNodes.push(label);
+		labelAnchorNodes.push(anchorToNode);
+		nodeToAttachTo.labelAnchor = anchorToNode;
+		labelAnchorLinks.push({
+			source: 2*i,
+			target: 2*i + 1,
+			distance: 0
+		});
+	});
+
 	// Attract the nodes to the segments
 	nodes.forEach((n,j) => {
 		for(let i=0,l=rings[0].segments.length;i<l;i++) {
@@ -125,16 +162,36 @@ module.exports = function ({
 		.gravity(0)
 		.size([width, height]);
 
+	const labelForce = d3.layout.force()
+		.nodes(labelAnchorNodes)
+		.links(labelAnchorLinks)
+		.charge(n => n.charge || 0)
+		.chargeDistance(n => n.chargeDistance || 10)
+		.gravity(0)
+		.linkStrength(1)
+		.linkDistance(0.1)
+		.size([width, height]);
+
 	force.on('tick', function () {
 
-		// bounce off the walls
 		nodes.forEach(function (d) {
 			if (d.x > width) [d.x, d.px] = [d.px, d.x];
 			if (d.y > height) [d.y, d.py] = [d.py, d.y];
 			d.x = d.x % (width * 4);
 			d.y = d.y % (height * 4);
+
+
+			// Attach the label node to this node
+			if (d.labelAnchor) {
+				d.labelAnchor.x = d.x;
+				d.labelAnchor.y = d.y;
+			}
 		});
 		node.attr('transform', d => `translate(${d.x}, ${d.y})`);
+	});
+
+	labelForce.on('tick', function () {
+		labelNode.attr('transform', d => `translate(${d.x}, ${d.y})`);
 	});
 
 	const node = svg.selectAll('.node')
@@ -144,19 +201,41 @@ module.exports = function ({
 		.attr('class', d => d.rootEl ? 'rootNode' : 'node')
 		.attr('id', n => `${n['hidden-graph-item-id']}--graph-point`);
 
+	const labelNode = svg.selectAll('.label-node')
+		.data(labelAnchorNodes)
+		.enter()
+		.append('svg:g')
+		.attr('id', n => `${n.id}`);
+
+	labelNode
+		.append('svg:text')
+		.text(n => n.text || '')
+		.attr('class', 'd3-label bg')
+		.attr('x', '-10px')
+		.attr('y', '5px');
+
+	labelNode
+		.append('svg:text')
+		.text(n => n.text || '')
+		.attr('class', 'd3-label')
+		.attr('x', '-10px')
+		.attr('y', '5px');
+
 	node.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
 	function mouseover (d) {
-		renderOnTop.attr('xlink:href', '#' + `${d['hidden-graph-item-id']}--graph-point`);
-		this.parentNode.classList.add('hovering');
+		const labelSelector = '#' + `${d['hidden-graph-item-id']}--graph-label`;
+		renderOnTop.attr('xlink:href', labelSelector);
+		document.querySelector(labelSelector).classList.add('hovering');
 		const row = document.getElementById(d['hidden-graph-item-id']);
 		if (!row) return;
 		row.classList.add('hovering');
 	}
 
 	function mouseout (d) {
+		const labelSelector = '#' + `${d['hidden-graph-item-id']}--graph-label`;
 		renderOnTop.attr('xlink:href', '#');
-		this.parentNode.classList.remove('hovering');
+		document.querySelector(labelSelector).classList.remove('hovering');
 		const row = document.getElementById(d['hidden-graph-item-id']);
 		if (!row) return;
 		row.classList.remove('hovering');
@@ -205,15 +284,15 @@ module.exports = function ({
 		.text(n => n.longDesc);
 
 	node.append('svg:text')
-		.text(n => n.name || '')
-		.attr('class', n => `d3-label bg${n.dot === false ? ' no-dot' : ''}`)
-		.attr('x', n => n.dot !== false ? '-10px' : '0px')
+		.text(n => n.dot === false ? n.name : '')
+		.attr('class', 'd3-label bg no-dot')
+		.attr('x', '-10px')
 		.attr('y', '5px');
 
 	node.append('svg:text')
-		.text(n => n.name || '')
-		.attr('class', n => `d3-label${n.dot === false ? ' no-dot' : ''}`)
-		.attr('x', n => n.dot !== false ? '-10px' : '0px')
+		.text(n => n.dot === false ? n.name : '')
+		.attr('class', 'd3-label no-dot')
+		.attr('x', '-10px')
 		.attr('y', '5px');
 
 	const rootNode = svg.select('.rootNode');
@@ -257,6 +336,7 @@ module.exports = function ({
 		.style('fill', 'rgba(255, 255, 255, 1)');
 
 	force.start().alpha(0.05);
+	labelForce.start().alpha(0.05);
 
 	const renderOnTop = svg
 	.append('svg:g')
