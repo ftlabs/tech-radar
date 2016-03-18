@@ -99,8 +99,8 @@ module.exports = function ({
 			y,
 			weight,
 			text,
-			charge: -250,
-			chargeDistance: 90,
+			charge: -2500,
+			chargeDistance: totalRingSize/(rings.length),
 			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 		};
 
@@ -148,9 +148,9 @@ module.exports = function ({
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode)
-		.attr('width', width + 500)
-		.attr('height', height + 50)
-		.attr('viewBox', `-500 -50 ${width + 500} ${height + 50}`);
+		.attr('width', width + 500 + 50)
+		.attr('height', height + 100)
+		.attr('viewBox', `-500 -50 ${width + 500 + 50} ${height + 100}`);
 
 	const force = d3.layout.force()
 		.nodes(nodes)
@@ -169,7 +169,7 @@ module.exports = function ({
 		.chargeDistance(n => n.chargeDistance || 10)
 		.gravity(0)
 		.linkStrength(1)
-		.linkDistance(0.1)
+		.linkDistance(3)
 		.size([width, height]);
 
 	force.on('tick', function () {
@@ -274,7 +274,7 @@ module.exports = function ({
 	}
 
 	node.append('circle')
-		.attr('class', n => `node${n.dot === false ? ' no-dot' : ''}`)
+		.attr('class', n => `node${n.dot === false ? ' segment-label' : ''}`)
 		.attr('r', 8)
 		.style('fill', n => `hsla(${n['hidden-graph-item-hue']}, 95%, 60%, 1)`)
 		.on('mouseover', mouseover)
@@ -285,13 +285,13 @@ module.exports = function ({
 
 	node.append('svg:text')
 		.text(n => n.dot === false ? n.name : '')
-		.attr('class', 'd3-label bg no-dot')
+		.attr('class', 'd3-label bg segment-label')
 		.attr('x', '-10px')
 		.attr('y', '5px');
 
 	node.append('svg:text')
 		.text(n => n.dot === false ? n.name : '')
-		.attr('class', 'd3-label no-dot')
+		.attr('class', 'd3-label segment-label')
 		.attr('x', '-10px')
 		.attr('y', '5px');
 
@@ -299,15 +299,29 @@ module.exports = function ({
 
 	rings.reverse();
 	for (const ring of rings) {
-		rootNode.append('circle')
+		rootNode.append('svg:circle')
 			.attr('class', 'background')
 			.attr('r', ((ring.proportionalSizeEnd * (1 - innerWidth)) + innerWidth) * totalRingSize)
 			.style('fill', ring.fill);
 	}
 	rings.reverse();
 
+	// Add rectangles to hide other quadrants of the circle.
+	rootNode.append('svg:rect')
+		.attr('x', 0)
+		.attr('y', -totalRingSize)
+		.attr('width', totalRingSize)
+		.attr('height', totalRingSize * 2)
+		.style('fill', 'rgba(255, 255, 255, 1)');
+	rootNode.append('svg:rect')
+		.attr('x', -totalRingSize)
+		.attr('y', 0)
+		.attr('width', totalRingSize * 2)
+		.attr('height', totalRingSize)
+		.style('fill', 'rgba(255, 255, 255, 1)');
+
 	for (const lineOrigin of segmentLines) {
-		rootNode.append('line')
+		rootNode.append('svg:line')
 			.attr('x1', lineOrigin.x)
 			.attr('y1', lineOrigin.y)
 			.attr('x2', 0)
@@ -315,25 +329,25 @@ module.exports = function ({
 			.style('stroke', 'rgba(255, 255, 255, 1)');
 	}
 
+	// Nothing goes in the middle ring
+	rootNode.append('svg:circle')
+		.attr('class', 'background')
+		.attr('r', totalRingSize * innerWidth)
+		.style('fill', 'rgba(255, 255, 255, 1)');
+
 
 	for (const ring of rings) {
 		rootNode.append('svg:text')
 			.text(ring.groupLabel || ring.min)
-			.attr('class', 'd3-label bg')
-			.attr('x', '-16px')
-			.attr('y', (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
+			.attr('class', 'd3-label ring-label bg')
+			.attr('x', '45')
+			.attr('y', -10 + (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 		rootNode.append('svg:text')
 			.text(ring.groupLabel || ring.min)
-			.attr('class', 'd3-label')
-			.attr('x', '-16px')
-			.attr('y', (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
+			.attr('class', 'd3-label ring-label')
+			.attr('x', '45')
+			.attr('y', -10 + (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 	}
-
-	// Nothing goes in the middle ring
-	rootNode.append('circle')
-		.attr('class', 'background')
-		.attr('r', totalRingSize * innerWidth)
-		.style('fill', 'rgba(255, 255, 255, 1)');
 
 	force.start().alpha(0.05);
 	labelForce.start().alpha(0.05);
