@@ -42,6 +42,19 @@ div, form {
 	}
 }
 
+#tech-radar__graph-target {
+	flex-grow: 1;
+	margin-left: -250px;
+	min-width: 500px;
+	text-align: right;
+}
+
+#tech-radar__display {
+	display: flex;
+	flex-direction: row-reverse;
+	justify-content: flex-end;
+}
+
 .filter-table {
 
 	white-space: nowrap;
@@ -66,15 +79,15 @@ div, form {
 svg {
 	max-width: 100%;
 	height: auto;
+	font-size: 1.3em;
+	font-family: MetricWeb, helvetica, sans;
+	font-weight: bold;
 
 	.d3-label {
-		fill: #333;
+		fill: black;
 		fill-opacity: 1;
 		z-index: 10;
-		font-size: 14pt;
-		font-weight: bold;
 		pointer-events: none;
-		font-family: MetricWeb, helvetica, sans;
 		transition: transform 0.2s ease;
 		text-anchor: end;
 
@@ -87,10 +100,28 @@ svg {
 			stroke-alignment: outer;
 		}
 
-		&.no-dot {
+		&.ring-label {
+			fill: white;
+			font-size: 18pt;
+
+			&.bg{
+				stroke: black;
+				stroke-width: 5px;
+			}
+		}
+
+		&.segment-label {
 			fill: black;
 			text-decoration: underline;
 			font-size: 18pt;
+		}
+	}
+
+	// Hide it do that the use label is shown instead
+	.hovering {
+		.d3-label {
+			font-weight: bold;
+			font-size: 130%;
 		}
 	}
 
@@ -103,19 +134,15 @@ svg {
 		stroke-width: 2px;
 		stroke: black;
 
-		&.no-dot {
+		&.segment-label {
 			display: none;
 			font-size: 16pt;
 		}
 	}
 }
 
-.hovering {
-	font-weight: bold;
-
-	.d3-label {
-		font-size: 150%;
-	}
+use {
+	pointer-events: none;
 }
 
 .details {

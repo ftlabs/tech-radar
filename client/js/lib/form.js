@@ -3,6 +3,10 @@
 function makeSelect (items, selected) {
 	const input = document.createElement('select');
 	input.classList.add('o-forms-select');
+	const noSelection = document.createElement('option');
+	noSelection.value = '';
+	noSelection.textContent = 'Default';
+	input.appendChild(noSelection);
 	items.forEach(key => {
 		const o = document.createElement('option');
 		if (key === selected) {
@@ -15,6 +19,7 @@ function makeSelect (items, selected) {
 	return input;
 }
 
+const inputs = [];
 module.exports = function (schema, dataFormat, options) {
 
 	const formLocation = document.getElementById('tech-radar__qp-form');
@@ -29,21 +34,33 @@ module.exports = function (schema, dataFormat, options) {
 		let input = document.createElement('input');
 		const small = document.createElement('small');
 
-		input.type = 'text';
-		input.placeholder = schema[qp][1].name;
-		label.title = schema[qp][2];
-		small.textContent = schema[qp][2];
-		input.value = options[schema[qp][0]] || '';
+		const thisSchema = schema[qp];
+		const optionKey = thisSchema[0];
+		const optionType = thisSchema[1];
+		const optionDefault = thisSchema[2];
+		const desc = thisSchema[3];
+		const optionValue = options[optionKey];
 
-		if (schema[qp][1] === Boolean) {
+		input.type = 'text';
+
+		// show the default value if it is something worth showing
+		input.placeholder = optionType.name + (!!String(optionDefault) ? ` (${thisSchema[2]})` : '');
+		label.title = desc;
+		small.textContent = desc;
+		input.value = optionValue || '';
+		if (optionValue === optionDefault) {
+			input.value = '';
+		}
+
+		if (optionType === Boolean) {
 			input = makeSelect(
 				['true', 'false'],
-				String(!!options[schema[qp][0]])
+				String(!!optionValue === optionDefault ? 'Default' : !!optionValue)
 			);
 		}
 
-		if (schema[qp][1] === Array) {
-			input.value = options[schema[qp][0]].join(', ');
+		if (optionType === Array) {
+			input.value = optionValue.join(', ');
 			group.style.flexBasis = '60%';
 		}
 
@@ -53,7 +70,11 @@ module.exports = function (schema, dataFormat, options) {
 		small.classList.add('o-forms-additional-info');
 
 		if (qp === 'sortcol') {
-			input = makeSelect(dataFormat, options.sortCol);
+			input = makeSelect(dataFormat, options.sortCol === optionDefault ? 'Default' : options.sortCol);
+		}
+
+		if (qp === 'segment') {
+			input = makeSelect(dataFormat, options.segment === optionDefault ? 'Default' : options.segment);
 		}
 
 		input.name = qp;
@@ -62,10 +83,13 @@ module.exports = function (schema, dataFormat, options) {
 		group.appendChild(small);
 		group.appendChild(input);
 		formLocation.appendChild(group);
+		inputs.push(input);
 	}
 	const submit = document.createElement('input');
 	submit.type = 'submit';
-	submit.addEventListener('click', () => formLocation.submit());
+	submit.addEventListener('click', () => {
+		validate();
+	});
 	submit.classList.add('o-buttons');
 	submit.classList.add('o-buttons--standout');
 	const hiddenSubmit = submit.cloneNode();
@@ -73,4 +97,23 @@ module.exports = function (schema, dataFormat, options) {
 	formLocation.appendChild(hiddenSubmit);
 	formLocation.parentNode.appendChild(submit);
 	formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
+
+	function validate () {
+		inputs.forEach(el => {
+			const shouldDisable = (
+				el.value === '' ||
+				el.value === 'Default'
+			);
+			if (shouldDisable) {
+				el.disabled = 'disabled';
+			}
+		});
+		formLocation.submit();
+	}
+
+	formLocation.addEventListener('submit', function submitCatcher (e) {
+		e.preventDefault();
+		validate();
+		return false;
+	});
 };
