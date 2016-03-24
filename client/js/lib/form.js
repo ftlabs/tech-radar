@@ -100,6 +100,9 @@ module.exports = function (schema, dataFormat, options) {
 	formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
 
 	function validate () {
+		tracking({
+			action: 'Form Used'
+		});
 		inputs.forEach(el => {
 			const shouldDisable = (
 				el.value === '' ||
@@ -113,9 +116,6 @@ module.exports = function (schema, dataFormat, options) {
 	}
 
 	formLocation.addEventListener('submit', function submitCatcher (e) {
-		tracking({
-			action: 'Form Used'
-		});
 		e.preventDefault();
 		validate();
 		return false;
