@@ -90,12 +90,13 @@
 	});
 	var color = __webpack_require__(79);
 	var graph = __webpack_require__(81);
-	var extend = __webpack_require__(82)._extend;
+	var tracking = __webpack_require__(82);
+	var extend = __webpack_require__(101)._extend;
 	var berthaRoot = 'https://bertha.ig.ft.com/';
 	var berthaView = 'view/publish/gss/';
 	var berthaRepublish = 'republish/publish/gss/';
-	var isEqual = __webpack_require__(86);
-	var queryString = __webpack_require__(91);
+	var isEqual = __webpack_require__(105);
+	var queryString = __webpack_require__(110);
 	var sheetTitles = new _Set();
 	var titleFromQueryParam = false;
 	
@@ -147,6 +148,8 @@
 	
 		return options;
 	}
+	
+	tracking({ action: 'PageLoad' });
 	
 	// read query params
 	parseOptions((function () {
@@ -1011,7 +1014,7 @@
 			return;
 		}
 	
-		__webpack_require__(93)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
+		__webpack_require__(112)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
 			return !k.match(/^(configvalue$|hidden-graph-item)/);
 		}) : [], options);
 	
@@ -4339,6 +4342,2374 @@
 /* 82 */
 /***/ function(module, exports, __webpack_require__) {
 
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	'use strict';
+	
+	var oTracking = __webpack_require__(83).init({
+		server: 'https://spoor-api.ft.com/px.gif',
+		context: {
+			product: 'FTLabs Tech Radar'
+		}
+	});
+	
+	function makeTrackingRequest(details) {
+	
+		var trackingReq = details;
+		trackingReq.category = 'ftlabs-tech-radar';
+	
+		oTracking.event({
+			detail: trackingReq
+		});
+	}
+	
+	module.exports = makeTrackingRequest;
+
+/***/ },
+/* 83 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__(84);
+
+/***/ },
+/* 84 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global require, module */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var settings = __webpack_require__(85);
+	var user = __webpack_require__(86);
+	var session = __webpack_require__(90);
+	var send = __webpack_require__(91);
+	
+	/**
+	 * The version of the tracking module.
+	 * @type {string}
+	 */
+	var version = '1.1.8';
+	/**
+	 * The source of this event.
+	 * @type {string}
+	 */
+	var source = 'o-tracking';
+	/**
+	 * The API key.
+	 * @type {string}
+	 */
+	var api_key = 'qUb9maKfKbtpRsdp0p2J7uWxRPGJEP';
+	
+	/**
+	 * @class Tracking
+	 */
+	function Tracking() {
+		this.version = version;
+		this.source = source;
+		this.api_key = api_key;
+	
+		/**
+	  * The initialised state of the object.
+	  * @type {boolean}
+	  */
+		this.initialised = false;
+	}
+	
+	/**
+	 * Turn on/off developer mode. (Can also be activated on init.)
+	 * @param {boolean} level - Turn on or off, defaults to false if omitted.
+	 * @return {undefined}
+	 */
+	Tracking.prototype.developer = function (level) {
+		if (level) {
+			settings.set('developer', true);
+		} else {
+			settings.destroy('developer', null);
+			settings.destroy('no_send', null);
+		}
+	};
+	
+	/**
+	 * Clean up the tracking module.
+	 * @return {undefined}
+	 */
+	Tracking.prototype.destroy = function () {
+		this.developer(false);
+		this.initialised = false;
+	
+		settings.destroy('config');
+		settings.destroy('page_sent');
+	};
+	
+	/**
+	 * Overload toString method to show the version.
+	 * @return {string} The module's version.
+	 */
+	Tracking.prototype.toString = function () {
+		return 'oTracking version ' + version;
+	};
+	
+	Tracking.prototype.page = __webpack_require__(97);
+	
+	Tracking.prototype.event = __webpack_require__(99);
+	
+	Tracking.prototype.link = __webpack_require__(100);
+	
+	Tracking.prototype.utils = __webpack_require__(87);
+	
+	/**
+	 * Initialises the Tracking object.
+	 *
+	 * All options are optional, if a configuration option is missing, the module
+	 * will try to initialise using any configuration found in the DOM using the
+	 * script config tag.
+	 *
+	 * @example
+	 * <!-- DOM configuration settings -->
+	 * <script type='application/json' data-o-tracking-config>
+	 * page: {
+	 * 	 product: 'desktop'
+	 * },
+	 * user: {
+	 *   user_id: '023ur9jfokwenvcklwnfiwhfoi324'
+	 * }
+	 * </script>
+	 *
+	 * @param {Object} config 					- See {@link Tracking} for the configuration options.
+	 * @param {boolean} config.developer        - Optional, if `true`, logs certain actions.
+	 * @param {boolean} config.noSend           - Optional, if `true`, won't send events.
+	 * @param {string} config.configId          - Optional
+	 * @param {string} config.session           - Optional
+	 *
+	 * @return {Tracking} - Returns the tracking object
+	 */
+	Tracking.prototype.init = function (config) {
+		if (this.initialised) {
+			return this;
+		}
+	
+		var hasDeclarativeConfig = !!this._getDeclarativeConfigElement();
+	
+		if (!(hasDeclarativeConfig || config)) {
+			return this;
+		}
+	
+		config = config || {};
+		if (hasDeclarativeConfig) {
+			config = this._getDeclarativeConfig(config);
+		}
+	
+		settings.set('config', config);
+		settings.set('version', this.version);
+		settings.set('source', this.source);
+		settings.set('api_key', this.api_key);
+	
+		settings.set('page_sent', false);
+	
+		// Developer mode
+		if (config.developer) {
+			this.developer(config.developer);
+	
+			if (config.noSend) {
+				settings.set('no_send', true);
+			}
+		}
+	
+		// User identifier
+		user.init(config.user ? config.user.user_id : null);
+	
+		// Session
+		session.init(config.session);
+	
+		// Initialize the sending queue.
+		var queue = send.init();
+	
+		// If queue length is very large, could be due to a bug in a previous version
+		// This was fixed in 1.0.14 https://github.com/Financial-Times/o-tracking/compare/1.0.13...1.0.14
+		// But, still seeing big queues coming through in the data for historical reasons.
+		// This tries to catch those big queues and forcibly empty them.
+		var queue_length = queue.all().length;
+	
+		if (queue_length > 200) {
+			queue.replace([]);
+	
+			this.event({ detail: {
+					category: 'o-tracking',
+					action: 'queue-bug',
+					context: {
+						queue_length: queue_length
+					}
+				} });
+		}
+		this.event.init();
+		this.page.init();
+		this.initialised = true;
+		return this;
+	};
+	
+	/**
+	 * Checks if the <script type='application/json' data-o-tracking-config> element is in the DOM
+	 * @private
+	 * @return {HTMLElement} - Returns the <script> element if found
+	 */
+	Tracking.prototype._getDeclarativeConfigElement = function () {
+		return document.querySelector('script[data-o-tracking-config]');
+	};
+	
+	/**
+	 * Initialises additional data using the <script type='application/json' data-o-tracking-config> element in the DOM.
+	 * @private
+	 * @param {Object} options - A partially, or fully filled options object.  If
+	 *                           an option is missing, this method will attempt to
+	 *                           initialise it from the DOM.
+	 * @return {Object} - The options modified to include the options gathered from the DOM
+	 */
+	Tracking.prototype._getDeclarativeConfig = function (options) {
+		var configEl = this._getDeclarativeConfigElement();
+		var declarativeConfigString = undefined;
+		if (configEl) {
+			declarativeConfigString = configEl.textContent || configEl.innerText || configEl.innerHTML;
+		} else {
+			return false;
+		}
+	
+		var declarativeOptions = undefined;
+	
+		try {
+			declarativeOptions = JSON.parse(declarativeConfigString);
+		} catch (e) {
+			var configError = new Error('Invalid JSON configuration syntax, check validity for o-tracking configuration: "' + e.message + '"');
+			this.utils.broadcast('oErrors', 'log', {
+				error: configError.message,
+				info: { module: 'o-tracking' }
+			});
+			throw configError;
+		}
+	
+		for (var property in declarativeOptions) {
+			if (declarativeOptions.hasOwnProperty(property)) {
+				options[property] = options[property] || declarativeOptions[property];
+			}
+		}
+	
+		return options;
+	};
+	
+	var tracking = new Tracking();
+	
+	function initialise() {
+		tracking.init();
+		document.removeEventListener('o.DOMContentLoaded', initialise);
+	}
+	
+	// Try and initialise on o.DOMContentLoaded. If it fails, defer to the
+	// consumer of the library.
+	document.addEventListener('o.DOMContentLoaded', initialise);
+	
+	/**
+	 * A constructed object, this module is a Singleton as we only want one
+	 * instance sending events. See {@link Tracking} for the publicly available
+	 * interface.
+	 * @type {Tracking}
+	 */
+	module.exports = tracking;
+
+/***/ },
+/* 85 */
+/***/ function(module, exports) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var settings = {};
+	
+	/**
+	 * Very basic implementation of deep clone, and only supports simple POJO objects and
+	 * native arrays.
+	 * @param  {*} value Any value
+	 * @return {*}       Copy of value
+	 * @private
+	 */
+	function clone(value) {
+	  if (value === undefined) {
+	    return value;
+	  }
+	  switch (Object.prototype.toString.call(value)) {
+	    case '[object Object]':
+	      return JSON.parse(JSON.stringify(value));
+	    case '[object Array]':
+	      return [].slice.call(value);
+	    default:
+	      return value;
+	  }
+	}
+	
+	/**
+	 * Saves a value. Stores a copy rather than a reference, to avoid mutations leaking.
+	 *
+	 * @param {string} key - The key to use to store the object
+	 * @param {*} value - The value
+	 * @return {undefined}
+	 */
+	function setValue(key, value) {
+	  settings[key] = clone(value);
+	}
+	
+	/**
+	 * Retrieves a value from the settings object. Returns a copy rather than reference, to
+	 * avoid mutations leaking.
+	 *
+	 * @param {string} key - The key to get
+	 * @return {*} - The setting.
+	 */
+	function getValue(key) {
+	  return clone(settings[key]);
+	}
+	
+	/**
+	 * Deletes a value
+	 *
+	 * @param  {string} key - The key to delete
+	 * @return {undefined}
+	 */
+	function destroy(key) {
+	  delete settings[key];
+	}
+	
+	module.exports = {
+	  'set': setValue,
+	  'get': getValue,
+	  'destroy': destroy
+	};
+
+/***/ },
+/* 86 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var _userID = undefined;
+	var store = undefined;
+	var defaultUserConfig = {
+		storage: 'cookie',
+		name: 'spoor-id',
+		value: null,
+		domain: document.URL.match(/^https?\:\/\/([^\/?#]+)(?:[\/?#]|$)/i)[1].indexOf('ft.com') > -1 ? 'ft.com' : null
+	};
+	
+	var utils = __webpack_require__(87);
+	var Store = __webpack_require__(89);
+	
+	/**
+	 * migrate_across_domains
+	 * Clean up after forgetting to write cookies to the 'root' ft.com domain.
+	 * - Check local storage for the 'proper' value.
+	 * - If it exists, use it.
+	 * - If not, set current user id as the 'proper' value.
+	 * - If this value and the cookie match, then we've already fixed it.
+	 * - If not, drop the cookie and it will be reset it on the root domain.
+	 *
+	 * @param {Store} store - The storage instance used for storing the ID.
+	 * @param {String} user_id - The user ID to check against storage.
+	 * @return {String} - The real user ID.
+	 */
+	function migrate_across_domains(store, user_id) {
+		var ls_name = 'o-tracking-proper-id';
+		var proper_id = undefined;
+	
+		try {
+			// This isn't consistent in at least Firefox, maybe more, localstorage seems secured at subdomian level.
+			proper_id = utils.getValueFromCookie(ls_name + '=([^;]+)');
+	
+			if (!proper_id) {
+				var d = new Date();
+				d.setTime(d.getTime() + 10 * 365 * 24 * 60 * 60 * 1000);
+				var expires = 'expires=' + d.toGMTString() + ';';
+	
+				window.document.cookie = ls_name + '=' + utils.encode(user_id) + ';' + expires + 'path=/;domain=.' + defaultUserConfig.domain + ';';
+				proper_id = user_id;
+			}
+		} catch (error) {
+			utils.broadcast('oErrors', 'log', {
+				error: error.message,
+				info: { module: 'o-tracking' }
+			});
+			proper_id = user_id;
+		}
+	
+		// Expire the cookie on the (sub)domain
+		window.document.cookie = 'spoor-id=0;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;';
+		// Re-set the cookie on the  root domain
+		store.write(proper_id);
+	
+		return proper_id;
+	}
+	
+	/**
+	 * Init
+	 *
+	 * @param {String|Object} value The value of a userID to use or configuration object.
+	 * @return {String} - The user ID.
+	 */
+	function init(value) {
+		var config = utils.merge(defaultUserConfig, { value: value });
+	
+		// config.name is important here, means the user has specifically asked for a cookie name.
+		if (config.storage === 'cookie' && config.name) {
+			config.nameOverride = config.name;
+		}
+	
+		store = new Store(config.name, config);
+	
+		_userID = store.read();
+	
+		if (_userID) {
+			_userID = migrate_across_domains(store, _userID);
+		}
+	
+		if (!_userID) {
+			_userID = config.value;
+		}
+	
+		if (!_userID) {
+			_userID = utils.guid();
+		}
+	
+		store.write(_userID); // Refreshes the cookie...
+	
+		return _userID;
+	}
+	
+	function destroy() {
+		store.destroy();
+	}
+	
+	module.exports = {
+		init: init,
+		userID: function userID() {
+			return _userID;
+		},
+		destroy: destroy
+	};
+
+/***/ },
+/* 87 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require, window */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	/**
+	 * Shared 'internal' scope.
+	 * @private
+	 */
+	var settings = __webpack_require__(85);
+	
+	/**
+	 * CUID Generator
+	 */
+	var cuid = __webpack_require__(88);
+	
+	/**
+	 * Record of callbacks to call when a page is tracked.
+	 */
+	var page_callbacks = [];
+	
+	/**
+	 * Log messages to the browser console. Requires 'log' to be set on init.
+	 *
+	 * @param {*} List of objects to log
+	 * @return {undefined}
+	 */
+	function log() {
+		if (settings.get('developer') && window.console) {
+			for (var i = 0; i < arguments.length; i++) {
+				window.console.log(arguments[i]);
+			}
+		}
+	}
+	
+	/**
+	 * Tests if variable is a certain type. Defaults to check for undefined if no type specified.
+	 *
+	 * @param {*} variable - The variable to check.
+	 * @param {string} type - The type to test for. Defaults to undefined.
+	 *
+	 * @return {boolean} - The answer for if the variable is of type.
+	 */
+	function is(variable, type) {
+		if (!type) {
+			type = 'undefined';
+		}
+		return typeof variable === type;
+	}
+	
+	/**
+	 * Merge objects together. Will remove 'falsy' values.
+	 *
+	 * @param {Object} target - The original object to merge in to.
+	 * @param {Object} options - The object to merge into the target. If omitted, will merge target into a new empty Object.
+	 *
+	 * @return {Object} The merged object.
+	 */
+	function merge(target, options) {
+		if (!options) {
+			options = target;
+			target = {};
+		}
+	
+		var name = undefined;
+		var src = undefined;
+		var copy = undefined;
+	
+		/* jshint -W089 */
+		/* eslint guard-for-in: 0 */
+		for (name in options) {
+			src = target[name];
+			copy = options[name];
+	
+			// Prevent never-ending loop
+			if (target === copy) {
+				continue;
+			}
+	
+			// Gets rid of missing values too
+			if (typeof copy !== 'undefined' && copy !== null) {
+				target[name] = src === Object(src) && !is(src, 'function') ? merge(src, copy) : copy;
+			}
+		}
+		/* jshint +W089 */
+		/* jslint forin:true */
+	
+		return target;
+	}
+	
+	/**
+	 * URL encode a string.
+	 * @param {string} str - The string to be encoded.
+	 *
+	 * @return {string} The encoded string.
+	 */
+	function encode(str) {
+		if (window.encodeURIComponent) {
+			return window.encodeURIComponent(str);
+		} else {
+			return window.escape(str);
+		}
+	}
+	
+	/**
+	 * URL decode a string.
+	 * @param {string} str - The string to be decoded.
+	 *
+	 * @return {string} The decoded string.
+	 */
+	function decode(str) {
+		if (window.decodeURIComponent) {
+			return window.decodeURIComponent(str);
+		} else {
+			return window.unescape(str);
+		}
+	}
+	
+	/*
+	 * Utility to add event listeners.
+	 *
+	 * @param {Element} element
+	 * @param {string} event
+	 * @param {Function} listener
+	 */
+	function addEvent(element, event, listener) {
+		if (element.addEventListener) {
+			element.addEventListener(event, listener, false);
+		} else {
+			element.attachEvent('on' + event, listener);
+		}
+	}
+	
+	/*
+	 * Utility for dispatching custom events from window
+	 *
+	 * @param {string} namespace
+	 * @param {string} eventType
+	 * @param {Object} detail
+	 */
+	function broadcast(namespace, eventType, detail) {
+		detail = detail || {};
+		try {
+			window.dispatchEvent(new CustomEvent(namespace + '.' + eventType, {
+				detail: detail,
+				bubbles: true
+			}));
+		} catch (error) {}
+	}
+	
+	/**
+	 * Listen for page tracking requests.
+	 *
+	 * @param {Function} cb - The callback to be called whenever a page is tracked.
+	 * @return {undefined}
+	 */
+	function onPage(cb) {
+		if (is(cb, 'function')) {
+			page_callbacks.push(cb);
+		}
+	}
+	
+	/**
+	 * Trigger the 'page' listeners.
+	 * @return {undefined}
+	 */
+	function triggerPage() {
+		for (var i = 0; i < page_callbacks.length; i++) {
+			page_callbacks[i]();
+		}
+	}
+	
+	/**
+	 * Get a value from document.cookie matching the first match of the regexp you supply
+	 * @param {RegExp} matcher - The Regex to match with
+	 * @return {String} - The vale from the cookie
+	 */
+	function getValueFromCookie(matcher) {
+		return document.cookie.match(matcher) && RegExp.$1 !== '' && RegExp.$1 !== 'null' ? RegExp.$1 : null;
+	}
+	
+	/**
+	 * Get a value from the url, used for uuid or querystring parameters
+	 * @param {RegExp} matcher - The Regex to match with
+	 * @return {String} - The value from the URL
+	 */
+	function getValueFromUrl(matcher) {
+		return document.location.href.match(matcher) && RegExp.$1 !== '' ? RegExp.$1 : null;
+	}
+	
+	/**
+	 * Get a value from a specified JavaScript variable.
+	 * @param {String} str - The name of variable, in dot syntax.
+	 * @return {String} The value from the JS variable.
+	 */
+	function getValueFromJsVariable(str) {
+		if (typeof str !== 'string') {
+			return null;
+		}
+	
+		var i = undefined;
+		var namespaces = str.split('.');
+		var test = window;
+	
+		for (i = 0; i < namespaces.length; i = i + 1) {
+			if (typeof test[namespaces[i]] === 'undefined') {
+				return null;
+			}
+	
+			test = test[namespaces[i]];
+		}
+	
+		return test !== '' ? test : null;
+	}
+	
+	module.exports = {
+		log: log,
+		is: is,
+		isUndefined: is,
+		merge: merge,
+		encode: encode,
+		decode: decode,
+		guid: cuid,
+		addEvent: addEvent,
+		broadcast: broadcast,
+		onPage: onPage,
+		triggerPage: triggerPage,
+		getValueFromCookie: getValueFromCookie,
+		getValueFromUrl: getValueFromUrl,
+		getValueFromJsVariable: getValueFromJsVariable
+	};
+
+/***/ },
+/* 88 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*eslint-disable*/
+	/**
+	 * cuid.js
+	 * Collision-resistant UID generator for browsers and node.
+	 * Sequential for fast db lookups and recency sorting.
+	 * Safe for element IDs and server-side lookups.
+	 *
+	 * Extracted from CLCTR
+	 *
+	 * Copyright (c) Eric Elliott 2012
+	 * MIT License
+	 */
+	
+	/*global window, navigator, document, require, process, module */
+	(function (app) {
+	  'use strict';
+	  var namespace = 'cuid',
+	      c = 0,
+	      blockSize = 4,
+	      base = 36,
+	      discreteValues = Math.pow(base, blockSize),
+	      pad = function pad(num, size) {
+	    var s = "000000000" + num;
+	    return s.substr(s.length - size);
+	  },
+	      randomBlock = function randomBlock() {
+	    return pad((Math.random() * discreteValues << 0).toString(base), blockSize);
+	  },
+	      safeCounter = function safeCounter() {
+	    c = c < discreteValues ? c : 0;
+	    c++; // this is not subliminal
+	    return c - 1;
+	  },
+	      api = function cuid() {
+	    // Starting with a lowercase letter makes
+	    // it HTML element ID friendly.
+	    var letter = 'c',
+	        // hard-coded allows for sequential access
+	
+	    // timestamp
+	    // warning: this exposes the exact date and time
+	    // that the uid was created.
+	    timestamp = new Date().getTime().toString(base),
+	
+	    // Prevent same-machine collisions.
+	    counter,
+	
+	    // A few chars to generate distinct ids for different
+	    // clients (so different computers are far less
+	    // likely to generate the same id)
+	    fingerprint = api.fingerprint(),
+	
+	    // Grab some more chars from Math.random()
+	    random = randomBlock() + randomBlock();
+	
+	    counter = pad(safeCounter().toString(base), blockSize);
+	
+	    return letter + timestamp + counter + fingerprint + random;
+	  };
+	
+	  api.slug = function slug() {
+	    var date = new Date().getTime().toString(36),
+	        counter,
+	        print = api.fingerprint().slice(0, 1) + api.fingerprint().slice(-1),
+	        random = randomBlock().slice(-2);
+	
+	    counter = safeCounter().toString(36).slice(-4);
+	
+	    return date.slice(-2) + counter + print + random;
+	  };
+	
+	  api.globalCount = function globalCount() {
+	    // We want to cache the results of this
+	    var cache = (function calc() {
+	      var i,
+	          count = 0;
+	
+	      for (i in window) {
+	        count++;
+	      }
+	
+	      return count;
+	    })();
+	
+	    api.globalCount = function () {
+	      return cache;
+	    };
+	    return cache;
+	  };
+	
+	  api.fingerprint = function browserPrint() {
+	    return pad((navigator.mimeTypes.length + navigator.userAgent.length).toString(36) + api.globalCount().toString(36), 4);
+	  };
+	
+	  // don't change anything from here down.
+	  if (true) {
+	    module.exports = api;
+	  } else {
+	    app[namespace] = api;
+	  }
+	})(undefined);
+	/*eslint-enable */
+
+/***/ },
+/* 89 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require, window */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	/**
+	 * Class for storing data
+	 * Will choose the 'best' storage method available. Can also specify a type of storage.
+	 *
+	 * @class  Store
+	 * @param {string} name - The name of the store
+	 * @param {Object} config - Optional, config object for extra configuration
+	 */
+	var Store = function Store(name, config) {
+	
+		/**
+	  * Internal Storage key prefix.
+	  */
+		var keyPrefix = 'o-tracking';
+	
+		/**
+	  * Temporary var containing data from a previously saved store.
+	  * @property loadStore
+	  */
+		var loadStore = undefined;
+		var utils = __webpack_require__(87);
+	
+		if (utils.isUndefined(name)) {
+			var undefinedName = new Error('You must specify a name for the store.');
+			utils.broadcast('oErrors', 'log', {
+				error: undefinedName.message,
+				info: { module: 'o-tracking' }
+			});
+			throw undefinedName;
+		}
+	
+		this.config = utils.merge({ storage: 'best', expires: 10 * 365 * 24 * 60 * 60 * 1000 }, config);
+	
+		/**
+	  * Store data.
+	  */
+		this.data = null;
+	
+		/**
+	  * The key/name of this store.
+	  */
+		this.storageKey = this.config.hasOwnProperty('nameOverride') ? this.config.nameOverride : [keyPrefix, name].join('_');
+	
+		/**
+	  * The storage method to use. Determines best storage method.
+	  *
+	  * @type {Object}
+	  */
+		this.storage = (function (config, window) {
+			var test_key = keyPrefix + '_InternalTest';
+	
+			// If cookie has been manually specified, don't bother with local storage.
+			if (config.storage !== 'cookie') {
+				try {
+					if (window.localStorage) {
+						window.localStorage.setItem(test_key, 'TEST');
+	
+						if (window.localStorage.getItem(test_key) === 'TEST') {
+							window.localStorage.removeItem(test_key);
+							return {
+								_type: 'localStorage',
+								load: function load(name) {
+									return window.localStorage.getItem.call(window.localStorage, name);
+								},
+								save: function save(name, value) {
+									return window.localStorage.setItem.call(window.localStorage, name, value);
+								},
+								remove: function remove(name) {
+									return window.localStorage.removeItem.call(window.localStorage, name);
+								}
+							};
+						}
+					}
+				} catch (error) {
+					utils.broadcast('oErrors', 'log', {
+						error: error.message,
+						info: { module: 'o-tracking' }
+					});
+				}
+			}
+	
+			function cookieLoad(name) {
+				name = name + '=';
+	
+				var cookies = window.document.cookie.split(';');
+				var i = undefined;
+				var cookie = undefined;
+	
+				for (i = 0; i < cookies.length; i = i + 1) {
+					cookie = cookies[i].replace(/^\s+|\s+$/g, '');
+					if (cookie.indexOf(name) === 0) {
+						return utils.decode(cookie.substring(name.length, cookie.length));
+					}
+				}
+	
+				return null;
+			}
+	
+			function cookieSave(name, value, expiry) {
+				var d = undefined;
+				var expires = '';
+				var cookie = undefined;
+	
+				if (utils.is(expiry, 'number')) {
+					d = new Date();
+					d.setTime(d.getTime() + expiry);
+					expires = 'expires=' + d.toGMTString() + ';';
+				}
+	
+				cookie = utils.encode(name) + '=' + utils.encode(value) + ';' + expires + 'path=/;' + (config.domain ? 'domain=.' + config.domain + ';' : '');
+				window.document.cookie = cookie;
+			}
+	
+			function cookieRemove(name) {
+				cookieSave(name, '', -1);
+			}
+	
+			cookieSave(test_key, 'TEST');
+	
+			if (cookieLoad(test_key) === 'TEST') {
+				cookieRemove(test_key);
+	
+				return {
+					_type: 'cookie',
+					load: cookieLoad,
+					save: cookieSave,
+					remove: cookieRemove
+				};
+			}
+	
+			return {
+				_type: 'none',
+				load: function load() {},
+				save: function save() {},
+				remove: function remove() {}
+			};
+		})(this.config, window);
+	
+		// Retrieve any previous store with the same name.
+		loadStore = this.storage.load(this.storageKey);
+		if (loadStore) {
+			try {
+				this.data = JSON.parse(loadStore);
+			} catch (error) {
+				utils.broadcast('oErrors', 'log', {
+					error: error.message,
+					module: 'o-tracking'
+				});
+				this.data = loadStore;
+			}
+		}
+	
+		return this;
+	};
+	
+	/**
+	 * Get/Read the current data.
+	 *
+	 * @return {Object} Returns the data from the store.
+	 */
+	Store.prototype.read = function () {
+		return this.data;
+	};
+	
+	/**
+	 * Write the supplied data to the store.
+	 *
+	 * @param {String} data - The data to write.
+	 * @return {Store} - The instance of the store
+	 */
+	Store.prototype.write = function (data) {
+		// Set this.data, in-case we're on a file:// domain and can't set cookies.
+		this.data = data;
+		this.storage.save(this.storageKey, typeof this.data === 'string' ? this.data : JSON.stringify(this.data), this.config.expires);
+	
+		return this;
+	};
+	
+	/**
+	 * Delete the current data.
+	 * @return {Store} - The instance of the store
+	 */
+	Store.prototype.destroy = function () {
+		this.data = null;
+		this.storage.remove(this.storageKey);
+		return this;
+	};
+	
+	module.exports = Store;
+
+/***/ },
+/* 90 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var store = undefined;
+	var defaultSessionConfig = {
+		storage: 'best',
+		name: 'session',
+		expires: 30 * 60 * 1000 // 30 minutes
+	};
+	
+	var utils = __webpack_require__(87);
+	var Store = __webpack_require__(89);
+	
+	/**
+	 * Set the session in the store.
+	 *
+	 * @param {String} session - The session to be stored.
+	 * @return {undefined}
+	 */
+	function setSession(session) {
+		var d = new Date();
+		d.setTime(d.getTime() + store.config.expires);
+	
+		store.write({
+			value: session,
+			expiry: d.valueOf()
+		});
+	}
+	
+	/**
+	 * Get the session from the store. Expiry and gen of a new session are handled here.
+	 *
+	 * @return {Object} the current session
+	 */
+	function getSession() {
+		var s = store.read();
+		var session = undefined;
+		var isNew = false;
+	
+		if (s) {
+			var d = new Date().valueOf();
+			var exp = parseInt(s.expiry);
+	
+			// If current session is active.
+			if (exp >= d) {
+				session = s.value;
+			}
+		}
+	
+		// No active session, gen a new one.
+		if (!session) {
+			session = utils.guid();
+			isNew = true;
+		}
+	
+		// Refreshes the cookie...
+		setSession(session);
+	
+		return {
+			id: session,
+			isNew: isNew
+		};
+	}
+	
+	/**
+	 * Init
+	 *
+	 * @param {String|Object} config The name used to store the session or configuration object.
+	 * @return {Session} - The session
+	 */
+	function init(config) {
+		if (utils.is(config, 'string')) {
+			config = { name: config };
+		}
+	
+		if (utils.isUndefined(config)) {
+			config = {};
+		}
+	
+		var c = utils.merge(defaultSessionConfig, config);
+	
+		// config.name is important here, means the user has specifically asked for a cookie name.
+		if (c.storage === 'cookie' && config.name) {
+			c.nameOverride = c.name;
+		}
+	
+		store = new Store(c.name, c);
+	
+		return getSession();
+	}
+	
+	module.exports = {
+		init: init,
+		session: getSession
+	};
+
+/***/ },
+/* 91 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var _Promise = __webpack_require__(61)['default'];
+	
+	var define = false;
+	
+	/*global module, require, window */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var settings = __webpack_require__(85);
+	var utils = __webpack_require__(87);
+	var Queue = __webpack_require__(92);
+	var transports = __webpack_require__(93);
+	/**
+	 * Default collection server.
+	 */
+	var domain = 'http://test.spoor-api.ft.com';
+	
+	/**
+	 * Queue queue.
+	 *
+	 * @type {Queue}
+	 */
+	var queue = undefined;
+	
+	/**
+	 * Consistent check to see if we should use sendBeacon or not.
+	 *
+	 * @return {boolean}
+	 */
+	function should_use_sendBeacon() {
+		return navigator.sendBeacon && _Promise && (settings.get('config') || {}).useSendBeacon;
+	}
+	
+	/**
+	 * Attempts to send a tracking request.
+	 *
+	 * @param {Object} request The request to be sent.
+	 * @param {Function} callback Callback to fire the next item in the queue.
+	 * @return {undefined}
+	 */
+	function sendRequest(request, callback) {
+		var queueTime = request.queueTime;
+		var offlineLag = new Date().getTime() - queueTime;
+		var path = undefined;
+		var transport = should_use_sendBeacon() ? transports.get('sendBeacon')() : window.XMLHttpRequest && 'withCredentials' in new window.XMLHttpRequest() ? transports.get('xhr')() : transports.get('image')();
+		var user_callback = request.callback;
+	
+		var core_system = settings.get('config') && settings.get('config').system || {};
+		var system = utils.merge(core_system, {
+			api_key: settings.get('api_key'), // String - API key - Make sure the request is from a valid client (idea nicked from Keen.io) useful if a page gets copied onto a Russian website and creates noise
+			version: settings.get('version'), // Version of the tracking client e.g. '1.2'
+			source: settings.get('source') });
+	
+		// Source of the tracking client e.g. 'o-tracking'
+		request = utils.merge({ system: system }, request);
+	
+		// Only bothered about offlineLag if it's longer than a second, but less than 12 months. (Especially as Date can be dodgy)
+		if (offlineLag > 1000 && offlineLag < 12 * 30 * 24 * 60 * 60 * 1000) {
+			request.time = request.time || {};
+			request.time.offset = offlineLag;
+		}
+		delete request.callback;
+		delete request.async;
+		delete request.type;
+		delete request.queueTime;
+	
+		utils.log('user_callback', user_callback);
+		utils.log('PreSend', request);
+	
+		path = JSON.stringify(request);
+	
+		utils.log('path', path);
+	
+		transport.complete(function (error) {
+			if (utils.is(user_callback, 'function')) {
+				user_callback.call(request);
+				utils.log('calling user_callback');
+			}
+	
+			if (error) {
+				// Re-add to the queue if it failed.
+				// Re-apply queueTime here
+				request.queueTime = queueTime;
+				queue.add(request).save();
+	
+				utils.broadcast('oErrors', 'log', {
+					error: error.message,
+					info: { module: 'o-tracking' }
+				});
+			} else {
+				callback && callback();
+			}
+		});
+	
+		// Both developer and noSend flags have to be set to stop the request sending.
+		if (!(settings.get('developer') && settings.get('no_send'))) {
+			transport.send(domain, path);
+		}
+	}
+	
+	/**
+	 * Adds a new request to the list of pending requests
+	 *
+	 * @param {Tracking} request The request to queue
+	 * @return {undefined}
+	 */
+	function add(request) {
+		request.queueTime = new Date().getTime();
+		if (should_use_sendBeacon()) {
+			sendRequest(request);
+		} else {
+			queue.add(request).save();
+		}
+		utils.log('AddedToQueue', queue);
+	}
+	
+	/**
+	 * If there are any requests queued, attempts to send the next one
+	 * Otherwise, does nothing
+	 * @param {Function} callback - Optional callback
+	 * @return {undefined}
+	 */
+	function run(callback) {
+		if (utils.isUndefined(callback)) {
+			callback = function () {};
+		}
+	
+		var next = function next() {
+			run();
+			callback();
+		};
+		var nextRequest = queue.shift();
+	
+		// Cancel if we've run out of requests.
+		if (!nextRequest) {
+			return callback();
+		}
+	
+		// Send this request, then try run again.
+		return sendRequest(nextRequest, next);
+	}
+	
+	/**
+	 * Convenience function to add and run a request all in one go.
+	 *
+	 * @param {Object} request The request to queue and run.
+	 * @return {undefined}
+	 */
+	function addAndRun(request) {
+		add(request);
+		run();
+	}
+	
+	/**
+	 * Init the queue and send any leftover events.
+	 * @return {undefined}
+	 */
+	function init() {
+		queue = new Queue('requests');
+	
+		if (settings.get('config') && settings.get('config').server) {
+			domain = settings.get('config').server;
+		}
+	
+		// If any tracking calls are made whilst offline, try sending them the next time the device comes online
+		utils.addEvent(window, 'online', run);
+	
+		// On startup, try sending any requests queued from a previous session.
+		run();
+	
+		return queue;
+	}
+	
+	module.exports = {
+		init: init,
+		add: add,
+		run: run,
+		addAndRun: addAndRun
+	};
+
+/***/ },
+/* 92 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var utils = __webpack_require__(87);
+	var Store = __webpack_require__(89);
+	
+	/**
+	 * Class for handling a queue backed up by a store.
+	 * @class Queue
+	 *
+	 * @param {String} name - The name of the queue.
+	 * @return {Queue} - Returns the instance of the queue.
+	 */
+	var Queue = function Queue(name) {
+		if (utils.isUndefined(name)) {
+			var undefinedName = new Error('You must specify a name for the queue.');
+			utils.broadcast('oErrors', 'log', {
+				error: undefinedName.message,
+				info: { module: 'o-tracking' }
+			});
+			throw undefinedName;
+		}
+	
+		/**
+	  * Queue data.
+	  * @type {Array}
+	  */
+		this.queue = [];
+	
+		/**
+	  * The storage method to use. Determines best storage method.
+	  * @type {Object}
+	  */
+		this.storage = new Store(name);
+	
+		// Retrieve any previous store with the same name.
+		if (this.storage.read()) {
+			this.queue = this.storage.read();
+		}
+	
+		return this;
+	};
+	
+	/**
+	 * Gets the contents of the store.
+	 *
+	 * @return {Array} The array of items.
+	 */
+	Queue.prototype.all = function () {
+		if (this.queue.length === 0) {
+			return [];
+		}
+	
+		var items = [];
+	
+		for (var i = 0; i < this.queue.length; i = i + 1) {
+			items.push(this.queue[i].item);
+		}
+	
+		return items;
+	};
+	
+	/**
+	 * Gets the first item in the store.
+	 *
+	 * @return {Object} Returns the item.
+	 */
+	Queue.prototype.first = function () {
+		if (this.queue.length === 0) {
+			return null;
+		}
+	
+		return this.queue[0].item;
+	};
+	
+	/**
+	 * Gets the last item in the store.
+	 *
+	 * @return {Object} Returns the item.
+	 */
+	Queue.prototype.last = function () {
+		if (this.queue.length === 0) {
+			return null;
+		}
+	
+		return this.queue.slice(-1)[0].item;
+	};
+	
+	/**
+	 * Add data to the store.
+	 *
+	 * @param {Object} item - An item or an array of items.
+	 *
+	 * @return {Queue} - Returns the instance of the queue.
+	 */
+	Queue.prototype.add = function (item) {
+		// I was trying to turn this whole add function into a little module, to stop doAdd function being created everytime, but couldn't work out how to get to 'this' from within the module.
+	
+		var self = this;
+		var i = undefined;
+	
+		function doAdd(item) {
+			self.queue.push({
+				created_at: new Date().valueOf(),
+				item: item
+			});
+		}
+	
+		if (utils.is(item, 'object') && item.constructor.toString().match(/array/i)) {
+			for (i = 0; i < item.length; i = i + 1) {
+				doAdd(item[i]);
+			}
+		} else {
+			doAdd(item);
+		}
+	
+		return self;
+	};
+	
+	/**
+	 * Overwrite the store with something completely new.
+	 *
+	 * @param {Array} items The new array of data.
+	 *
+	 * @return {Queue} - Returns the instance of the queue.
+	 */
+	Queue.prototype.replace = function (items) {
+		if (utils.is(items, 'object') && items.constructor.toString().match(/array/i)) {
+			this.queue = [];
+			this.add(items).save();
+	
+			return this;
+		}
+	
+		var invalidArg = new Error('Argument invalid, must be an array.');
+		utils.broadcast('oErrors', 'log', {
+			error: invalidArg.message,
+			info: { module: 'o-tracking' }
+		});
+		throw invalidArg;
+	};
+	
+	/**
+	 * Pop the first item from the queue.
+	 *
+	 * @return {Object} The item.
+	 */
+	Queue.prototype.shift = function () {
+		if (this.queue.length === 0) {
+			return null;
+		}
+	
+		var item = this.queue.shift().item;
+	
+		this.save();
+	
+		return item;
+	};
+	
+	/**
+	 * Save the current store to localStorage so that old requests can still be sent after a page refresh.
+	 *
+	 * @return {Queue} - Returns the instance of the queue.
+	 */
+	Queue.prototype.save = function () {
+		this.storage.write(this.queue);
+	
+		return this;
+	};
+	
+	module.exports = Queue;
+
+/***/ },
+/* 93 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	module.exports = {
+		xhr: __webpack_require__(94),
+		sendBeacon: __webpack_require__(95),
+		image: __webpack_require__(96),
+		get: function get(name) {
+			return this.mock || this[name];
+		}
+	};
+
+/***/ },
+/* 94 */
+/***/ function(module, exports) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	module.exports = function () {
+		var xhr = new window.XMLHttpRequest();
+	
+		return {
+			send: function send(url, data) {
+				xhr.open('POST', url, true);
+				xhr.withCredentials = true;
+				xhr.setRequestHeader('Content-type', 'application/json');
+				xhr.send(data);
+			},
+			complete: function complete(callback) {
+				xhr.onerror = function () {
+					callback(this);
+				};
+				xhr.onload = function () {
+					if (xhr.status >= 200 && xhr.status < 300) {
+						callback();
+					} else {
+						callback('Incorrect response: ' + xhr.status);
+					}
+				};
+			}
+		};
+	};
+
+/***/ },
+/* 95 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var _Promise = __webpack_require__(61)['default'];
+	
+	var define = false;
+	
+	module.exports = function () {
+	    var resolver = undefined;
+	    var rejecter = undefined;
+	    var p = new _Promise(function (resolve, reject) {
+	        resolver = resolve;
+	        rejecter = reject;
+	    });
+	    return {
+	        send: function send(url, data) {
+	            if (navigator.sendBeacon(url, data)) {
+	                resolver();
+	            } else {
+	                rejecter(new Error('Failed to send beacon event: ' + data.toString()));
+	            }
+	        },
+	        complete: function complete(callback) {
+	            callback && p.then(callback, callback);
+	        }
+	    };
+	};
+
+/***/ },
+/* 96 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	var utils = __webpack_require__(87);
+	
+	module.exports = function () {
+		var image = new Image(1, 1);
+	
+		return {
+			send: function send(url, data) {
+				image.src = url + '?data=' + utils.encode(data);
+			},
+			complete: function complete(callback) {
+				if (image.addEventListener) {
+					image.addEventListener('error', callback);
+					image.addEventListener('load', function () {
+						return callback();
+					});
+				} else {
+					// it's IE!
+					image.attachEvent('onerror', callback);
+					image.attachEvent('onload', function () {
+						return callback();
+					});
+				}
+			}
+		};
+	};
+
+/***/ },
+/* 97 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var Core = __webpack_require__(98);
+	var utils = __webpack_require__(87);
+	
+	/**
+	 * Default properties for page tracking requests.
+	 *
+	 * @return {Object} - The default properties for pages.
+	 */
+	var defaultPageConfig = function defaultPageConfig() {
+		return {
+			category: 'page',
+			action: 'view',
+			context: {
+				url: document.URL,
+				referrer: document.referrer
+			},
+	
+			async: true // Send this event asyncronously - as sync doesn't work in FF, as it doesn't send cookies. https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest#withCredentials
+		};
+	};
+	
+	/**
+	 * Make the page tracking request.
+	 *
+	 * @param {Object} config - Configuration object. If omitted, will use the defaults.
+	 * @param {Function} callback - Callback function. Called when request completed.
+	 * @return {undefined}
+	 */
+	function page(config, callback) {
+		config = utils.merge(defaultPageConfig(), {
+			context: config
+		});
+	
+		// New PageID for a new Page.
+		Core.setRootID();
+		Core.track(config, callback);
+	
+		// Alert internally that a new page has been tracked - for single page apps for example.
+		utils.triggerPage();
+	}
+	
+	/**
+	 * Listener for pages.
+	 *
+	 * @param {CustomEvent} e - The CustomEvent
+	 * @private
+	 * @return {undefined}
+	 */
+	function listener(e) {
+		page(e.detail);
+	}
+	
+	module.exports = page;
+	module.exports.init = function () {
+		utils.addEvent(window, 'oTracking.page', listener);
+	};
+
+/***/ },
+/* 98 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var Send = __webpack_require__(91);
+	var User = __webpack_require__(86);
+	var Session = __webpack_require__(90);
+	
+	/**
+	 * Shared 'internal' scope.
+	 * @type {Object}
+	 */
+	var settings = __webpack_require__(85);
+	var utils = __webpack_require__(87);
+	
+	/**
+	 * Default properties for sending a tracking request.
+	 * @type {Object}
+	 * @return {Object} - The default settings for the component.
+	 */
+	var defaultConfig = function defaultConfig() {
+		return {
+			async: true,
+			callback: function callback() {},
+			system: {},
+			context: {},
+			user: {
+				passport_id: utils.getValueFromCookie(/USERID=([0-9]+):/) || utils.getValueFromCookie(/PID=([0-9]+)\_/),
+				ft_session: utils.getValueFromCookie(/FTSession=([^;]+)/)
+			}
+		};
+	};
+	
+	/**
+	 * Generate and store a new rootID.
+	 * @param {string} new_id - Optional rootID, if you want to use your own. Otherwise we'll create one for you.
+	 * @return {string|*} The rootID.
+	 */
+	function setRootID(new_id) {
+		settings.set('root_id', requestID(new_id));
+		return settings.get('root_id');
+	}
+	
+	/**
+	 * Get rootID.
+	 * @return {string|*} The rootID.
+	 */
+	function getRootID() {
+		var root_id = settings.get('root_id');
+	
+		if (utils.isUndefined(root_id)) {
+			root_id = setRootID();
+		}
+	
+		return root_id;
+	}
+	
+	/**
+	 * Create a requestID (unique identifier) for the page impression.
+	 *
+	 * @param {string} request_id - Optional RequestID, if you want to use your own. Otherwise will create one for you.
+	 *
+	 * @return {string|*} The RequestID.
+	 */
+	function requestID(request_id) {
+		if (utils.isUndefined(request_id)) {
+			request_id = utils.guid();
+		}
+	
+		return request_id;
+	}
+	
+	/**
+	 * Make a tracking request.
+	 *
+	 * @param {Object} config - Should be passed an object containing a format and the values for that format
+	 * @param {function} callback - Fired when the request has been made.
+	 *
+	 * @return {Object} request
+	 */
+	function track(config, callback) {
+		if (utils.isUndefined(callback)) {
+			callback = function () {};
+		}
+	
+		var coreContext = settings.get('config') && settings.get('config').context || {};
+		config.context = utils.merge(coreContext, config.context);
+	
+		var request = utils.merge(defaultConfig(), utils.merge(config, { callback: callback }));
+	
+		var session = Session.session();
+	
+		/* Values here are kinda the mandatory ones, so we want to make sure they're possible. */
+		request = utils.merge({
+			context: {
+				id: requestID(request.id), // Keep an ID if it's been set elsewhere.
+				root_id: getRootID()
+			},
+	
+			user: settings.get('config') ? settings.get('config').user : {},
+	
+			device: {
+				spoor_session: session.id,
+				spoor_session_is_new: session.isNew,
+				spoor_id: User.userID()
+			}
+		}, request);
+	
+		utils.log('Core.Track', request);
+		// Send it.
+		Send.addAndRun(request);
+	
+		return request;
+	}
+	
+	module.exports = {
+		setRootID: setRootID,
+		getRootID: getRootID,
+		track: track
+	};
+
+/***/ },
+/* 99 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var Core = __webpack_require__(98);
+	var utils = __webpack_require__(87);
+	
+	/**
+	 * Default properties for events.
+	 *
+	 * @type {Object}
+	 * @return {Object} - Default configuration for events
+	 */
+	var defaultEventConfig = function defaultEventConfig() {
+		return {
+			category: 'event',
+			action: 'generic',
+			context: {}
+		};
+	};
+	
+	/**
+	 * Track an event.
+	 *
+	 * @param {Event} trackingEvent - The event, which could the following properties in its 'detail' key:
+	 *   [category] - The category, for example: video
+	 *   [action] - The action performed, for example: play
+	 *   [component_id] - Optional. The ID for the component instance.
+	 *
+	 * @param {Function} callback - Optional, Callback function. Called when request completed.
+	 * @return {undefined}
+	 */
+	function event(trackingEvent, callback) {
+		if (utils.is(trackingEvent.detail.category) || utils.is(trackingEvent.detail.action)) {
+			var noCategoryActionVals = 'Missing category or action values';
+			utils.broadcast('oErrors', 'log', {
+				error: noCategoryActionVals,
+				info: { module: 'o-tracking' }
+			});
+			throw noCategoryActionVals;
+		}
+	
+		var config = utils.merge(defaultEventConfig(), {
+			category: trackingEvent.detail.category,
+			action: trackingEvent.detail.action,
+			context: trackingEvent.detail
+		});
+	
+		delete config.context.category;
+		delete config.context.action;
+	
+		var origamiElement = getOrigamiEventTarget(trackingEvent);
+		if (origamiElement) {
+			config.context.component_name = origamiElement.getAttribute('data-o-component');
+			config.context.component_id = config.context.component_id || getComponentId(origamiElement);
+		} else {
+			config.context.component_name = config.context.component_name;
+			config.context.component_id = config.context.component_id;
+		}
+	
+		Core.track(config, callback);
+	}
+	
+	/**
+	 * Helper function that gets the target of an event if it's an Origami component
+	 * @param  {Event} event - The event triggered.
+	 * @return {HTMLElement|undefined} - Returns the HTML element if an Origami component, else undefined.
+	 */
+	function getOrigamiEventTarget(event) {
+		// IE backwards compatibility (get the actual target). If not IE, uses
+		// `event.target`
+		var element = event.target || event.srcElement;
+	
+		if (element && element.getAttribute('data-o-component')) {
+			return element;
+		} else {
+			return;
+		}
+	}
+	
+	/**
+	 * Helper function that generates a component id based on its xpath
+	 *
+	 * @param {HTMLElement} element - The HTML Element to gen an ID for.
+	 *
+	 * @return {string} hash
+	 */
+	function getComponentId(element) {
+		var path = _getElementPath(element);
+	
+		if (typeof path === 'undefined') {
+			return;
+		}
+	
+		// Select the source element (first item in the ordered sequence `path`)
+		var srcElement = path[0];
+	
+		// Because, you could have two identical elements in the DOM as siblings,
+		// we need to determine the 'sibling index': the order they're sitting within a DOM node.
+		// Although in reality this is unlikely to always be the same, it's just a
+		// best guess - unless child elements are always appended to an element rather than added as the first child.
+		var siblingIndex = (function getSiblingIndex(element) {
+			var srcParent = element.parentElement;
+			if (srcParent) {
+				for (var i = 0; i < srcParent.childNodes.length; i++) {
+					if (srcParent.childNodes[i] === srcElement) {
+						return i;
+					}
+				}
+				return -1;
+			} else {
+				return 0;
+			}
+		})(srcElement);
+	
+		// Generate a normalised string (normalising browser quirks) from the sequence of elements
+		var normalisedStringPath = path.reduceRight(function (builder, el) {
+			if (!el.nodeName) {
+				return builder + ' - ' + el.constructor.name + '\n';
+			}
+	
+			var nodeName = el.nodeName.toLowerCase();
+	
+			// In some browsers, document is prepended with a '#'
+			if (nodeName.indexOf('#') === 0) {
+				return builder + '<' + nodeName + '>';
+			}
+	
+			// Replace this stuff with stuff that makes each node unique - without including styling detail (as this may change depending on animation state etc, position)
+			return builder + '<' + nodeName + ' id="' + (el.id || '') + '">';
+		}, '');
+	
+		// Append a sibling index to the string and use some simple, off the shelf string hashing algorithm.
+		return _generateHash(normalisedStringPath + '_siblingIndex=' + siblingIndex);
+	}
+	
+	/**
+	 * Gets the xpath for an element
+	 *
+	 * @param  {HTMLElement} element - The element to get a path for.
+	 *
+	 * @private
+	 *
+	 * @return {array} The xpath
+	 */
+	function _getElementPath(element) {
+		var path = [];
+	
+		while (element) {
+			path.push(element);
+			element = element.parentElement;
+		}
+	
+		return path;
+	}
+	
+	/**
+	 * JS Implementation of MurmurHash2
+	 *
+	 * @author <a href="mailto:gary.court@gmail.com">Gary Court</a>
+	 * @see http://github.com/garycourt/murmurhash-js
+	 * @author <a href="mailto:aappleby@gmail.com">Austin Appleby</a>
+	 * @see http://sites.google.com/site/murmurhash/
+	 * Copyright (c) 2011 Gary Court
+	 *
+	 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+	 *
+	 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+	 *
+	 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	 *
+	 * @param {string} str  - The string to hash, ASCII only.
+	 *
+	 * @return {number} 32-bit positive integer hash
+	 *
+	 * @private
+	 */
+	function _generateHash(str) {
+		var l = str.length;
+		var h = 1 ^ l;
+		var i = 0;
+		var k = undefined;
+	
+		while (l >= 4) {
+			k = str.charCodeAt(i) & 0xff | (str.charCodeAt(++i) & 0xff) << 8 | (str.charCodeAt(++i) & 0xff) << 16 | (str.charCodeAt(++i) & 0xff) << 24;
+	
+			k = (k & 0xffff) * 0x5bd1e995 + (((k >>> 16) * 0x5bd1e995 & 0xffff) << 16);
+			k ^= k >>> 24;
+			k = (k & 0xffff) * 0x5bd1e995 + (((k >>> 16) * 0x5bd1e995 & 0xffff) << 16);
+	
+			h = (h & 0xffff) * 0x5bd1e995 + (((h >>> 16) * 0x5bd1e995 & 0xffff) << 16) ^ k;
+	
+			l -= 4;
+			++i;
+		}
+	
+		switch (l) {
+			case 3:
+				h ^= (str.charCodeAt(i + 2) & 0xff) << 16;
+				break;
+			case 2:
+				h ^= (str.charCodeAt(i + 1) & 0xff) << 8;
+				break;
+			case 1:
+				h ^= str.charCodeAt(i) & 0xff;
+				h = (h & 0xffff) * 0x5bd1e995 + (((h >>> 16) * 0x5bd1e995 & 0xffff) << 16);
+		}
+	
+		h ^= h >>> 13;
+		h = (h & 0xffff) * 0x5bd1e995 + (((h >>> 16) * 0x5bd1e995 & 0xffff) << 16);
+		h ^= h >>> 15;
+	
+		return h >>> 0;
+	}
+	
+	module.exports = event;
+	module.exports.init = function () {
+		utils.addEvent(window, 'oTracking.event', event);
+	};
+
+/***/ },
+/* 100 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*** IMPORTS FROM imports-loader ***/
+	'use strict';
+	
+	var define = false;
+	
+	/*global module, require, window */
+	/*eslint-disable*/
+	'use strict';
+	/*eslint-enable*/
+	
+	var Queue = __webpack_require__(92);
+	var Core = __webpack_require__(98);
+	var utils = __webpack_require__(87);
+	var internalQueue = undefined;
+	
+	/**
+	 * Default properties for events.
+	 *
+	 * @type {Object}
+	 * @return {Object} The default link configuration.
+	 */
+	var defaultLinkConfig = function defaultLinkConfig() {
+		return {
+			category: 'link',
+			action: 'click',
+			context: {}
+		};
+	};
+	
+	var callback = function callback() {};
+	
+	/**
+	 * Check if a URL is going to the same site (internal)
+	 *
+	 * @param {string} url - The url to check.
+	 *
+	 * @return {boolean} - Result of internal url.
+	 * @private
+	 */
+	function isInternal(url) {
+		return url.indexOf(window.document.location.hostname) > -1;
+	}
+	
+	/**
+	 * Check if a URL is going to an external site.
+	 *
+	 * @param {string} url - The url to check.
+	 *
+	 * @return {boolean} - The result of external url.
+	 * @private
+	 */
+	function isExternal(url) {
+		return !isInternal(url);
+	}
+	
+	/**
+	 * Checks if a URL is pointing at a file.
+	 * NOTE: Don't want to maintain a list of file extensions, so try best guess.
+	 *
+	 * @param {string} url - The url to check.
+	 *
+	 * @return {boolean} - The result if a url is a file location.
+	 * @private
+	 */
+	function isFile(url) {
+		var path = url.replace(/^\w+:\/\//, '').replace(/(#|\?).+/g, '').replace(/\/$/, '');
+	
+		// It must have a slash to have a file path
+		if (path.indexOf('/') === -1) {
+			return false;
+		}
+	
+		// No extension
+		if (!path.match(/\.(\w{2,4})$/)) {
+			return false;
+		}
+	
+		// Obviously a web page.
+		if (['html', 'htm', 'php'].indexOf(RegExp.$1) > -1) {
+			return false;
+		}
+	
+		return true;
+	}
+	
+	/**
+	 * Calculates the parents of a HTML element.
+	 *
+	 * @param {Element} element - The starting element.
+	 *
+	 * @return {array} The tree of parent elements.
+	 * @private
+	 */
+	function parentTree(element) {
+		if (!element) {
+			return [];
+		}
+	
+		var tree = [element];
+	
+		if (element.nodeName === 'BODY') {
+			return tree;
+		}
+	
+		return tree.concat(parentTree(element.parentElement));
+	}
+	
+	/**
+	 * Create the identifier of the link. TODO: https://rally1.rallydev.com/#/16966478977d/detail/defect/17919485944
+	 *
+	 * @param {Element} link - The link element.
+	 *
+	 * @return {string} The ID for the link.
+	 * @private
+	 */
+	function createLinkID(link) {
+		var parents = parentTree(link);
+		var name = link.href || link.text || link.name || link.id;
+	
+		name = name.replace(/^http:\/\/[\w\.\:]+/, '') // Remove http://[something].
+		.replace(/^\//, '') // Remove slash at beginning
+		.replace(/(\?|#).*$/, '') // Remove query string and page anchor (#)
+		.replace(/\/$/, '') // Remove trailing slash
+		.replace(/\.[a-z]{3,4}$/, ''); // Remove final '.com' or similar
+	
+		// If it's an external URL
+		if (name === '') {
+			name = link.href.replace(/^http:\/\//, '').split('?')[0].replace(/\/$/, '');
+		}
+	
+		// Last 2 items of URL
+		name = name.split('/').slice(-2).filter(function (obj) {
+			return obj;
+		});
+	
+		// If uuid then take final value only
+		if (name.slice(-1)[0].match(/[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}/)) {
+			name = name.slice(-1);
+		}
+	
+		// Remove slashes as final outcome is slash delimited
+		name = (name.length > 1 ? name.slice(0, 2).join('-') : name[0]).toLowerCase();
+	
+		return parents.map(function (p) {
+			return p.tagName.toLowerCase();
+		}).filter(function (e, i, arr) {
+			return arr.lastIndexOf(e) === i;
+		}).reverse().join('/') + '/' + name;
+	}
+	
+	/**
+	 * Track the link.
+	 *
+	 * @param {Element} element - The element being tracked.
+	 *
+	 * @return {Object|boolean} - If synscronous, returns when the tracking event is sent, if async, returns true immediately.
+	 */
+	function track(element) {
+		var linkID = createLinkID(element);
+		var config = utils.merge(defaultLinkConfig(), {
+			context: {
+				link: {
+					id: linkID,
+					source_id: Core.getRootID(),
+					href: element.href,
+					title: element.text
+				}
+			}
+		});
+	
+		if (isExternal(element.href) || isFile(element.href)) {
+			// Send now
+			config.async = false;
+			return Core.track(config, callback);
+		}
+	
+		if (isInternal(element.href)) {
+			// Queue and send on next page.
+			internalQueue.add(config).save();
+		}
+	
+		return true;
+	}
+	
+	/**
+	 * Handle a click event.
+	 *
+	 * @param {Event} event - The event.
+	 *
+	 * @return {boolean} - Returns the result of the tracking request
+	 * @private
+	 */
+	function clickEvent(event) {
+		return track(event.target);
+	}
+	
+	/**
+	 * Set the callback called on every link tracking event.
+	 *
+	 * @param {Function} cb - The callback.
+	 * @return {undefined}
+	 */
+	function onClick(cb) {
+		callback = cb;
+	}
+	
+	/**
+	 * If there are any requests queued, attempts to send the next one
+	 * Otherwise, does nothing
+	 * @return {undefined}
+	 */
+	function runQueue() {
+		var next = function next() {
+			runQueue();callback();
+		};
+		var nextLink = internalQueue.shift();
+		if (nextLink) {
+			Core.track(nextLink, next);
+		}
+	}
+	
+	/**
+	 * Listener for links.
+	 *
+	 * @param {CustomEvent} e - The CustomEvent
+	 * @private
+	 * @return {undefined}
+	 */
+	function listener(e) {
+		track(e.detail);
+	}
+	
+	/**
+	 * Setup and initialise link tracking.
+	 *
+	 * @param {Object}  config - Initial configuration
+	 * @param {Element} config.root - Optional. The root element to search for links. Defaults to window.document - useful if trying to track links from an iframe.
+	 * @param {string}  config.selector - Optional. The selector to use to search for links. Defaults to 'a'.
+	 * @param {string}  config.event - Optional. The event to listen on. Defaults to 'click'.
+	 * @param {array}   config.links - Optional. If you've already worked out the links to track, then this is used to pass them over. Must be an array with elements that accept events.
+	 *
+	 * @return {array} The links setup in this init.
+	 */
+	function init(config) {
+		var links = undefined;
+		var i = undefined;
+	
+		internalQueue = new Queue('links');
+	
+		runQueue();
+	
+		// Listen for page requests. If this is a single page app, we can send link requests now.
+		utils.onPage(runQueue);
+	
+		if (utils.isUndefined(config)) {
+			config = {};
+		}
+		config = utils.merge({
+			root: window.document,
+			selector: 'a',
+			event: 'click',
+			links: null
+		}, config);
+	
+		if (config.hasOwnProperty('callback')) {
+			callback = config.callback;
+		}
+	
+		if (config.links && utils.is(config.links, 'object') && config.links.constructor.toString().match(/array/i)) {
+			links = config.links;
+	
+			for (i = 0; i < links.length; i = i + 1) {
+				utils.addEvent(links[i], config.event, clickEvent);
+			}
+		} else {
+			if (typeof config.root !== 'object' || typeof config.selector !== 'string') {
+				var configException = 'If supplying a config it must have a valid root element and a selector string';
+				utils.broadcast('oErrors', 'log', {
+					error: configException,
+					info: { module: 'o-tracking' }
+				});
+				throw configException;
+			}
+	
+			utils.addEvent(config.root, config.event, function (event) {
+				if (event.target.tagName === config.selector.toUpperCase()) {
+					clickEvent.call(event.target, event);
+				}
+			});
+		}
+	
+		utils.addEvent(window, 'oTracking.link', listener);
+	}
+	
+	module.exports = {
+		init: init,
+		onClick: onClick,
+		track: track
+	};
+
+/***/ },
+/* 101 */
+/***/ function(module, exports, __webpack_require__) {
+
 	/* WEBPACK VAR INJECTION */(function(global, process) {// Copyright Joyent, Inc. and other Node contributors.
 	//
 	// Permission is hereby granted, free of charge, to any person obtaining a
@@ -4864,7 +7235,7 @@
 	}
 	exports.isPrimitive = isPrimitive;
 	
-	exports.isBuffer = __webpack_require__(84);
+	exports.isBuffer = __webpack_require__(103);
 	
 	function objectToString(o) {
 	  return Object.prototype.toString.call(o);
@@ -4908,7 +7279,7 @@
 	 *     prototype.
 	 * @param {function} superCtor Constructor function to inherit prototype from.
 	 */
-	exports.inherits = __webpack_require__(85);
+	exports.inherits = __webpack_require__(104);
 	
 	exports._extend = function(origin, add) {
 	  // Don't do anything if add isn't an object
@@ -4926,10 +7297,10 @@
 	  return Object.prototype.hasOwnProperty.call(obj, prop);
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(83)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(102)))
 
 /***/ },
-/* 83 */
+/* 102 */
 /***/ function(module, exports) {
 
 	// shim for using process in browser
@@ -5026,7 +7397,7 @@
 
 
 /***/ },
-/* 84 */
+/* 103 */
 /***/ function(module, exports) {
 
 	module.exports = function isBuffer(arg) {
@@ -5037,7 +7408,7 @@
 	}
 
 /***/ },
-/* 85 */
+/* 104 */
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
@@ -5066,7 +7437,7 @@
 
 
 /***/ },
-/* 86 */
+/* 105 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -5077,9 +7448,9 @@
 	 * Copyright 2009-2016 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 * Available under MIT license <https://lodash.com/license>
 	 */
-	var Stack = __webpack_require__(87),
-	    keys = __webpack_require__(89),
-	    root = __webpack_require__(90);
+	var Stack = __webpack_require__(106),
+	    keys = __webpack_require__(108),
+	    root = __webpack_require__(109);
 	
 	/** Used to compose bitmasks for comparison styles. */
 	var UNORDERED_COMPARE_FLAG = 1,
@@ -5817,7 +8188,7 @@
 
 
 /***/ },
-/* 87 */
+/* 106 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(module, global) {/**
@@ -6483,10 +8854,10 @@
 	
 	module.exports = Stack;
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(88)(module), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(107)(module), (function() { return this; }())))
 
 /***/ },
-/* 88 */
+/* 107 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -6502,7 +8873,7 @@
 
 
 /***/ },
-/* 89 */
+/* 108 */
 /***/ function(module, exports) {
 
 	/**
@@ -6944,7 +9315,7 @@
 
 
 /***/ },
-/* 90 */
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(module, global) {/**
@@ -7007,14 +9378,14 @@
 	
 	module.exports = root;
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(88)(module), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(107)(module), (function() { return this; }())))
 
 /***/ },
-/* 91 */
+/* 110 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var strictUriEncode = __webpack_require__(92);
+	var strictUriEncode = __webpack_require__(111);
 	
 	exports.extract = function (str) {
 		return str.split('?')[1] || '';
@@ -7069,7 +9440,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.sort().map(function (val2) {
+				return val.slice().sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
@@ -7082,7 +9453,7 @@
 
 
 /***/ },
-/* 92 */
+/* 111 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -7094,7 +9465,7 @@
 
 
 /***/ },
-/* 93 */
+/* 112 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*** IMPORTS FROM imports-loader ***/
@@ -7107,6 +9478,7 @@
 	var define = false;
 	
 	'use strict';
+	var tracking = __webpack_require__(82);
 	
 	function makeSelect(items, selected) {
 		var input = document.createElement('select');
@@ -7238,6 +9610,9 @@
 		}
 	
 		formLocation.addEventListener('submit', function submitCatcher(e) {
+			tracking({
+				action: 'Form Used'
+			});
 			e.preventDefault();
 			validate();
 			return false;
