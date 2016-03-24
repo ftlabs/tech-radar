@@ -25,6 +25,7 @@ Object.keys(qpSchema).forEach(key => {
 });
 const color = require('tinycolor2');
 const graph = require('./lib/d3');
+const tracking = require('./lib/tracking');
 const extend = require('util')._extend;
 const berthaRoot = 'https://bertha.ig.ft.com/';
 const berthaView = 'view/publish/gss/';
@@ -81,6 +82,8 @@ function parseOptions (config, force = false) {
 
 	return options;
 }
+
+tracking({action: 'PageLoad'});
 
 // read query params
 parseOptions((function () {

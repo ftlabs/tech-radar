@@ -8,7 +8,7 @@
     "watch": "nodemon -e js,html,scss --watch ./client --exec 'npm run build'",
     "build": "npm run compile && cp ./client/* ./dist/ || :",
     "deploy": "git-directory-deploy --directory ./dist",
-	"postinstall": "bower install"
+    "postinstall": "bower install"
   },
   "author": "FTLabs",
   "license": "MIT",

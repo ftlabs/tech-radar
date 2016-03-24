@@ -1,4 +1,5 @@
 'use strict';
+const tracking = require('./tracking');
 
 function makeSelect (items, selected) {
 	const input = document.createElement('select');
@@ -99,6 +100,9 @@ module.exports = function (schema, dataFormat, options) {
 	formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
 
 	function validate () {
+		tracking({
+			action: 'Form Used'
+		});
 		inputs.forEach(el => {
 			const shouldDisable = (
 				el.value === '' ||
