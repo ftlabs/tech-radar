@@ -1,4 +1,5 @@
 'use strict';
+const tracking = require('./tracking');
 
 function makeSelect (items, selected) {
 	const input = document.createElement('select');
@@ -112,6 +113,9 @@ module.exports = function (schema, dataFormat, options) {
 	}
 
 	formLocation.addEventListener('submit', function submitCatcher (e) {
+		tracking({
+			action: 'Form Used'
+		});
 		e.preventDefault();
 		validate();
 		return false;

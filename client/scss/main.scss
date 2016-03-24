@@ -100,7 +100,7 @@ svg {
 			stroke-alignment: outer;
 		}
 
-		&.ring-label {
+		&.ring-label, &.segment-label {
 			fill: white;
 			font-size: 18pt;
 
@@ -108,12 +108,6 @@ svg {
 				stroke: black;
 				stroke-width: 5px;
 			}
-		}
-
-		&.segment-label {
-			fill: black;
-			text-decoration: underline;
-			font-size: 18pt;
 		}
 	}
 

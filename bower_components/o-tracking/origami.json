@@ -1,0 +1,23 @@
+{
+    "description": "Module for tracking FT",
+    "origamiType": "module",
+    "origamiVersion": 1,
+    "support": "https://github.com/Financial-Times/o-tracking/issues",
+    "supportStatus": "active",
+    "browserFeatures": {
+        "required": [
+            "CustomEvent"
+        ],
+        "optional": [
+            "Promise",
+            "sendBeacon"
+        ]
+    },
+    "demos": [
+        {
+            "path": "/demos/json-config.html",
+            "expanded": true,
+            "description": "Sample configuration for a product."
+        }
+    ]
+}
