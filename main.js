@@ -390,6 +390,9 @@
 			if (data[0][options.sortCol] === undefined) {
 				throw Error('No column with the name \'' + options.sortCol + '\'. ' + (options.sortCol === 'phase' ? 'Do you need to set the sortcol parameter?' : 'Did you set the sortcol parameter to the correct column heading?') + '\n Available headings: ' + _Object$keys(data[0]).join(', '));
 			}
+			if (data[0]['name'] === undefined) {
+				throw Error('No column with the name "name". The name column is required to label each data point.');
+			}
 		} else {
 			throw Error('Empty spreasheet from Bertha');
 		}
@@ -1006,8 +1009,8 @@
 		return mergeData(data);
 	}).then(function (data) {
 	
-		var cleanUpTable = generateTable(data);
-		var cleanUpGraph = generateGraphs(data);
+		var cleanUpGraph = function cleanUpGraph() {};
+		var cleanUpTable = function cleanUpTable() {};
 	
 		if (options.dashboard) {
 			document.getElementById('tech-radar__settings').style.display = 'none';
@@ -1060,6 +1063,9 @@
 			cleanUpTable = generateTable(data);
 			cleanUpGraph = generateGraphs(data);
 		});
+	
+		cleanUpTable = generateTable(data);
+		cleanUpGraph = generateGraphs(data);
 	})['catch'](function (e) {
 		document.getElementById('error-text-target').textContent = e.message;
 		throw e;
@@ -9600,6 +9606,9 @@
 		formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
 	
 		function validate() {
+			tracking({
+				action: 'Form Used'
+			});
 			inputs.forEach(function (el) {
 				var shouldDisable = el.value === '' || el.value === 'Default';
 				if (shouldDisable) {
@@ -9610,9 +9619,6 @@
 		}
 	
 		formLocation.addEventListener('submit', function submitCatcher(e) {
-			tracking({
-				action: 'Form Used'
-			});
 			e.preventDefault();
 			validate();
 			return false;
