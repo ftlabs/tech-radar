@@ -81,7 +81,8 @@
 		sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)'],
 		crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.'],
 		noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)'],
-		nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)']
+		nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)'],
+		css: ['customCss', String, '', 'Advanced: Style this page with some custom css.']
 	};
 	
 	var options = {};
@@ -1011,6 +1012,12 @@
 	
 		var cleanUpGraph = function cleanUpGraph() {};
 		var cleanUpTable = function cleanUpTable() {};
+	
+		if (options.customCss) {
+			var customStyleSheet = document.createElement('style');
+			customStyleSheet.textContent = options.customCss;
+			document.head.appendChild(customStyleSheet);
+		}
 	
 		if (options.dashboard) {
 			document.getElementById('tech-radar__settings').style.display = 'none';
@@ -4241,11 +4248,15 @@
 	
 		node.append('svg:text').text(function (n) {
 			return n.dot === false ? n.name : '';
-		}).attr('class', 'd3-label bg segment-label').attr('x', '-10px').attr('y', '5px');
+		}).attr('class', function (n) {
+			return 'd3-label bg' + ('' + (n.dot === false ? ' segment-label' : ''));
+		}).attr('x', '-10px').attr('y', '5px');
 	
 		node.append('svg:text').text(function (n) {
 			return n.dot === false ? n.name : '';
-		}).attr('class', 'd3-label segment-label').attr('x', '-10px').attr('y', '5px');
+		}).attr('class', function (n) {
+			return 'd3-label' + ('' + (n.dot === false ? ' segment-label' : ''));
+		}).attr('x', '-10px').attr('y', '5px');
 	
 		var rootNode = svg.select('.rootNode');
 	
@@ -4278,8 +4289,8 @@
 		rings.reverse();
 	
 		// Add rectangles to hide other quadrants of the circle.
-		rootNode.append('svg:rect').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', 'rgba(255, 255, 255, 1)');
-		rootNode.append('svg:rect').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', 'rgba(255, 255, 255, 1)');
+		rootNode.append('svg:rect').attr('class', 'mask').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', 'rgba(255, 255, 255, 1)');
+		rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', 'rgba(255, 255, 255, 1)');
 	
 		var _iteratorNormalCompletion2 = true;
 		var _didIteratorError2 = false;
@@ -4308,7 +4319,7 @@
 			}
 		}
 	
-		rootNode.append('svg:circle').attr('class', 'background').attr('r', totalRingSize * innerWidth).style('fill', 'rgba(255, 255, 255, 1)');
+		rootNode.append('svg:circle').attr('class', 'background mask').attr('r', totalRingSize * innerWidth).style('fill', 'rgba(255, 255, 255, 1)');
 	
 		var _iteratorNormalCompletion3 = true;
 		var _didIteratorError3 = false;
@@ -9505,6 +9516,16 @@
 		return input;
 	}
 	
+	function makeTextarea(placeholder, text) {
+		var ta = document.createElement('textarea');
+		ta.classList.add('o-forms-textarea');
+		ta.style.height = '6em';
+		ta.setAttribute('form', 'tech-radar__qp-form');
+		ta.placeholder = placeholder;
+		ta.textContent = text;
+		return ta;
+	}
+	
 	var inputs = [];
 	module.exports = function (schema, dataFormat, options) {
 	
@@ -9567,6 +9588,11 @@
 	
 				if (qp === 'segment') {
 					input = makeSelect(dataFormat, options.segment === optionDefault ? 'Default' : options.segment);
+				}
+	
+				if (qp === 'css') {
+					input = makeTextarea(optionDefault, optionValue);
+					group.style.flexBasis = '90%';
 				}
 	
 				input.name = qp;
