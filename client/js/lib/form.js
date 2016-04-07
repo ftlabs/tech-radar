@@ -20,6 +20,16 @@ function makeSelect (items, selected) {
 	return input;
 }
 
+function makeTextarea (placeholder, text) {
+	const ta = document.createElement('textarea');
+	ta.classList.add('o-forms-textarea');
+	ta.style.height = '6em';
+	ta.setAttribute('form', 'tech-radar__qp-form');
+	ta.placeholder = placeholder;
+	ta.textContent = text;
+	return ta;
+}
+
 const inputs = [];
 module.exports = function (schema, dataFormat, options) {
 
@@ -76,6 +86,11 @@ module.exports = function (schema, dataFormat, options) {
 
 		if (qp === 'segment') {
 			input = makeSelect(dataFormat, options.segment === optionDefault ? 'Default' : options.segment);
+		}
+
+		if (qp === 'css') {
+			input = makeTextarea(optionDefault, optionValue);
+			group.style.flexBasis = '90%';
 		}
 
 		input.name = qp;

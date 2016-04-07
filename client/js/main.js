@@ -17,6 +17,7 @@ const qpSchema = {
 	crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.'],
 	noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)'],
 	nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)'],
+	css: ['customCss', String, '', 'Advanced: Style this page with some custom css.']
 };
 
 const options = {};
@@ -627,6 +628,12 @@ Promise.all([
 
 	let cleanUpGraph = function () {};
 	let cleanUpTable = function () {};
+
+	if (options.customCss) {
+		const customStyleSheet = document.createElement('style');
+		customStyleSheet.textContent = options.customCss;
+		document.head.appendChild(customStyleSheet);
+	}
 
 	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
