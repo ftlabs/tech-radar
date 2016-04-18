@@ -60,6 +60,41 @@ Numbers are any positive real number. E.g. `&number=0.1`, `&number=50`
 * crystallisation (String) - Ring to highlight
 * noderepulsion (Number) - How strongly the nodes repel each other (default, 3)
 * nodeattraction (Number) - How strongly the nodes are pulled to the center of the segment (default, 3)
+* css (String) - An advanced property but you can use this to override existing styles.
+
+CSS Example:
+
+```
+body, svg .mask {
+  background-color: #f6e9d8 !important;
+  fill: #f6e9d8 !important;
+}
+
+svg .d3-label {
+  font-size: 1.5em;
+  font-family: sans;
+  fill: green;
+}
+
+svg .d3-label.segment-label {
+  fill: yellow;
+}
+
+svg .d3-label.ring-label {
+  fill: red;
+}
+
+svg .d3-label.bg {
+  stroke-width: 0px !important;
+}
+
+svg circle.node {
+  transform: scale(1.5);
+  stroke: green;
+  stroke-width: 4px;
+  fill: white !important;
+}
+```
 
 Any of the above parameters can also be entered in the spreadsheet under name and configvalue columns e.g.
 
@@ -74,11 +109,13 @@ Example URL:
 
 ```
 
-Example URL: http://local.ft.com:8080/?sheet=my-information-sheet&id=12345678-ABCDEFG_ABCDEFGHIJKLMNMLKJIHGFEDCBA&sortcol=important-row&showcol=revelant-row,another-relevant-row```
+Example URL: http://local.ft.com:8080/?sheet=my-information-sheet&id=12345678-ABCDEFG_ABCDEFGHIJKLMNMLKJIHGFEDCBA&sortcol=important-row&showcol=revelant-row,another-relevant-row
 
 Demo URL: http://ftlabs.github.io/tech-radar/?id=14-BOCeYDFXQyGB4H7NRx5Vej6q9Fuh7gH93AsxEtl00&sheet=Data1&sortcol=do-able&showcol=heft
 
 ```
+
+
 
 ## Constructing the spreadsheet
 

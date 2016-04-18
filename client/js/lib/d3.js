@@ -285,13 +285,13 @@ module.exports = function ({
 
 	node.append('svg:text')
 		.text(n => n.dot === false ? n.name : '')
-		.attr('class', 'd3-label bg segment-label')
+		.attr('class', n => 'd3-label bg' + `${n.dot === false ? ' segment-label' : ''}`)
 		.attr('x', '-10px')
 		.attr('y', '5px');
 
 	node.append('svg:text')
 		.text(n => n.dot === false ? n.name : '')
-		.attr('class', 'd3-label segment-label')
+		.attr('class', n => 'd3-label' + `${n.dot === false ? ' segment-label' : ''}`)
 		.attr('x', '-10px')
 		.attr('y', '5px');
 
@@ -308,12 +308,14 @@ module.exports = function ({
 
 	// Add rectangles to hide other quadrants of the circle.
 	rootNode.append('svg:rect')
+		.attr('class', 'mask')
 		.attr('x', 0)
 		.attr('y', -totalRingSize)
 		.attr('width', totalRingSize)
 		.attr('height', totalRingSize * 2)
 		.style('fill', 'rgba(255, 255, 255, 1)');
 	rootNode.append('svg:rect')
+		.attr('class', 'mask')
 		.attr('x', -totalRingSize)
 		.attr('y', 0)
 		.attr('width', totalRingSize * 2)
@@ -331,7 +333,7 @@ module.exports = function ({
 
 	// Nothing goes in the middle ring
 	rootNode.append('svg:circle')
-		.attr('class', 'background')
+		.attr('class', 'background mask')
 		.attr('r', totalRingSize * innerWidth)
 		.style('fill', 'rgba(255, 255, 255, 1)');
 
