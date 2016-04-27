@@ -100,7 +100,7 @@ module.exports = function ({
 			weight,
 			text,
 			charge: -2500,
-			chargeDistance: totalRingSize/(rings.length),
+			chargeDistance: text.length * 16,
 			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 		};
 
@@ -166,9 +166,9 @@ module.exports = function ({
 		.nodes(labelAnchorNodes)
 		.links(labelAnchorLinks)
 		.charge(n => n.charge || 0)
-		.chargeDistance(n => n.chargeDistance || 10)
+		.chargeDistance(n => n.chargeDistance)
 		.gravity(0)
-		.linkStrength(1)
+		.linkStrength(0.1)
 		.linkDistance(3)
 		.size([width, height]);
 
