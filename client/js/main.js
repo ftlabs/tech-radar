@@ -12,6 +12,7 @@ const qpSchema = {
 	sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
 	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
 	ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)'],
+	gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings'],
 	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
 	sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)'],
 	crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.'],
@@ -415,7 +416,7 @@ function generateChartRings (data, labels = []) {
 
 		const baseColor = color(options.ringColor || '#fff1e0').toHsv();
 		const maxV = baseColor.v;
-		const minV = 0.5;
+		const minV = Math.min(Math.max(baseColor.v + (options.gradientOffset || -0.4), 0), 1);
 
 		// don't go fully black
 		baseColor.v = i * ((maxV - minV)/nRings) + minV;
