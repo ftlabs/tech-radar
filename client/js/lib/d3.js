@@ -209,17 +209,35 @@ module.exports = function ({
 
 	labelNode
 		.append('svg:text')
-		.text(n => n.text || '')
 		.attr('class', 'd3-label bg')
 		.attr('x', '-10px')
-		.attr('y', '5px');
+		.attr('y', '5px')
+		.each(function (n) {
+			if (!n.text) return;
+			n.text.split(' ').forEach(str => {
+				d3.select(this)
+				.append('svg:tspan')
+				.text(str)
+				.attr('x', 0)
+				.attr('dy', '1.2em');
+			});
+		});
 
 	labelNode
 		.append('svg:text')
-		.text(n => n.text || '')
 		.attr('class', 'd3-label')
 		.attr('x', '-10px')
-		.attr('y', '5px');
+		.attr('y', '5px')
+		.each(function (n) {
+			if (!n.text) return;
+			n.text.split(' ').forEach(str => {
+				d3.select(this)
+				.append('svg:tspan')
+				.text(str)
+				.attr('x', 0)
+				.attr('dy', '1.2em');
+			});
+		});
 
 	node.style('display', d => (d.visible === false && d.rootEl !== true) ? 'none' : 'initial');
 
