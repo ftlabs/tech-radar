@@ -95,21 +95,23 @@ module.exports = function ({
 
 		// Has the text
 		const label = {
+			__coment: 'The text end',
 			x,
 			y,
 			weight,
 			text,
-			charge: -2500,
-			chargeDistance: text.length * 16,
+			charge: -250,
+			chargeDistance: 160,
 			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 		};
 
 		// Pulls the label towards the node
 		const anchorToNode = {
+			__coment: 'Anchor Node',
 			x,
 			y,
-			weight,
-			fixed: true
+			fixed: true,
+			weight: 0
 		};
 		labelAnchorNodes.push(label);
 		labelAnchorNodes.push(anchorToNode);
@@ -117,7 +119,8 @@ module.exports = function ({
 		labelAnchorLinks.push({
 			source: 2*i,
 			target: 2*i + 1,
-			distance: 0
+			distance: 3,
+			weight,
 		});
 	});
 
@@ -168,7 +171,7 @@ module.exports = function ({
 		.charge(n => n.charge || 0)
 		.chargeDistance(n => n.chargeDistance)
 		.gravity(0)
-		.linkStrength(0.1)
+		.linkStrength(0.5)
 		.linkDistance(3)
 		.size([width, height]);
 
@@ -177,20 +180,25 @@ module.exports = function ({
 		nodes.forEach(function (d) {
 			if (d.x > width) [d.x, d.px] = [d.px, d.x];
 			if (d.y > height) [d.y, d.py] = [d.py, d.y];
-			d.x = d.x % (width * 4);
-			d.y = d.y % (height * 4);
-
 
 			// Attach the label node to this node
 			if (d.labelAnchor) {
+				d.labelAnchor.px = d.x;
+				d.labelAnchor.py = d.y;
 				d.labelAnchor.x = d.x;
 				d.labelAnchor.y = d.y;
 			}
 		});
 		node.attr('transform', d => `translate(${d.x}, ${d.y})`);
+		labelForce.alpha(0.1);
 	});
 
 	labelForce.on('tick', function () {
+		labelLine
+			.attr('x1', function (d) { return d.source.x; })
+			.attr('y1', function (d) { return d.source.y; })
+			.attr('x2', function (d) { return d.target.x; })
+			.attr('y2', function (d) { return d.target.y; });
 		labelNode.attr('transform', d => `translate(${d.x}, ${d.y})`);
 	});
 
@@ -207,6 +215,13 @@ module.exports = function ({
 		.append('svg:g')
 		.attr('id', n => `${n.id}`);
 
+	const labelLine = svg.selectAll('.label.link')
+		.data(labelAnchorLinks)
+		.enter()
+		.append('svg:line')
+		.style('stroke', 'grey')
+		.style('stroke-width', '1px');
+
 	labelNode
 		.append('svg:text')
 		.attr('class', 'd3-label bg')
@@ -214,12 +229,13 @@ module.exports = function ({
 		.attr('y', '5px')
 		.each(function (n) {
 			if (!n.text) return;
-			n.text.split(' ').forEach(str => {
+			const strs = n.text.split(' ');
+			strs.forEach((str, i) => {
 				d3.select(this)
 				.append('svg:tspan')
 				.text(str)
 				.attr('x', 0)
-				.attr('dy', '1.2em');
+				.attr('y', (i - (strs.length/2)) + 'em');
 			});
 		});
 
@@ -230,12 +246,13 @@ module.exports = function ({
 		.attr('y', '5px')
 		.each(function (n) {
 			if (!n.text) return;
-			n.text.split(' ').forEach(str => {
+			const strs = n.text.split(' ');
+			strs.forEach((str, i) => {
 				d3.select(this)
 				.append('svg:tspan')
 				.text(str)
 				.attr('x', 0)
-				.attr('dy', '1.2em');
+				.attr('y', (i - (strs.length/2)) + 'em');
 			});
 		});
 

@@ -7,7 +7,8 @@ const qpSchema = {
 	sortcol: ['sortCol', String, 'phase', 'Which column to sort by'],
 	title: ['title', String, '', 'Title to display'],
 	showcol: ['showCol', Array, [], 'Comma seperated list of columns to show'],
-	dashboard: ['dashboard', Boolean, false, 'Whether to display these settings.'],
+	dashboard: ['dashboard', Boolean, false, 'Whether to hide these settings.'],
+	defaultfilter: ['defaultFilter', String, '', 'Default search query for the filter'],
 	showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
 	sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
 	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
@@ -107,7 +108,7 @@ parseOptions((function () {
 }()), true);
 
 // String input from the filter field used to filter the text input
-let filterString = '';
+let filterString = options.defaultFilter;
 
 function addScript (url) {
 	return new Promise(function (resolve, reject) {
@@ -638,7 +639,6 @@ Promise.all([
 
 	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
-		return;
 	}
 
 	require('./lib/form')(
@@ -673,6 +673,7 @@ Promise.all([
 		});
 	});
 
+	document.getElementById('filter').value = filterString;
 	document.getElementById('filter').addEventListener('input', function (e) {
 
 		// Filter graph
