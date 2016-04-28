@@ -103,6 +103,7 @@ svg {
 		&.ring-label, &.segment-label {
 			fill: white;
 			font-size: 18pt;
+			text-anchor: start;
 
 			&.bg{
 				stroke: black;
@@ -114,6 +115,7 @@ svg {
 	// Hide it do that the use label is shown instead
 	.hovering {
 		.d3-label {
+			fill: red !important;
 			font-weight: bold;
 		}
 	}

@@ -88,7 +88,7 @@ module.exports = function ({
 	const labelAnchorLinks = [];
 	links.forEach((l, i) => {
 		const nodeToAttachTo = nodes[l.source];
-		const x = nodeToAttachTo.x;
+		const x = nodeToAttachTo.x - totalRingSize;
 		const y = nodeToAttachTo.y;
 		const weight = 0.1;
 		const text = nodeToAttachTo.name;
@@ -100,8 +100,7 @@ module.exports = function ({
 			y,
 			weight,
 			text,
-			charge: -250,
-			chargeDistance: 160,
+			charge: -700,
 			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 		};
 
@@ -111,7 +110,8 @@ module.exports = function ({
 			x,
 			y,
 			fixed: true,
-			weight: 0
+			weight: 0,
+			charge: -100
 		};
 		labelAnchorNodes.push(label);
 		labelAnchorNodes.push(anchorToNode);
@@ -123,6 +123,15 @@ module.exports = function ({
 			weight,
 		});
 	});
+	for (const ring of rings) {
+		labelAnchorNodes.push({
+			__comment: 'ring label repulsion',
+			x: totalRingSize + 100,
+			y: -1 * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
+			fixed: true,
+			charge: -700,
+		});
+	}
 
 	// Attract the nodes to the segments
 	nodes.forEach((n,j) => {
@@ -169,9 +178,8 @@ module.exports = function ({
 		.nodes(labelAnchorNodes)
 		.links(labelAnchorLinks)
 		.charge(n => n.charge || 0)
-		.chargeDistance(n => n.chargeDistance)
-		.gravity(0)
-		.linkStrength(0.5)
+		.gravity(0.1)
+		.linkStrength(1)
 		.linkDistance(3)
 		.size([width, height]);
 
@@ -377,12 +385,12 @@ module.exports = function ({
 		rootNode.append('svg:text')
 			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label ring-label bg')
-			.attr('x', '45')
+			.attr('x', '-5')
 			.attr('y', -10 + (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 		rootNode.append('svg:text')
 			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label ring-label')
-			.attr('x', '45')
+			.attr('x', '-5')
 			.attr('y', -10 + (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 	}
 
