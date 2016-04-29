@@ -77,6 +77,8 @@
 		showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
 		sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
 		segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
+		scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.'],
+		tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping'],
 		ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)'],
 		gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings'],
 		proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
@@ -543,7 +545,7 @@
 					if (!valueMap.has(datum[options.sortCol])) {
 						valueMap.set(datum[options.sortCol], valueMap.size);
 					}
-					datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (0.5 * Math.random() + 0.2);
+					datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (options.scatterInBand ? 0.5 * Math.random() + 0.2 : 0.5);
 				});
 	
 				labels = _Array$from(valueMap.entries()).sort(function (a, b) {
@@ -4078,7 +4080,7 @@
 				y: y,
 				weight: weight,
 				text: text,
-				charge: -700,
+				charge: options.tightlyBoundLabels ? -10 : -700,
 				id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 			};
 	
@@ -4168,7 +4170,7 @@
 	
 		var labelForce = d3.layout.force().nodes(labelAnchorNodes).links(labelAnchorLinks).charge(function (n) {
 			return n.charge || 0;
-		}).gravity(0.1).linkStrength(1).linkDistance(3).size([width, height]);
+		}).gravity(0.1).linkStrength(options.tightlyBoundLabels ? 10 : 1).linkDistance(3).size([width, height]);
 	
 		force.on('tick', function () {
 	
@@ -4223,7 +4225,7 @@
 			return '' + n.id;
 		});
 	
-		var labelLine = svg.selectAll('.label.link').data(labelAnchorLinks).enter().append('svg:line').style('stroke', 'grey').style('stroke-width', '1px');
+		var labelLine = svg.selectAll('.label.link').data(labelAnchorLinks).enter().append('svg:line').style('stroke', options.tightlyBoundLabels ? 'transparent' : 'grey').style('stroke-width', '1px');
 	
 		labelNode.append('svg:text').attr('class', 'd3-label bg').attr('x', '-10px').attr('y', '5px').each(function (n) {
 			var _this = this;
