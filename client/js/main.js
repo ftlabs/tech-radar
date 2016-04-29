@@ -12,6 +12,8 @@ const qpSchema = {
 	showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
 	sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
 	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
+	scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.'],
+	tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping'],
 	ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)'],
 	gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings'],
 	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
@@ -331,7 +333,7 @@ function process (data) {
 			if (!valueMap.has(datum[options.sortCol])) {
 				valueMap.set(datum[options.sortCol], valueMap.size);
 			}
-			datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (0.5*Math.random() + 0.2);
+			datum['datumValue'] = valueMap.get(datum[options.sortCol]) + (options.scatterInBand ? (0.5*Math.random() + 0.2) : 0.5);
 		});
 
 		labels = Array.from(valueMap.entries())

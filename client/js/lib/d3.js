@@ -100,7 +100,7 @@ module.exports = function ({
 			y,
 			weight,
 			text,
-			charge: -700,
+			charge: options.tightlyBoundLabels ? -10 : -700,
 			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 		};
 
@@ -179,7 +179,7 @@ module.exports = function ({
 		.links(labelAnchorLinks)
 		.charge(n => n.charge || 0)
 		.gravity(0.1)
-		.linkStrength(1)
+		.linkStrength(options.tightlyBoundLabels ? 10 : 1)
 		.linkDistance(3)
 		.size([width, height]);
 
@@ -227,7 +227,7 @@ module.exports = function ({
 		.data(labelAnchorLinks)
 		.enter()
 		.append('svg:line')
-		.style('stroke', 'grey')
+		.style('stroke', options.tightlyBoundLabels ? 'transparent' : 'grey')
 		.style('stroke-width', '1px');
 
 	labelNode
