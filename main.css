@@ -107,13 +107,14 @@ svg {
       stroke-alignment: outer; }
     svg .d3-label.ring-label, svg .d3-label.segment-label {
       fill: white;
-      font-size: 18pt; }
+      font-size: 18pt;
+      text-anchor: start; }
       svg .d3-label.ring-label.bg, svg .d3-label.segment-label.bg {
         stroke: black;
         stroke-width: 5px; }
   svg .hovering .d3-label {
-    font-weight: bold;
-    font-size: 130%; }
+    fill: red !important;
+    font-weight: bold; }
   svg circle.background {
     pointer-events: none; }
   svg circle.node {
