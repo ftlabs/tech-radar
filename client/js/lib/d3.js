@@ -160,9 +160,9 @@ module.exports = function ({
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode)
-		.attr('width', width + 500 + 50)
+		.attr('width', width + 500 + 130)
 		.attr('height', height + 100)
-		.attr('viewBox', `-500 -50 ${width + 500 + 50} ${height + 100}`);
+		.attr('viewBox', `-500 -50 ${width + 500 + 130} ${height + 100}`);
 
 	const force = d3.layout.force()
 		.nodes(nodes)
@@ -182,6 +182,11 @@ module.exports = function ({
 		.linkStrength(options.tightlyBoundLabels ? 10 : 1)
 		.linkDistance(3)
 		.size([width, height]);
+
+	const drag = force.drag()
+		.on('dragstart', () => nodes.forEach(n => n.fixed = true ));
+	const dragLabel = labelForce.drag()
+		.on('dragstart', () => labelAnchorNodes.forEach(n => n.fixed = true ));
 
 	force.on('tick', function () {
 
@@ -215,7 +220,8 @@ module.exports = function ({
 		.enter()
 		.append('svg:g')
 		.attr('class', d => d.rootEl ? 'rootNode' : 'node')
-		.attr('id', n => `${n['hidden-graph-item-id']}--graph-point`);
+		.attr('id', n => `${n['hidden-graph-item-id']}--graph-point`)
+		.call(drag);
 
 	const labelNode = svg.selectAll('.label-node')
 		.data(labelAnchorNodes)
@@ -237,7 +243,7 @@ module.exports = function ({
 		.attr('y', '5px')
 		.each(function (n) {
 			if (!n.text) return;
-			const strs = n.text.split(' ');
+			const strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach((str, i) => {
 				d3.select(this)
 				.append('svg:tspan')
@@ -252,9 +258,10 @@ module.exports = function ({
 		.attr('class', 'd3-label')
 		.attr('x', '-10px')
 		.attr('y', '5px')
+		.call(dragLabel)
 		.each(function (n) {
 			if (!n.text) return;
-			const strs = n.text.split(' ');
+			const strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach((str, i) => {
 				d3.select(this)
 				.append('svg:tspan')
@@ -284,7 +291,7 @@ module.exports = function ({
 		row.classList.remove('hovering');
 	}
 
-	function click (d) {
+	function showTable (d) {
 
 		if(document.querySelector('.filter-table') !== null){
 			const row = document.getElementById(d['hidden-graph-item-id']);
@@ -311,9 +318,7 @@ module.exports = function ({
 				boilDown.appendChild(info);
 
 			});
-
 		}
-
 	}
 
 	node.append('circle')
@@ -322,7 +327,7 @@ module.exports = function ({
 		.style('fill', n => `hsla(${n['hidden-graph-item-hue']}, 95%, 60%, 1)`)
 		.on('mouseover', mouseover)
 		.on('mouseout', mouseout)
-		.on('click', click)
+		.on('mouseover', showTable)
 		.append('svg:title')
 		.text(n => n.longDesc);
 

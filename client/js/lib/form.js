@@ -53,6 +53,7 @@ module.exports = function (schema, dataFormat, options) {
 		const optionValue = options[optionKey];
 
 		input.type = 'text';
+		input.name = qp;
 
 		// show the default value if it is something worth showing
 		input.placeholder = optionType.name + (!!String(optionDefault) ? ` (${thisSchema[2]})` : '');
@@ -64,10 +65,16 @@ module.exports = function (schema, dataFormat, options) {
 		}
 
 		if (optionType === Boolean) {
-			input = makeSelect(
-				['true', 'false'],
-				String(!!optionValue === optionDefault ? 'Default' : !!optionValue)
-			);
+			input.value = 'true';
+			if (optionDefault) {
+				input.setAttribute('checked', 'checked');
+			}
+			input.type = 'checkbox';
+			input.className = 'o-forms-checkbox';
+			input.checked = optionValue !== undefined ? optionValue : optionDefault;
+			group.style.flexBasis = '8em';
+			label.setAttribute('for', qp);
+			input.setAttribute('id', qp);
 		}
 
 		if (optionType === Array) {
@@ -93,11 +100,17 @@ module.exports = function (schema, dataFormat, options) {
 			group.style.flexBasis = '90%';
 		}
 
-		input.name = qp;
 		label.textContent = `${qp}`;
-		group.appendChild(label);
-		group.appendChild(small);
-		group.appendChild(input);
+		if (optionType === Boolean) {
+			group.appendChild(label.cloneNode(true));
+			group.appendChild(small);
+			group.appendChild(input);
+			group.appendChild(label);
+		} else {
+			group.appendChild(label);
+			group.appendChild(small);
+			group.appendChild(input);
+		}
 		formLocation.appendChild(group);
 		inputs.push(input);
 	}
@@ -121,10 +134,16 @@ module.exports = function (schema, dataFormat, options) {
 		inputs.forEach(el => {
 			const shouldDisable = (
 				el.value === '' ||
-				el.value === 'Default'
+				el.value === 'Default' ||
+				(el.type === 'checkbox' && el.checked === el.defaultChecked)
 			);
 			if (shouldDisable) {
 				el.disabled = 'disabled';
+			} else {
+				if (el.type === 'checkbox') {
+					el.checked = true;
+					el.value = String(!el.defaultChecked);
+				}
 			}
 		});
 		formLocation.submit();

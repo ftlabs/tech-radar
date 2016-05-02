@@ -14,6 +14,7 @@ const qpSchema = {
 	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
 	scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.'],
 	tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping'],
+	linewrap: ['lineWrapLabels', Boolean, true, 'Whether to break the labels across muliple lines.'],
 	ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)'],
 	gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings'],
 	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
