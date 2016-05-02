@@ -79,6 +79,7 @@
 		segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
 		scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.'],
 		tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping'],
+		linewrap: ['lineWrapLabels', Boolean, true, 'Whether to break the labels across muliple lines.'],
 		ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)'],
 		gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings'],
 		proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
@@ -4158,7 +4159,7 @@
 	  */
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-		var svg = d3.select(svgNode).attr('width', width + 500 + 50).attr('height', height + 100).attr('viewBox', '-500 -50 ' + (width + 500 + 50) + ' ' + (height + 100));
+		var svg = d3.select(svgNode).attr('width', width + 500 + 130).attr('height', height + 100).attr('viewBox', '-500 -50 ' + (width + 500 + 130) + ' ' + (height + 100));
 	
 		var force = d3.layout.force().nodes(nodes).links(links).charge(function (n) {
 			return n.charge;
@@ -4171,6 +4172,17 @@
 		var labelForce = d3.layout.force().nodes(labelAnchorNodes).links(labelAnchorLinks).charge(function (n) {
 			return n.charge || 0;
 		}).gravity(0.1).linkStrength(options.tightlyBoundLabels ? 10 : 1).linkDistance(3).size([width, height]);
+	
+		var drag = force.drag().on('dragstart', function () {
+			return nodes.forEach(function (n) {
+				return n.fixed = true;
+			});
+		});
+		var dragLabel = labelForce.drag().on('dragstart', function () {
+			return labelAnchorNodes.forEach(function (n) {
+				return n.fixed = true;
+			});
+		});
 	
 		force.on('tick', function () {
 	
@@ -4219,7 +4231,7 @@
 			return d.rootEl ? 'rootNode' : 'node';
 		}).attr('id', function (n) {
 			return n['hidden-graph-item-id'] + '--graph-point';
-		});
+		}).call(drag);
 	
 		var labelNode = svg.selectAll('.label-node').data(labelAnchorNodes).enter().append('svg:g').attr('id', function (n) {
 			return '' + n.id;
@@ -4231,17 +4243,17 @@
 			var _this = this;
 	
 			if (!n.text) return;
-			var strs = n.text.split(' ');
+			var strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach(function (str, i) {
 				d3.select(_this).append('svg:tspan').text(str).attr('x', 0).attr('y', i - strs.length / 2 + 'em');
 			});
 		});
 	
-		labelNode.append('svg:text').attr('class', 'd3-label').attr('x', '-10px').attr('y', '5px').each(function (n) {
+		labelNode.append('svg:text').attr('class', 'd3-label').attr('x', '-10px').attr('y', '5px').call(dragLabel).each(function (n) {
 			var _this2 = this;
 	
 			if (!n.text) return;
-			var strs = n.text.split(' ');
+			var strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach(function (str, i) {
 				d3.select(_this2).append('svg:tspan').text(str).attr('x', 0).attr('y', i - strs.length / 2 + 'em');
 			});
@@ -4269,7 +4281,7 @@
 			row.classList.remove('hovering');
 		}
 	
-		function click(d) {
+		function showTable(d) {
 	
 			if (document.querySelector('.filter-table') !== null) {
 				var row = document.getElementById(d['hidden-graph-item-id']);
@@ -4302,7 +4314,7 @@
 			return 'node' + (n.dot === false ? ' segment-label' : '');
 		}).attr('r', 8).style('fill', function (n) {
 			return 'hsla(' + n['hidden-graph-item-hue'] + ', 95%, 60%, 1)';
-		}).on('mouseover', mouseover).on('mouseout', mouseout).on('click', click).append('svg:title').text(function (n) {
+		}).on('mouseover', mouseover).on('mouseout', mouseout).on('mouseover', showTable).append('svg:title').text(function (n) {
 			return n.longDesc;
 		});
 	
@@ -9618,6 +9630,7 @@
 				var optionValue = options[optionKey];
 	
 				input.type = 'text';
+				input.name = qp;
 	
 				// show the default value if it is something worth showing
 				input.placeholder = optionType.name + (!!String(optionDefault) ? ' (' + thisSchema[2] + ')' : '');
@@ -9629,7 +9642,16 @@
 				}
 	
 				if (optionType === Boolean) {
-					input = makeSelect(['true', 'false'], String(!!optionValue === optionDefault ? 'Default' : !!optionValue));
+					input.value = 'true';
+					if (optionDefault) {
+						input.setAttribute('checked', 'checked');
+					}
+					input.type = 'checkbox';
+					input.className = 'o-forms-checkbox';
+					input.checked = optionValue !== undefined ? optionValue : optionDefault;
+					group.style.flexBasis = '8em';
+					_label.setAttribute('for', qp);
+					input.setAttribute('id', qp);
 				}
 	
 				if (optionType === Array) {
@@ -9655,11 +9677,17 @@
 					group.style.flexBasis = '90%';
 				}
 	
-				input.name = qp;
 				_label.textContent = '' + qp;
-				group.appendChild(_label);
-				group.appendChild(small);
-				group.appendChild(input);
+				if (optionType === Boolean) {
+					group.appendChild(_label.cloneNode(true));
+					group.appendChild(small);
+					group.appendChild(input);
+					group.appendChild(_label);
+				} else {
+					group.appendChild(_label);
+					group.appendChild(small);
+					group.appendChild(input);
+				}
 				formLocation.appendChild(group);
 				inputs.push(input);
 			}
@@ -9696,9 +9724,14 @@
 				action: 'Form Used'
 			});
 			inputs.forEach(function (el) {
-				var shouldDisable = el.value === '' || el.value === 'Default';
+				var shouldDisable = el.value === '' || el.value === 'Default' || el.type === 'checkbox' && el.checked === el.defaultChecked;
 				if (shouldDisable) {
 					el.disabled = 'disabled';
+				} else {
+					if (el.type === 'checkbox') {
+						el.checked = true;
+						el.value = String(!el.defaultChecked);
+					}
 				}
 			});
 			formLocation.submit();
