@@ -131,6 +131,13 @@ module.exports = function ({
 			fixed: true,
 			charge: -700,
 		});
+		labelAnchorNodes.push({
+			__comment: 'ring bottom repulsion',
+			x: -1 * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
+			y: totalRingSize - 100,
+			fixed: true,
+			charge: -700,
+		});
 	}
 
 	// Attract the nodes to the segments
@@ -153,10 +160,6 @@ module.exports = function ({
 			}
 		}
 	});
-
-	/**
-	 * constiables
-	 */
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode)
@@ -291,9 +294,9 @@ module.exports = function ({
 		row.classList.remove('hovering');
 	}
 
-	function showTable (d) {
+	function showTable (d, alsoUncollapseTable) {
 
-		if(document.querySelector('.filter-table') !== null){
+		if (alsoUncollapseTable && document.querySelector('.filter-table') !== null){
 			const row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
 			row.classList.toggle('collapsed');
@@ -328,6 +331,7 @@ module.exports = function ({
 		.on('mouseover', mouseover)
 		.on('mouseout', mouseout)
 		.on('mouseover', showTable)
+		.on('click', d => showTable(d, true))
 		.append('svg:title')
 		.text(n => n.longDesc);
 
@@ -391,12 +395,12 @@ module.exports = function ({
 			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label ring-label bg')
 			.attr('x', '-5')
-			.attr('y', -10 + (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
+			.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 		rootNode.append('svg:text')
 			.text(ring.groupLabel || ring.min)
 			.attr('class', 'd3-label ring-label')
 			.attr('x', '-5')
-			.attr('y', -10 + (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
+			.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
 	}
 
 	force.start().alpha(0.05);
