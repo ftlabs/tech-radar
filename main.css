@@ -27,6 +27,16 @@ div, form {
       right: 0;
       height: 1em; }
 
+#boil-down {
+  font-size: 1.5em;
+  width: 5em;
+  overflow: visible;
+  -webkit-flex-shrink: 0;
+  -ms-flex-negative: 0;
+  flex-shrink: 0; }
+  #boil-down h3, #boil-down p {
+    margin: 0.1em 0; }
+
 #tech-radar__qp-form {
   display: -webkit-box;
   display: -webkit-flex;

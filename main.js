@@ -4119,6 +4119,13 @@
 					fixed: true,
 					charge: -700
 				});
+				labelAnchorNodes.push({
+					__comment: 'ring bottom repulsion',
+					x: -1 * ((ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize),
+					y: totalRingSize - 100,
+					fixed: true,
+					charge: -700
+				});
 			}
 	
 			// Attract the nodes to the segments
@@ -4153,10 +4160,6 @@
 				}
 			}
 		});
-	
-		/**
-	  * constiables
-	  */
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 		var svg = d3.select(svgNode).attr('width', width + 500 + 130).attr('height', height + 100).attr('viewBox', '-500 -50 ' + (width + 500 + 130) + ' ' + (height + 100));
@@ -4281,9 +4284,9 @@
 			row.classList.remove('hovering');
 		}
 	
-		function showTable(d) {
+		function showTable(d, alsoUncollapseTable) {
 	
-			if (document.querySelector('.filter-table') !== null) {
+			if (alsoUncollapseTable && document.querySelector('.filter-table') !== null) {
 				var row = document.getElementById(d['hidden-graph-item-id']);
 				if (!row) return;
 				row.classList.toggle('collapsed');
@@ -4314,7 +4317,9 @@
 			return 'node' + (n.dot === false ? ' segment-label' : '');
 		}).attr('r', 8).style('fill', function (n) {
 			return 'hsla(' + n['hidden-graph-item-hue'] + ', 95%, 60%, 1)';
-		}).on('mouseover', mouseover).on('mouseout', mouseout).on('mouseover', showTable).append('svg:title').text(function (n) {
+		}).on('mouseover', mouseover).on('mouseout', mouseout).on('mouseover', showTable).on('click', function (d) {
+			return showTable(d, true);
+		}).append('svg:title').text(function (n) {
 			return n.longDesc;
 		});
 	
@@ -4401,8 +4406,8 @@
 			for (var _iterator4 = _getIterator(rings), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 				var ring = _step4.value;
 	
-				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label bg').attr('x', '-5').attr('y', -10 + (ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
-				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label').attr('x', '-5').attr('y', -10 + (ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label bg').attr('x', '-5').attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label').attr('x', '-5').attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
 			}
 		} catch (err) {
 			_didIteratorError4 = true;
