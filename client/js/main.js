@@ -1,28 +1,28 @@
 'use strict';
 
-// configProperty: [optionsParameter, type, default value, description]
+// configProperty: [optionsParameter, type, default value, description, category]
 const qpSchema = {
-	id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load'],
-	sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents'],
-	sortcol: ['sortCol', String, 'phase', 'Which column to sort by'],
-	title: ['title', String, '', 'Title to display'],
-	showcol: ['showCol', Array, [], 'Comma seperated list of columns to show'],
-	dashboard: ['dashboard', Boolean, false, 'Whether to hide these settings.'],
-	defaultfilter: ['defaultFilter', String, '', 'Default search query for the filter'],
-	showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
-	sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
-	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
-	scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.'],
-	tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping'],
-	linewrap: ['lineWrapLabels', Boolean, true, 'Whether to break the labels across muliple lines.'],
-	ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)'],
-	gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings'],
-	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
-	sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)'],
-	crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.'],
-	noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)'],
-	nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)'],
-	css: ['customCss', String, '', 'Advanced: Style this page with some custom css.']
+	filter: ['filter', String, '', 'Some Examples:  \'foo\', \'biz:baz\', do-able:[5-10]" class="o-forms-text', 'Filter'],
+	id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
+	sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
+	sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
+	showcol: ['showCol', Array, [], 'Comma seperated list of columns to show', 'Data Source'],
+	sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings', 'Data Source'],
+	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.', 'Data Source'],
+	sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)', 'Data Source'],
+	title: ['title', String, '', 'Title to display', 'Display'],
+	dashboard: ['dashboard', Boolean, false, 'Whether to hide these settings.', 'Display'],
+	showtable: ['showTable', Boolean, true, 'Whether to display the data table', 'Display'],
+	scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.', 'Display'],
+	tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping', 'Display'],
+	linewrap: ['lineWrapLabels', Boolean, true, 'Whether to break the labels across muliple lines.', 'Display'],
+	ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)', 'Display'],
+	gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings', 'Display'],
+	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.', 'Display'],
+	crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.', 'Display'],
+	noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)', 'Display'],
+	nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)', 'Display'],
+	css: ['customCss', String, '', 'Advanced: Style this page with some custom css.', 'Advanced']
 };
 
 const options = {};
@@ -109,9 +109,6 @@ parseOptions((function () {
 	document.getElementById('error-text-target').textContent = errMessage;
 	throw Error(errMessage);
 }()), true);
-
-// String input from the filter field used to filter the text input
-let filterString = options.defaultFilter;
 
 function addScript (url) {
 	return new Promise(function (resolve, reject) {
@@ -358,7 +355,7 @@ function process (data) {
 	data = data.filter(datum => {
 		let regex;
 		try {
-			regex = new RegExp(filterString, 'gi');
+			regex = new RegExp(options.filter, 'gi');
 		} catch (e) {
 
 			// if there is a broken regex then don't try matching
@@ -676,21 +673,13 @@ Promise.all([
 		});
 	});
 
-	document.getElementById('filter').value = filterString;
-	document.getElementById('filter').addEventListener('input', function (e) {
+	document.getElementById('filter')
+	.addEventListener('input', function (e) {
 
 		// Filter graph
-		filterString = e.currentTarget.value;
+		options.filter = e.currentTarget.value;
 		cleanUpTable();
 		cleanUpTable = generateTable(data);
-	});
-
-	document.getElementById('filter-form').addEventListener('submit', function (e) {
-		e.preventDefault();
-		cleanUpTable();
-		cleanUpGraph();
-		cleanUpTable = generateTable(data);
-		cleanUpGraph = generateGraphs(data);
 	});
 
 	cleanUpTable = generateTable(data);

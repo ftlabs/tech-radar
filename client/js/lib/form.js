@@ -34,11 +34,15 @@ const inputs = [];
 module.exports = function (schema, dataFormat, options) {
 
 	const formLocation = document.getElementById('tech-radar__qp-form');
-	const formWrapper = document.getElementById('tech-radar__form-container');
-	const label = formWrapper.querySelector('label');
-	formWrapper.addEventListener('click', () => formWrapper.classList.remove('collapsed'));
+
+	const tabs = document.createElement('ul');
+	tabs.setAttribute('data-o-component', 'o-tabs');
+	tabs.setAttribute('class', 'o-tabs o-tabs--buttontabs');
+	tabs.setAttribute('role', 'tablist');
+	formLocation.appendChild(tabs);
 
 	const queryParams = Object.keys(schema);
+	const categoryDom = {};
 	for (const qp of queryParams) {
 		const group = document.createElement('div');
 		const label = document.createElement('label');
@@ -49,11 +53,12 @@ module.exports = function (schema, dataFormat, options) {
 		const optionKey = thisSchema[0];
 		const optionType = thisSchema[1];
 		const optionDefault = thisSchema[2];
+		const category = thisSchema[4];
+		const categoryKey = category.split(' ').map(str => str.toLowerCase()).join('-');
 		const desc = thisSchema[3];
 		const optionValue = options[optionKey];
 
 		input.type = 'text';
-		input.name = qp;
 
 		// show the default value if it is something worth showing
 		input.placeholder = optionType.name + (!!String(optionDefault) ? ` (${thisSchema[2]})` : '');
@@ -74,12 +79,15 @@ module.exports = function (schema, dataFormat, options) {
 			input.checked = optionValue !== undefined ? optionValue : optionDefault;
 			group.style.flexBasis = '8em';
 			label.setAttribute('for', qp);
-			input.setAttribute('id', qp);
 		}
 
 		if (optionType === Array) {
 			input.value = optionValue.join(', ');
 			group.style.flexBasis = '60%';
+		}
+
+		if (qp === 'filter') {
+			group.style.flexBasis = '80%';
 		}
 
 		label.classList.add('o-forms-label');
@@ -111,7 +119,28 @@ module.exports = function (schema, dataFormat, options) {
 			group.appendChild(small);
 			group.appendChild(input);
 		}
-		formLocation.appendChild(group);
+
+		if (categoryDom[categoryKey] === undefined) {
+			const cat = document.createElement('div');
+			categoryDom[categoryKey] = cat;
+			cat.classList.add('form-tab-contents');
+			cat.classList.add('o-tabs__tabpanel');
+			cat.id = categoryKey;
+			formLocation.appendChild(cat);
+
+			const tab = document.createElement('li');
+			tab.setAttribute('role', 'tab');
+
+			const a = document.createElement('a');
+			a.href = '#' + categoryKey;
+			a.textContent = category;
+
+			tab.appendChild(a);
+			tabs.appendChild(tab);
+		}
+		categoryDom[categoryKey].appendChild(group);
+		input.name = qp;
+		input.setAttribute('id', qp);
 		inputs.push(input);
 	}
 	const submit = document.createElement('input');
@@ -125,7 +154,6 @@ module.exports = function (schema, dataFormat, options) {
 	hiddenSubmit.style.display = 'none';
 	formLocation.appendChild(hiddenSubmit);
 	formLocation.parentNode.appendChild(submit);
-	formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
 
 	function validate () {
 		tracking({
@@ -154,4 +182,6 @@ module.exports = function (schema, dataFormat, options) {
 		validate();
 		return false;
 	});
+
+	window.Origami['o-tabs'].init();
 };
