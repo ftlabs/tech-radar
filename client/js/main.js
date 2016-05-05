@@ -2,13 +2,13 @@
 
 // configProperty: [optionsParameter, type, default value, description, category]
 const qpSchema = {
-	filter: ['filter', String, '', 'Some Examples:  \'foo\', \'biz:baz\', do-able:[5-10]" class="o-forms-text', 'Filter'],
+	filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li></ul>', 'Filter Data'],
 	id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
 	sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
 	sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
+	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.', 'Data Source'],
 	showcol: ['showCol', Array, [], 'Comma seperated list of columns to show', 'Data Source'],
 	sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings', 'Data Source'],
-	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.', 'Data Source'],
 	sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)', 'Data Source'],
 	title: ['title', String, '', 'Title to display', 'Display'],
 	dashboard: ['dashboard', Boolean, false, 'Whether to hide these settings.', 'Display'],
@@ -16,10 +16,10 @@ const qpSchema = {
 	scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.', 'Display'],
 	tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping', 'Display'],
 	linewrap: ['lineWrapLabels', Boolean, true, 'Whether to break the labels across muliple lines.', 'Display'],
-	ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)', 'Display'],
-	gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings', 'Display'],
-	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.', 'Display'],
+	ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour) <a href="http://www.cssportal.com/css3-color-names/">List of CSS colour names</a>', 'Display'],
+	gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings, -1 go darker, 0 no gradient, 1 go lighter', 'Display'],
 	crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.', 'Display'],
+	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.', 'Display'],
 	noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)', 'Display'],
 	nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)', 'Display'],
 	css: ['customCss', String, '', 'Advanced: Style this page with some custom css.', 'Advanced']

@@ -63,7 +63,7 @@ module.exports = function (schema, dataFormat, options) {
 		// show the default value if it is something worth showing
 		input.placeholder = optionType.name + (!!String(optionDefault) ? ` (${thisSchema[2]})` : '');
 		label.title = desc;
-		small.textContent = desc;
+		small.innerHTML = desc;
 		input.value = optionValue || '';
 		if (optionValue === optionDefault) {
 			input.value = '';
