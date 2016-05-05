@@ -65,29 +65,29 @@
 	
 	'use strict';
 	
-	// configProperty: [optionsParameter, type, default value, description]
+	// configProperty: [optionsParameter, type, default value, description, category]
 	var qpSchema = {
-		id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load'],
-		sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents'],
-		sortcol: ['sortCol', String, 'phase', 'Which column to sort by'],
-		title: ['title', String, '', 'Title to display'],
-		showcol: ['showCol', Array, [], 'Comma seperated list of columns to show'],
-		dashboard: ['dashboard', Boolean, false, 'Whether to hide these settings.'],
-		defaultfilter: ['defaultFilter', String, '', 'Default search query for the filter'],
-		showtable: ['showTable', Boolean, true, 'Whether to display the data table'],
-		sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings'],
-		segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.'],
-		scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.'],
-		tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping'],
-		linewrap: ['lineWrapLabels', Boolean, true, 'Whether to break the labels across muliple lines.'],
-		ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour)'],
-		gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings'],
-		proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.'],
-		sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)'],
-		crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.'],
-		noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)'],
-		nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)'],
-		css: ['customCss', String, '', 'Advanced: Style this page with some custom css.']
+		filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li></ul>', 'Filter Data'],
+		id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
+		sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
+		sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
+		segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.', 'Data Source'],
+		showcol: ['showCol', Array, [], 'Comma seperated list of columns to show', 'Data Source'],
+		sortcolorder: ['sortColOrder', Array, [], 'Comma seperated list, order to sort the rings', 'Data Source'],
+		sorttype: ['sortType', String, '', '"alphabetical" or "numerical" (without quotes)', 'Data Source'],
+		title: ['title', String, '', 'Title to display', 'Display'],
+		dashboard: ['dashboard', Boolean, false, 'Whether to hide these settings.', 'Display'],
+		showtable: ['showTable', Boolean, true, 'Whether to display the data table', 'Display'],
+		scatter: ['scatterInBand', Boolean, true, 'Whether the results should be scattered within the band or placed in the center.', 'Display'],
+		tightlabels: ['tightlyBoundLabels', Boolean, false, 'Whether the labels should be allowed to position freely to avoid overlapping', 'Display'],
+		linewrap: ['lineWrapLabels', Boolean, true, 'Whether to break the labels across muliple lines.', 'Display'],
+		ringcolor: ['ringColor', String, '', 'Colour to use for the ring (try rainbow to make multicolour) <a href="http://www.cssportal.com/css3-color-names/">List of CSS colour names</a>', 'Display'],
+		gradient: ['gradientOffset', Number, -0.4, 'How to colour the rings, -1 go darker, 0 no gradient, 1 go lighter', 'Display'],
+		crystallisation: ['crystallisation', String, '', 'Make this row the focus of attention.', 'Display'],
+		proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.', 'Display'],
+		noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)', 'Display'],
+		nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)', 'Display'],
+		css: ['customCss', String, '', 'Advanced: Style this page with some custom css.', 'Advanced']
 	};
 	
 	var options = {};
@@ -175,9 +175,6 @@
 		document.getElementById('error-text-target').textContent = errMessage;
 		throw Error(errMessage);
 	})(), true);
-	
-	// String input from the filter field used to filter the text input
-	var filterString = options.defaultFilter;
 	
 	function addScript(url) {
 		return new _Promise(function (resolve, reject) {
@@ -596,7 +593,7 @@
 		data = data.filter(function (datum) {
 			var regex = undefined;
 			try {
-				regex = new RegExp(filterString, 'gi');
+				regex = new RegExp(options.filter, 'gi');
 			} catch (e) {
 	
 				// if there is a broken regex then don't try matching
@@ -1059,21 +1056,12 @@
 			});
 		});
 	
-		document.getElementById('filter').value = filterString;
 		document.getElementById('filter').addEventListener('input', function (e) {
 	
 			// Filter graph
-			filterString = e.currentTarget.value;
+			options.filter = e.currentTarget.value;
 			cleanUpTable();
 			cleanUpTable = generateTable(data);
-		});
-	
-		document.getElementById('filter-form').addEventListener('submit', function (e) {
-			e.preventDefault();
-			cleanUpTable();
-			cleanUpGraph();
-			cleanUpTable = generateTable(data);
-			cleanUpGraph = generateGraphs(data);
 		});
 	
 		cleanUpTable = generateTable(data);
@@ -9534,7 +9522,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.slice().sort().map(function (val2) {
+				return val.sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
@@ -9607,13 +9595,15 @@
 	module.exports = function (schema, dataFormat, options) {
 	
 		var formLocation = document.getElementById('tech-radar__qp-form');
-		var formWrapper = document.getElementById('tech-radar__form-container');
-		var label = formWrapper.querySelector('label');
-		formWrapper.addEventListener('click', function () {
-			return formWrapper.classList.remove('collapsed');
-		});
+	
+		var tabs = document.createElement('ul');
+		tabs.setAttribute('data-o-component', 'o-tabs');
+		tabs.setAttribute('class', 'o-tabs o-tabs--buttontabs');
+		tabs.setAttribute('role', 'tablist');
+		formLocation.appendChild(tabs);
 	
 		var queryParams = _Object$keys(schema);
+		var categoryDom = {};
 		var _iteratorNormalCompletion = true;
 		var _didIteratorError = false;
 		var _iteratorError = undefined;
@@ -9623,7 +9613,7 @@
 				var qp = _step.value;
 	
 				var group = document.createElement('div');
-				var _label = document.createElement('label');
+				var label = document.createElement('label');
 				var input = document.createElement('input');
 				var small = document.createElement('small');
 	
@@ -9631,16 +9621,19 @@
 				var optionKey = thisSchema[0];
 				var optionType = thisSchema[1];
 				var optionDefault = thisSchema[2];
+				var category = thisSchema[4];
+				var categoryKey = category.split(' ').map(function (str) {
+					return str.toLowerCase();
+				}).join('-');
 				var desc = thisSchema[3];
 				var optionValue = options[optionKey];
 	
 				input.type = 'text';
-				input.name = qp;
 	
 				// show the default value if it is something worth showing
 				input.placeholder = optionType.name + (!!String(optionDefault) ? ' (' + thisSchema[2] + ')' : '');
-				_label.title = desc;
-				small.textContent = desc;
+				label.title = desc;
+				small.innerHTML = desc;
 				input.value = optionValue || '';
 				if (optionValue === optionDefault) {
 					input.value = '';
@@ -9655,8 +9648,7 @@
 					input.className = 'o-forms-checkbox';
 					input.checked = optionValue !== undefined ? optionValue : optionDefault;
 					group.style.flexBasis = '8em';
-					_label.setAttribute('for', qp);
-					input.setAttribute('id', qp);
+					label.setAttribute('for', qp);
 				}
 	
 				if (optionType === Array) {
@@ -9664,7 +9656,11 @@
 					group.style.flexBasis = '60%';
 				}
 	
-				_label.classList.add('o-forms-label');
+				if (qp === 'filter') {
+					group.style.flexBasis = '80%';
+				}
+	
+				label.classList.add('o-forms-label');
 				input.classList.add('o-forms-text');
 				group.classList.add('o-forms-group');
 				small.classList.add('o-forms-additional-info');
@@ -9682,18 +9678,39 @@
 					group.style.flexBasis = '90%';
 				}
 	
-				_label.textContent = '' + qp;
+				label.textContent = '' + qp;
 				if (optionType === Boolean) {
-					group.appendChild(_label.cloneNode(true));
+					group.appendChild(label.cloneNode(true));
 					group.appendChild(small);
 					group.appendChild(input);
-					group.appendChild(_label);
+					group.appendChild(label);
 				} else {
-					group.appendChild(_label);
+					group.appendChild(label);
 					group.appendChild(small);
 					group.appendChild(input);
 				}
-				formLocation.appendChild(group);
+	
+				if (categoryDom[categoryKey] === undefined) {
+					var cat = document.createElement('div');
+					categoryDom[categoryKey] = cat;
+					cat.classList.add('form-tab-contents');
+					cat.classList.add('o-tabs__tabpanel');
+					cat.id = categoryKey;
+					formLocation.appendChild(cat);
+	
+					var tab = document.createElement('li');
+					tab.setAttribute('role', 'tab');
+	
+					var a = document.createElement('a');
+					a.href = '#' + categoryKey;
+					a.textContent = category;
+	
+					tab.appendChild(a);
+					tabs.appendChild(tab);
+				}
+				categoryDom[categoryKey].appendChild(group);
+				input.name = qp;
+				input.setAttribute('id', qp);
 				inputs.push(input);
 			}
 		} catch (err) {
@@ -9722,7 +9739,6 @@
 		hiddenSubmit.style.display = 'none';
 		formLocation.appendChild(hiddenSubmit);
 		formLocation.parentNode.appendChild(submit);
-		formWrapper.style.height = formLocation.clientHeight + submit.clientHeight + label.clientHeight + 16 + 'px';
 	
 		function validate() {
 			tracking({
@@ -9747,6 +9763,8 @@
 			validate();
 			return false;
 		});
+	
+		window.Origami['o-tabs'].init();
 	};
 
 /***/ }

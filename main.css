@@ -11,21 +11,7 @@ div, form {
 #tech-radar__form-container {
   -webkit-transition: height 0.6s ease;
   transition: height 0.6s ease;
-  overflow: hidden;
   position: relative; }
-  #tech-radar__form-container.collapsed {
-    height: 7em !important; }
-    #tech-radar__form-container.collapsed:after {
-      content: '';
-      pointer-events: none;
-      background: -webkit-gradient(linear, left top, left bottom, from(rgba(246, 233, 216, 0)), to(#f6e9d8));
-      background: -webkit-linear-gradient(top, rgba(246, 233, 216, 0) 0%, #f6e9d8 100%);
-      background: linear-gradient(to bottom, rgba(246, 233, 216, 0) 0%, #f6e9d8 100%);
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      right: 0;
-      height: 1em; }
 
 #boil-down {
   font-size: 1.5em;
@@ -37,7 +23,7 @@ div, form {
   #boil-down h3, #boil-down p {
     margin: 0.1em 0; }
 
-#tech-radar__qp-form {
+.form-tab-contents {
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -53,7 +39,7 @@ div, form {
   -webkit-align-items: center;
   -ms-flex-align: center;
   align-items: center; }
-  #tech-radar__qp-form > div {
+  .form-tab-contents > div {
     -webkit-box-flex: 1;
     -webkit-flex-grow: 1;
     -ms-flex-positive: 1;
