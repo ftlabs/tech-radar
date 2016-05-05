@@ -22,6 +22,7 @@ const qpSchema = {
 	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.', 'Display'],
 	noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)', 'Display'],
 	nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)', 'Display'],
+	quadrant: ['quadrant', ['bottom right', 'bottom left', 'top left', 'top right'], 'bottom right', 'What quadrant of a circle should the graph display as.', 'Display'],
 	css: ['customCss', String, '', 'Advanced: Style this page with some custom css.', 'Advanced']
 };
 
@@ -82,6 +83,11 @@ function parseOptions (config, force = false) {
 			break;
 		case Boolean:
 			options[handle[0]] = config[key].toLowerCase() !== 'false' && config[key] !== false;
+			break;
+		default:
+			if (handle[1].constructor === Array) {
+				options[handle[0]] = handle[1].indexOf(config[key]) !== -1 ? config[key] : handle[2];
+			}
 			break;
 		}
 	});
@@ -641,12 +647,6 @@ Promise.all([
 		document.getElementById('tech-radar__settings').style.display = 'none';
 	}
 
-	require('./lib/form')(
-		qpSchema,
-		data[0] ? Object.keys(data[0]).filter(k => !k.match(/^(configvalue$|hidden-graph-item)/)) : [],
-		options
-	);
-
 	const buttons = document.getElementById('tech-radar__buttons');
 
 	const updateDataButton = document.createElement('button');
@@ -673,6 +673,20 @@ Promise.all([
 		});
 	});
 
+	cleanUpTable = generateTable(data);
+	cleanUpGraph = generateGraphs(data);
+
+
+	const o = process(data);
+	const rings = generateChartRings(o.data, o.labels);
+
+	require('./lib/form')(
+		qpSchema,
+		data[0] ? Object.keys(data[0]).filter(k => !k.match(/^(configvalue$|hidden-graph-item)/)) : [],
+		rings.map(r => r.groupLabel),
+		options
+	);
+
 	document.getElementById('filter')
 	.addEventListener('input', function (e) {
 
@@ -681,9 +695,6 @@ Promise.all([
 		cleanUpTable();
 		cleanUpTable = generateTable(data);
 	});
-
-	cleanUpTable = generateTable(data);
-	cleanUpGraph = generateGraphs(data);
 })
 .catch(e => {
 	document.getElementById('error-text-target').textContent = e.message;

@@ -31,7 +31,7 @@ function makeTextarea (placeholder, text) {
 }
 
 const inputs = [];
-module.exports = function (schema, dataFormat, options) {
+module.exports = function (schema, visibleColumns, ringLabels, options) {
 
 	const formLocation = document.getElementById('tech-radar__qp-form');
 
@@ -86,6 +86,10 @@ module.exports = function (schema, dataFormat, options) {
 			group.style.flexBasis = '60%';
 		}
 
+		if (optionType.constructor === Array) {
+			input = makeSelect(optionType, optionValue || optionDefault);
+		}
+
 		if (qp === 'filter') {
 			group.style.flexBasis = '80%';
 		}
@@ -96,11 +100,15 @@ module.exports = function (schema, dataFormat, options) {
 		small.classList.add('o-forms-additional-info');
 
 		if (qp === 'sortcol') {
-			input = makeSelect(dataFormat, options.sortCol === optionDefault ? 'Default' : options.sortCol);
+			input = makeSelect(visibleColumns, options.sortCol === optionDefault ? 'Default' : options.sortCol);
 		}
 
 		if (qp === 'segment') {
-			input = makeSelect(dataFormat, options.segment === optionDefault ? 'Default' : options.segment);
+			input = makeSelect(visibleColumns, options.segment === optionDefault ? 'Default' : options.segment);
+		}
+
+		if (qp === 'crystallisation') {
+			input = makeSelect(ringLabels, options.crystallisation || 'Default');
 		}
 
 		if (qp === 'css') {
