@@ -171,25 +171,25 @@ module.exports = function ({
 		let offsetHorizontalY;
 		switch(options.quadrant) {
 		case 'bottom right':
-			offsetVerticalX = totalRingSize - 100;
+			offsetVerticalX = totalRingSize + 100;
 			offsetVerticalY = -1;
 			offsetHorizontalX = -1;
 			offsetHorizontalY = totalRingSize + 100;
 			break;
 		case 'bottom left':
-			offsetVerticalX = totalRingSize + 100;
+			offsetVerticalX = totalRingSize - 100;
 			offsetVerticalY = -1;
 			offsetHorizontalX = 1;
 			offsetHorizontalY = totalRingSize + 100;
 			break;
 		case 'top left':
-			offsetVerticalX = totalRingSize + 100;
+			offsetVerticalX = totalRingSize - 100;
 			offsetVerticalY = 1;
 			offsetHorizontalX = 1;
 			offsetHorizontalY = totalRingSize - 100;
 			break;
 		case 'top right':
-			offsetVerticalX = totalRingSize - 100;
+			offsetVerticalX = totalRingSize + 100;
 			offsetVerticalY = 1;
 			offsetHorizontalX = -1;
 			offsetHorizontalY = totalRingSize - 100;
@@ -202,7 +202,7 @@ module.exports = function ({
 				y: offsetVerticalY * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
 				fixed: true,
 				charge: -700,
-				text: '+'
+				text: '**'
 			});
 			labelAnchorNodes.push({
 				__comment: 'ring bottom repulsion',
@@ -210,7 +210,7 @@ module.exports = function ({
 				y: offsetHorizontalY,
 				fixed: true,
 				charge: -700,
-				text: '+'
+				text: '++'
 			});
 		}
 	}());
@@ -238,27 +238,33 @@ module.exports = function ({
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode);
+	const padding = {
+		hSmall: 100,
+		hLarge: 300,
+		vTop: 30,
+		vBottom: 0
+	};
 
 	switch(options.quadrant) {
 	case 'bottom right':
-		svg.attr('width', width)
-		.attr('height', height)
-		.attr('viewBox', ` ${-width} ${-height} ${width * 2} ${height * 2}`);
+		svg.attr('width', width + padding.hLarge + padding.hSmall)
+		.attr('height', height + padding.vTop + padding.vBottom)
+		.attr('viewBox', `${-padding.hLarge} ${ -padding.vTop} ${width + padding.hLarge + padding.hSmall} ${height + padding.vTop + padding.vBottom}`);
 		break;
 	case 'bottom left':
-		svg.attr('width', width)
-		.attr('height', height)
-		.attr('viewBox', ` ${-width} ${-height} ${width * 2} ${height * 2}`);
+		svg.attr('width', width + padding.hLarge + padding.hSmall)
+		.attr('height', height + padding.vTop + padding.vBottom)
+		.attr('viewBox', `${-width - padding.hSmall} ${ -padding.vTop} ${width + padding.hLarge + padding.hSmall} ${height + padding.vTop + padding.vBottom}`);
 		break;
 	case 'top left':
-		svg.attr('width', width)
-		.attr('height', height)
-		.attr('viewBox', ` ${-width} ${-height} ${width * 2} ${height * 2}`);
+		svg.attr('width', width + padding.hLarge + padding.hSmall)
+		.attr('height', height + padding.vTop + padding.vBottom)
+		.attr('viewBox', `${-width - padding.hSmall} ${-height - padding.vBottom} ${width + padding.hLarge + padding.hSmall} ${height + padding.vTop + padding.vBottom}`);
 		break;
 	case 'top right':
-		svg.attr('width', width)
-		.attr('height', height)
-		.attr('viewBox', ` ${-width} ${-height} ${width * 2} ${height * 2}`);
+		svg.attr('width', width + padding.hLarge + padding.hSmall)
+		.attr('height', height + padding.vTop + padding.vBottom)
+		.attr('viewBox', `${-padding.hLarge} ${-height - padding.vBottom} ${width + padding.hLarge + padding.hSmall} ${height + padding.vTop + padding.vBottom}`);
 		break;
 	}
 
@@ -506,7 +512,7 @@ module.exports = function ({
 		rootNode.append('svg:rect')
 			.attr('class', 'mask')
 			.attr('x', -totalRingSize)
-			.attr('y', totalRingSize)
+			.attr('y', -totalRingSize)
 			.attr('width', totalRingSize * 2)
 			.attr('height', totalRingSize)
 			.style('fill', rectFill);
@@ -525,7 +531,7 @@ module.exports = function ({
 		rootNode.append('svg:rect')
 			.attr('class', 'mask')
 			.attr('x', -totalRingSize)
-			.attr('y', totalRingSize)
+			.attr('y', -totalRingSize)
 			.attr('width', totalRingSize * 2)
 			.attr('height', totalRingSize)
 			.style('fill', rectFill);
