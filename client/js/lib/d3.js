@@ -32,32 +32,32 @@ module.exports = function ({
 		n.charge = -100 * (options.nodeRepulsion || 3) * Math.pow((Math.floor(n.datumValue) + 2)/rings.length, 2);
 	});
 
+	const rootNodeObject = {
+		name: 'root',
+		fixed: true,
+		visible: false,
+		rootEl: true,
+		charge: 0
+	};
+	switch(options.quadrant) {
+	case 'bottom right':
+		rootNodeObject.x = width;
+		rootNodeObject.y = height;
+		break;
+	case 'bottom left':
+		rootNodeObject.x = -width;
+		rootNodeObject.y = height;
+		break;
+	case 'top left':
+		rootNodeObject.x = -width;
+		rootNodeObject.y = -height;
+		break;
+	case 'top right':
+		rootNodeObject.x = width;
+		rootNodeObject.y = -height;
+		break;
+	}
 	(function addRootNode () {
-		const rootNodeObject = {
-			name: 'root',
-			fixed: true,
-			visible: false,
-			rootEl: true,
-			charge: 0
-		};
-		switch(options.quadrant) {
-		case 'bottom right':
-			rootNodeObject.x = width;
-			rootNodeObject.y = height;
-			break;
-		case 'bottom left':
-			rootNodeObject.x = -width;
-			rootNodeObject.y = height;
-			break;
-		case 'top left':
-			rootNodeObject.x = -width;
-			rootNodeObject.y = -height;
-			break;
-		case 'top right':
-			rootNodeObject.x = width;
-			rootNodeObject.y = -height;
-			break;
-		}
 		nodes.unshift(rootNodeObject);
 
 		// Draw an arc of attractive points with labels
@@ -65,43 +65,43 @@ module.exports = function ({
 		let offset;
 		switch(options.quadrant) {
 		case 'bottom right':
-			offset = 0;
-			break;
-		case 'bottom left':
-			offset = -1;
-			break;
-		case 'top left':
-			offset = -2;
-			break;
-		case 'top right':
 			offset = 1;
 			break;
+		case 'bottom left':
+			offset = 0;
+			break;
+		case 'top left':
+			offset = -1;
+			break;
+		case 'top right':
+			offset = -2;
+			break;
 		}
-		const thetaMin = (offset + 1) * Math.PI/2;
-		const thetaMax = (offset + 2) * Math.PI/2;
+		const thetaMin = offset * Math.PI/2;
+		const thetaMax = (offset + 1) * Math.PI/2;
 
 		for (let i=0,l=rings[0].segments.length;i<l;i++) {
 			const segment = rings[0].segments[i];
 			const arcWidth = thetaMax - thetaMin;
-			const segmentWidth = arcWidth/(l+1);
-			const theta = thetaMin + (1+i)*segmentWidth;
+			const segmentWidth = arcWidth/l;
+			const theta = thetaMin + i*segmentWidth;
 			const attractionNode = {
 				name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
-				x: rootNodeObject.x + r * Math.cos(theta),
-				y: rootNodeObject.y - r * Math.sin(theta),
+				x: rootNodeObject.x + r * Math.cos(theta + segmentWidth/2),
+				y: rootNodeObject.y - r * Math.sin(theta + segmentWidth/2),
 				fixed: true,
 				charge: 0,
 				dot: false
 			};
 			nodes.push(attractionNode);
 			segmentLines.push({
-				x: r * Math.cos(theta - (segmentWidth/2)),
-				y: r * -Math.sin(theta - (segmentWidth/2))
+				x: r * Math.cos(theta),
+				y: r * -Math.sin(theta)
 			});
 			if (i === l-1) {
 				segmentLines.push({
-					x: r * Math.cos(theta + (segmentWidth/2)),
-					y: r * -Math.sin(theta + (segmentWidth/2))
+					x: r * Math.cos(theta),
+					y: r * -Math.sin(theta)
 				});
 			}
 		}
@@ -146,7 +146,6 @@ module.exports = function ({
 			x,
 			y,
 			fixed: true,
-			weight: 0,
 			charge: -100
 		};
 		labelAnchorNodes.push(label);
@@ -167,28 +166,28 @@ module.exports = function ({
 		let offsetHorizontalY;
 		switch(options.quadrant) {
 		case 'bottom right':
-			offsetVerticalX = totalRingSize + 100;
+			offsetVerticalX = rootNodeObject.x + 100;
 			offsetVerticalY = -1;
 			offsetHorizontalX = -1;
-			offsetHorizontalY = totalRingSize + 100;
+			offsetHorizontalY = rootNodeObject.y + 100;
 			break;
 		case 'bottom left':
-			offsetVerticalX = -totalRingSize - 100;
+			offsetVerticalX = rootNodeObject.x - 100;
 			offsetVerticalY = -1;
 			offsetHorizontalX = 1;
-			offsetHorizontalY = totalRingSize + 100;
+			offsetHorizontalY = rootNodeObject.y + 100;
 			break;
 		case 'top left':
-			offsetVerticalX = -totalRingSize - 100;
+			offsetVerticalX = rootNodeObject.x - 100;
 			offsetVerticalY = 1;
 			offsetHorizontalX = 1;
-			offsetHorizontalY = -totalRingSize;
+			offsetHorizontalY = rootNodeObject.y;
 			break;
 		case 'top right':
-			offsetVerticalX = totalRingSize + 100;
+			offsetVerticalX = rootNodeObject.x + 100;
 			offsetVerticalY = 1;
 			offsetHorizontalX = -1;
-			offsetHorizontalY = -totalRingSize;
+			offsetHorizontalY = rootNodeObject.y;
 			break;
 		}
 		for (const ring of rings) {
@@ -232,6 +231,7 @@ module.exports = function ({
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode);
+	svg.attr('class', options.quadrant);
 	const padding = {
 		hSmall: 110,
 		hLarge: 300,
@@ -325,6 +325,7 @@ module.exports = function ({
 		.data(labelAnchorNodes)
 		.enter()
 		.append('svg:g')
+		.call(dragLabel)
 		.attr('id', n => `${n.id}`);
 
 	const labelLine = svg.selectAll('.label.link')
@@ -356,7 +357,6 @@ module.exports = function ({
 		.attr('class', 'd3-label')
 		.attr('x', '-10px')
 		.attr('y', '5px')
-		.call(dragLabel)
 		.each(function (n) {
 			if (!n.text) return;
 			const strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
@@ -550,18 +550,41 @@ module.exports = function ({
 
 
 	// Ring labels
-	for (const ring of rings) {
-		rootNode.append('svg:text')
-			.text(ring.groupLabel || ring.min)
-			.attr('class', 'd3-label ring-label bg')
-			.attr('x', '-5')
-			.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
-		rootNode.append('svg:text')
-			.text(ring.groupLabel || ring.min)
-			.attr('class', 'd3-label ring-label')
-			.attr('x', '-5')
-			.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
-	}
+	(function () {
+		let labelX;
+		let labelY;
+		switch(options.quadrant) {
+		case 'bottom right':
+			labelX = -5;
+			labelY = -1;
+			break;
+		case 'bottom left':
+			labelX = 5;
+			labelY = -1;
+			break;
+		case 'top left':
+			labelX = 5;
+			labelY = 1;
+			break;
+		case 'top right':
+			labelX = -5;
+			labelY = 1;
+			break;
+		}
+		for (const ring of rings) {
+			rootNode.append('svg:text')
+				.text(ring.groupLabel || ring.min)
+				.attr('class', 'd3-label ring-label bg')
+				.attr('x', labelX)
+				.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * labelY * totalRingSize) + 'px');
+			rootNode.append('svg:text')
+				.text(ring.groupLabel || ring.min)
+				.attr('class', 'd3-label ring-label')
+				.attr('x', labelX)
+				.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * labelY * totalRingSize) + 'px');
+		}
+
+	}());
 
 	force.start().alpha(0.05);
 	labelForce.start().alpha(0.05);

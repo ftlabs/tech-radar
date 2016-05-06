@@ -75,12 +75,12 @@ svg {
 	font-size: 1.3em;
 	font-family: MetricWeb, helvetica, sans;
 	font-weight: bold;
+	-webkit-user-select: none;
 
 	.d3-label {
 		fill: black;
 		fill-opacity: 1;
 		z-index: 10;
-		pointer-events: none;
 		transition: transform 0.2s ease;
 		text-anchor: end;
 
@@ -96,7 +96,6 @@ svg {
 		&.ring-label, &.segment-label {
 			fill: white;
 			font-size: 18pt;
-			text-anchor: start;
 
 			&.bg{
 				stroke: black;
@@ -104,6 +103,29 @@ svg {
 			}
 		}
 	}
+
+	&.right {
+		.d3-label {
+			&.ring-label {
+				text-anchor: start;
+			}
+			&.segment-label {
+				text-anchor: end;
+			}
+		}
+	}
+
+	&.left {
+		.d3-label {
+			&.ring-label {
+				text-anchor: end;
+			}
+			&.segment-label {
+				text-anchor: start;
+			}
+		}
+	}
+
 
 	// Hide it do that the use label is shown instead
 	.hovering {
