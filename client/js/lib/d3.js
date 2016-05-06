@@ -15,29 +15,21 @@ module.exports = function ({
 	const boilDown = document.getElementById('boil-down');
 	const width = (size || 400);
 	const height = (size || 400);
-	const nodes = data.slice(0);
 	const innerWidth = 0.1;
 	const totalRingSize = height;
 	const chargeDistance = size/2;
 	const segmentLines = [];
-
-	nodes.forEach(n => {
-		n.ring = rings[Math.floor(n.datumValue)];
-		const positionInRing = (n.datumValue % 1) * n.ring.width;
-		const startPositionOfRing = (n.ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth;
-		n.pseudoDatumValue = positionInRing + startPositionOfRing;
-		n.weight = 0.1;
-
-		// Initial boost of repulsion which drives them apart
-		n.charge = -100 * (options.nodeRepulsion || 3) * Math.pow((Math.floor(n.datumValue) + 2)/rings.length, 2);
-	});
+	const nodes = data.slice(0);
+	const links = [];
+	const labelAnchorNodes = [];
+	const labelAnchorLinks = [];
 
 	const rootNodeObject = {
 		name: 'root',
 		fixed: true,
 		visible: false,
 		rootEl: true,
-		charge: 0
+		charge: 10
 	};
 	switch(options.quadrant) {
 	case 'bottom right':
@@ -57,71 +49,39 @@ module.exports = function ({
 		rootNodeObject.y = -height;
 		break;
 	}
+
+	nodes.forEach(n => {
+		n.ring = rings[Math.floor(n.datumValue)];
+		const positionInRing = (n.datumValue % 1) * n.ring.width;
+		const startPositionOfRing = (n.ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth;
+		n.pseudoDatumValue = positionInRing + startPositionOfRing;
+		n.weight = 0.2;
+		n.x = rootNodeObject.x / 2;
+		n.y = rootNodeObject.y / 2;
+
+		// Initial boost of repulsion which drives them apart
+		n.charge = -100 * (options.nodeRepulsion || 3) * Math.pow((Math.floor(n.datumValue) + 2)/rings.length, 2);
+	});
 	(function addRootNode () {
 		nodes.unshift(rootNodeObject);
 
-		// Draw an arc of attractive points with labels
-		const r = height * 1.05;
-		let offset;
-		switch(options.quadrant) {
-		case 'bottom right':
-			offset = 1;
-			break;
-		case 'bottom left':
-			offset = 0;
-			break;
-		case 'top left':
-			offset = -1;
-			break;
-		case 'top right':
-			offset = -2;
-			break;
-		}
-		const thetaMin = offset * Math.PI/2;
-		const thetaMax = (offset + 1) * Math.PI/2;
-
-		for (let i=0,l=rings[0].segments.length;i<l;i++) {
-			const segment = rings[0].segments[i];
-			const arcWidth = thetaMax - thetaMin;
-			const segmentWidth = arcWidth/l;
-			const theta = thetaMin + i*segmentWidth;
-			const attractionNode = {
-				name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
-				x: rootNodeObject.x + r * Math.cos(theta + segmentWidth/2),
-				y: rootNodeObject.y - r * Math.sin(theta + segmentWidth/2),
-				fixed: true,
-				charge: 0,
-				dot: false
-			};
-			nodes.push(attractionNode);
-			segmentLines.push({
-				x: r * Math.cos(theta),
-				y: r * -Math.sin(theta)
-			});
-			if (i === l-1) {
-				segmentLines.push({
-					x: r * Math.cos(theta),
-					y: r * -Math.sin(theta)
-				});
-			}
-		}
+		// Attatch all nodes to the rootnode
+		nodes.map((n, i) => ({
+			target: 0,
+			source: i,
+			distance:(n.pseudoDatumValue || 0) * totalRingSize,
+			linkStrength: 0.1,
+			fixed: n.fixed,
+			toRoot: true
+		}))
+		.filter(l => !l.fixed)
+		.forEach(l => {
+			links.push(l);
+		});
 	}());
 
-	// remove first and last line
-	segmentLines.pop();
-	segmentLines.shift();
-
-	const links = nodes.map((n, i) => ({
-		target: 0,
-		source: i,
-		distance:(n.pseudoDatumValue || 0) * totalRingSize,
-		linkStrength: 20,
-		fixed: n.fixed
-	}))
-	.filter(l => !l.fixed);
-
-	const labelAnchorNodes = [];
-	const labelAnchorLinks = [];
+	// Create a label and attatch it to each node
+	// this resides in it's own force diagram.
 	links.forEach((l, i) => {
 		const nodeToAttachTo = nodes[l.source];
 		const x = nodeToAttachTo.x - totalRingSize;
@@ -136,7 +96,7 @@ module.exports = function ({
 			y,
 			weight,
 			text,
-			charge: options.tightlyBoundLabels ? -10 : -700,
+			charge: options.tightlyBoundLabels ? -50 : -300,
 			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 		};
 
@@ -146,7 +106,7 @@ module.exports = function ({
 			x,
 			y,
 			fixed: true,
-			charge: -100
+			charge: 10
 		};
 		labelAnchorNodes.push(label);
 		labelAnchorNodes.push(anchorToNode);
@@ -159,6 +119,7 @@ module.exports = function ({
 		});
 	});
 
+	// Add invisible nodes to repel the labels at the edges of the quadrant
 	(function () {
 		let offsetVerticalX;
 		let offsetVerticalY;
@@ -208,6 +169,75 @@ module.exports = function ({
 		}
 	}());
 
+	(function drawSegmentLabels () {
+
+		// Draw an arc of points to act as the segment labels
+		// they also attract the nodes.
+		const r = height * 1.05;
+		let offset;
+		switch(options.quadrant) {
+		case 'bottom right':
+			offset = 1;
+			break;
+		case 'bottom left':
+			offset = 0;
+			break;
+		case 'top left':
+			offset = -1;
+			break;
+		case 'top right':
+			offset = -2;
+			break;
+		}
+
+		const thetaMin = offset * Math.PI/2;
+		const thetaMax = (offset + 1) * Math.PI/2;
+		for (let i=0,l=rings[0].segments.length; i<l; i++) {
+
+			const segment = rings[0].segments[i];
+			const arcWidth = thetaMax - thetaMin;
+			const segmentWidth = arcWidth/l;
+			const theta = thetaMin + i*segmentWidth;
+			const attractionNode = {
+				name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
+				x: rootNodeObject.x + r * Math.cos(theta + segmentWidth/2),
+				y: rootNodeObject.y - r * Math.sin(theta + segmentWidth/2),
+				fixed: true,
+				charge: 0,
+				dot: false
+			};
+			labelAnchorNodes.push({
+				name: '',
+				x: rootNodeObject.x + r * Math.cos(theta + segmentWidth/2),
+				y: rootNodeObject.y - r * Math.sin(theta + segmentWidth/2),
+				fixed: true,
+				charge: -700
+			});
+			labelAnchorNodes.push({
+				name: '',
+				x: rootNodeObject.x + 1.4 * 2 * Math.cos(theta + segmentWidth/2),
+				y: rootNodeObject.y - 1.4 * 2 * Math.sin(theta + segmentWidth/2),
+				fixed: true,
+				charge: -700
+			});
+			nodes.push(attractionNode);
+			segmentLines.push({
+				x: r * Math.cos(theta),
+				y: r * -Math.sin(theta)
+			});
+			if (i === l-1) {
+				segmentLines.push({
+					x: r * Math.cos(theta),
+					y: r * -Math.sin(theta)
+				});
+			}
+		}
+
+		// remove first and last line
+		segmentLines.pop();
+		segmentLines.shift();
+	}());
+
 	// Attract the nodes to the segments
 	nodes.forEach((n,j) => {
 		for(let i=0,l=rings[0].segments.length;i<l;i++) {
@@ -218,12 +248,13 @@ module.exports = function ({
 				const target = nodes.length - l + i;
 				n.x = nodes[target].x;
 				n.y = nodes[target].y;
-				links.push({
+				const link = {
 					target,
 					source: j,
 					distance: 0,
 					linkStrength: 0.01 * (options.nodeAttraction || 3) * Math.pow(1.2, l)
-				});
+				};
+				links.push(link);
 				break;
 			}
 		}
@@ -269,15 +300,25 @@ module.exports = function ({
 		.chargeDistance(chargeDistance)
 		.linkStrength(l => l.linkStrength)
 		.linkDistance(l => l.distance)
-		.gravity(0)
+		.gravity(0.01)
 		.size([width, height]);
+
+	setTimeout(() => {
+		links.filter(l => l.toRoot).forEach(l => l.linkStrength = 0.5);
+		force.links(links).start().alpha(0.1);
+	}, 1000);
+	setTimeout(() => {
+		links.filter(l => l.toRoot).forEach(l => l.linkStrength = 10);
+		force.links(links).start().alpha(0.1);
+	}, 2000);
 
 	const labelForce = d3.layout.force()
 		.nodes(labelAnchorNodes)
 		.links(labelAnchorLinks)
 		.charge(n => n.charge || 0)
-		.gravity(0.1)
-		.linkStrength(options.tightlyBoundLabels ? 10 : 1)
+		.chargeDistance(totalRingSize)
+		.gravity(0.01)
+		.linkStrength(options.tightlyBoundLabels ? 10 : 0.5)
 		.linkDistance(3)
 		.size([width, height]);
 
@@ -289,8 +330,6 @@ module.exports = function ({
 	force.on('tick', function () {
 
 		nodes.forEach(function (d) {
-			if (d.x > width) [d.x, d.px] = [d.px, d.x];
-			if (d.y > height) [d.y, d.py] = [d.py, d.y];
 
 			// Attach the label node to this node
 			if (d.labelAnchor) {

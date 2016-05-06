@@ -84,6 +84,9 @@ svg {
 		transition: transform 0.2s ease;
 		text-anchor: end;
 
+   		cursor: move;
+		cursor: -webkit-grab;
+
 		&.bg {
 			stroke: white;
 			stroke-width: 3px;
@@ -143,11 +146,17 @@ svg {
 		fill: white;
 		stroke-width: 2px;
 		stroke: black;
+   		cursor: move;
+		cursor: -webkit-grab;
 
 		&.segment-label {
 			display: none;
 			font-size: 16pt;
 		}
+	}
+
+	.rootNode {
+		pointer-events: none;
 	}
 }
 
