@@ -123,32 +123,22 @@ module.exports = function ({
 	(function () {
 		let offsetVerticalX;
 		let offsetVerticalY;
-		let offsetHorizontalX;
-		let offsetHorizontalY;
 		switch(options.quadrant) {
 		case 'bottom right':
 			offsetVerticalX = rootNodeObject.x + 100;
 			offsetVerticalY = -1;
-			offsetHorizontalX = -1;
-			offsetHorizontalY = rootNodeObject.y + 100;
 			break;
 		case 'bottom left':
 			offsetVerticalX = rootNodeObject.x - 100;
 			offsetVerticalY = -1;
-			offsetHorizontalX = 1;
-			offsetHorizontalY = rootNodeObject.y + 100;
 			break;
 		case 'top left':
 			offsetVerticalX = rootNodeObject.x - 100;
 			offsetVerticalY = 1;
-			offsetHorizontalX = 1;
-			offsetHorizontalY = rootNodeObject.y;
 			break;
 		case 'top right':
 			offsetVerticalX = rootNodeObject.x + 100;
 			offsetVerticalY = 1;
-			offsetHorizontalX = -1;
-			offsetHorizontalY = rootNodeObject.y;
 			break;
 		}
 		for (const ring of rings) {
@@ -159,13 +149,6 @@ module.exports = function ({
 				fixed: true,
 				charge: -700
 			});
-			// labelAnchorNodes.push({
-			// 	__comment: 'ring bottom repulsion',
-			// 	x: offsetHorizontalX * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
-			// 	y: offsetHorizontalY,
-			// 	fixed: true,
-			// 	charge: -700
-			// });
 		}
 	}());
 
@@ -303,15 +286,6 @@ module.exports = function ({
 		.gravity(0.01)
 		.size([width, height]);
 
-	setTimeout(() => {
-		links.filter(l => l.toRoot).forEach(l => l.linkStrength = 0.5);
-		force.links(links).start().alpha(0.1);
-	}, 1000);
-	setTimeout(() => {
-		links.filter(l => l.toRoot).forEach(l => l.linkStrength = 10);
-		force.links(links).start().alpha(0.1);
-	}, 2000);
-
 	const labelForce = d3.layout.force()
 		.nodes(labelAnchorNodes)
 		.links(labelAnchorLinks)
@@ -346,6 +320,39 @@ module.exports = function ({
 	});
 
 	labelForce.on('tick', function () {
+		labelAnchorNodes.forEach(n => {
+
+			switch(options.quadrant) {
+			case 'bottom right':
+				if (n.y > rootNodeObject.y) {
+					n.y = rootNodeObject.y;
+				}
+				break;
+			case 'bottom left':
+				if (n.y > rootNodeObject.y) {
+					n.y = rootNodeObject.y;
+				}
+				break;
+			case 'top left':
+				if (n.y < rootNodeObject.y) {
+					n.y = rootNodeObject.y;
+				}
+				break;
+			case 'top right':
+				if (n.y < rootNodeObject.y) {
+					n.y = rootNodeObject.y;
+				}
+				break;
+			}
+		});
+		labelNode.forEach(n => {
+			let vY = 0;
+			if (n.y < rootNode.y ) {
+				vY = 20.0;
+			}
+			n.py -= vY;
+		});
+
 		labelLine
 			.attr('x1', function (d) { return d.source.x; })
 			.attr('y1', function (d) { return d.source.y; })
@@ -629,6 +636,22 @@ module.exports = function ({
 
 	force.start().alpha(0.05);
 	labelForce.start().alpha(0.05);
+	const n = 120;
+	for (let i = 0; i < n; ++i) {
+
+		if (i === 10) {
+			links.filter(l => l.toRoot).forEach(l => l.linkStrength = 0.5);
+			force.links(links).start().alpha(0.05);
+		}
+
+		if (i === 30) {
+			links.filter(l => l.toRoot).forEach(l => l.linkStrength = 10);
+			force.links(links).start().alpha(0.05);
+		}
+
+		force.tick();
+		labelForce.tick();
+	}
 
 	const renderOnTop = svg
 	.append('svg:g')
