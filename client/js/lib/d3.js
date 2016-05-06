@@ -19,6 +19,7 @@ module.exports = function ({
 	const innerWidth = 0.1;
 	const totalRingSize = height;
 	const chargeDistance = size/2;
+	const segmentLines = [];
 
 	nodes.forEach(n => {
 		n.ring = rings[Math.floor(n.datumValue)];
@@ -34,8 +35,6 @@ module.exports = function ({
 	(function addRootNode () {
 		const rootNodeObject = {
 			name: 'root',
-			x: width,
-			y: height,
 			fixed: true,
 			visible: false,
 			rootEl: true,
@@ -60,11 +59,8 @@ module.exports = function ({
 			break;
 		}
 		nodes.unshift(rootNodeObject);
-	}());
 
-	const segmentLines = [];
-	// Draw an arc of attractive points with labels
-	(function () {
+		// Draw an arc of attractive points with labels
 		const r = height * 1.05;
 		let offset;
 		switch(options.quadrant) {
@@ -91,8 +87,8 @@ module.exports = function ({
 			const theta = thetaMin + (1+i)*segmentWidth;
 			const attractionNode = {
 				name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
-				x: width + r * Math.cos(theta),
-				y: height - r * Math.sin(theta),
+				x: rootNodeObject.x + r * Math.cos(theta),
+				y: rootNodeObject.y - r * Math.sin(theta),
 				fixed: true,
 				charge: 0,
 				dot: false
@@ -177,22 +173,22 @@ module.exports = function ({
 			offsetHorizontalY = totalRingSize + 100;
 			break;
 		case 'bottom left':
-			offsetVerticalX = totalRingSize - 100;
+			offsetVerticalX = -totalRingSize - 100;
 			offsetVerticalY = -1;
 			offsetHorizontalX = 1;
 			offsetHorizontalY = totalRingSize + 100;
 			break;
 		case 'top left':
-			offsetVerticalX = totalRingSize - 100;
+			offsetVerticalX = -totalRingSize - 100;
 			offsetVerticalY = 1;
 			offsetHorizontalX = 1;
-			offsetHorizontalY = totalRingSize - 100;
+			offsetHorizontalY = -totalRingSize;
 			break;
 		case 'top right':
 			offsetVerticalX = totalRingSize + 100;
 			offsetVerticalY = 1;
 			offsetHorizontalX = -1;
-			offsetHorizontalY = totalRingSize - 100;
+			offsetHorizontalY = -totalRingSize;
 			break;
 		}
 		for (const ring of rings) {
@@ -201,16 +197,14 @@ module.exports = function ({
 				x: offsetVerticalX,
 				y: offsetVerticalY * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
 				fixed: true,
-				charge: -700,
-				text: '**'
+				charge: -700
 			});
 			labelAnchorNodes.push({
 				__comment: 'ring bottom repulsion',
 				x: offsetHorizontalX * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
 				y: offsetHorizontalY,
 				fixed: true,
-				charge: -700,
-				text: '++'
+				charge: -700
 			});
 		}
 	}());
@@ -239,10 +233,10 @@ module.exports = function ({
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
 	const svg = d3.select(svgNode);
 	const padding = {
-		hSmall: 100,
+		hSmall: 110,
 		hLarge: 300,
 		vTop: 30,
-		vBottom: 0
+		vBottom: 110
 	};
 
 	switch(options.quadrant) {
