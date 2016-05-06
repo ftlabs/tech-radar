@@ -249,7 +249,7 @@ module.exports = function ({
 	const padding = {
 		hSmall: 110,
 		hLarge: 300,
-		vTop: 30,
+		vTop: 50,
 		vBottom: 110
 	};
 
