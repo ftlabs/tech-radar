@@ -159,13 +159,13 @@ module.exports = function ({
 				fixed: true,
 				charge: -700
 			});
-			labelAnchorNodes.push({
-				__comment: 'ring bottom repulsion',
-				x: offsetHorizontalX * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
-				y: offsetHorizontalY,
-				fixed: true,
-				charge: -700
-			});
+			// labelAnchorNodes.push({
+			// 	__comment: 'ring bottom repulsion',
+			// 	x: offsetHorizontalX * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
+			// 	y: offsetHorizontalY,
+			// 	fixed: true,
+			// 	charge: -700
+			// });
 		}
 	}());
 
@@ -325,7 +325,9 @@ module.exports = function ({
 	const drag = force.drag()
 		.on('dragstart', () => nodes.forEach(n => n.fixed = true ));
 	const dragLabel = labelForce.drag()
-		.on('dragstart', () => labelAnchorNodes.forEach(n => n.fixed = true ));
+		.on('dragend', function (d) {
+			d.fixed = true;
+		});
 
 	force.on('tick', function () {
 
@@ -494,7 +496,7 @@ module.exports = function ({
 
 
 	// Add rectangles to hide other quadrants of the circle.
-	const rectFill = 'rgba(255, 255, 255, 0.5)';
+	const rectFill = 'rgba(255, 255, 255, 1)';
 	switch(options.quadrant) {
 	case 'bottom right':
 		rootNode.append('svg:rect')

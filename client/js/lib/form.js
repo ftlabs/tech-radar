@@ -55,7 +55,7 @@ module.exports = function (schema, visibleColumns, ringLabels, options) {
 		const optionDefault = thisSchema[2];
 		const category = thisSchema[4];
 		const categoryKey = category.split(' ').map(str => str.toLowerCase()).join('-');
-		const desc = thisSchema[3];
+		let desc = thisSchema[3];
 		const optionValue = options[optionKey];
 
 		input.type = 'text';
@@ -63,6 +63,11 @@ module.exports = function (schema, visibleColumns, ringLabels, options) {
 		// show the default value if it is something worth showing
 		input.placeholder = optionType.name + (!!String(optionDefault) ? ` (${thisSchema[2]})` : '');
 		label.title = desc;
+
+		if (qp === 'id') {
+			desc = desc + ` <a href="https://docs.google.com/spreadsheets/d/${optionValue}/" target="_blank">Link to spreadsheet</a>`;
+		}
+
 		small.innerHTML = desc;
 		input.value = optionValue || '';
 		if (optionValue === optionDefault) {
