@@ -67,7 +67,7 @@
 	
 	// configProperty: [optionsParameter, type, default value, description, category]
 	var qpSchema = {
-		filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li></ul>', 'Filter Data'],
+		filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
 		id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
 		sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
 		sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
@@ -472,6 +472,10 @@
 			return !!datum[options.sortCol] && !!datum['name'] && (datum['configvalue'] === undefined || datum['configvalue'] === null);
 		});
 	
+		if (!data.length) {
+			throw Error('No data from source');
+		}
+	
 		var sortType = 'numerical';
 	
 		// Default to numerical but if any of the sortcol values
@@ -633,6 +637,10 @@
 				}
 			}
 		});
+	
+		if (!data.length) {
+			throw Error('No data matched by filter');
+		}
 	
 		return {
 			data: data,
@@ -1018,6 +1026,31 @@
 		return mergeData(data);
 	}).then(function (data) {
 	
+		var rings = [];
+		var e = undefined;
+		try {
+			var o = process(data);
+			rings = generateChartRings(o.data, o.labels);
+		} catch (err) {
+			document.getElementById('error-text-target').textContent = err.message;
+			e = err;
+		}
+		__webpack_require__(112)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
+			return !k.match(/^(configvalue$|hidden-graph-item)/);
+		}) : [], rings.map(function (r) {
+			return r.groupLabel;
+		}), options);
+	
+		document.getElementById('filter').addEventListener('input', function (e) {
+	
+			// Filter graph
+			options.filter = e.currentTarget.value;
+			cleanUpTable();
+			cleanUpTable = generateTable(data);
+		});
+	
+		if (e) throw e;
+	
 		var cleanUpGraph = function cleanUpGraph() {};
 		var cleanUpTable = function cleanUpTable() {};
 	
@@ -1060,23 +1093,6 @@
 	
 		cleanUpTable = generateTable(data);
 		cleanUpGraph = generateGraphs(data);
-	
-		var o = process(data);
-		var rings = generateChartRings(o.data, o.labels);
-	
-		__webpack_require__(112)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
-			return !k.match(/^(configvalue$|hidden-graph-item)/);
-		}) : [], rings.map(function (r) {
-			return r.groupLabel;
-		}), options);
-	
-		document.getElementById('filter').addEventListener('input', function (e) {
-	
-			// Filter graph
-			options.filter = e.currentTarget.value;
-			cleanUpTable();
-			cleanUpTable = generateTable(data);
-		});
 	})['catch'](function (e) {
 		document.getElementById('error-text-target').textContent = e.message;
 		throw e;
