@@ -87,6 +87,7 @@
 		proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.', 'Display'],
 		noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)', 'Display'],
 		nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)', 'Display'],
+		quadrant: ['quadrant', ['bottom right', 'bottom left', 'top left', 'top right'], 'bottom right', 'What quadrant of a circle should the graph display as.', 'Display'],
 		css: ['customCss', String, '', 'Advanced: Style this page with some custom css.', 'Advanced']
 	};
 	
@@ -148,6 +149,11 @@
 					break;
 				case Boolean:
 					options[handle[0]] = config[key].toLowerCase() !== 'false' && config[key] !== false;
+					break;
+				default:
+					if (handle[1].constructor === Array) {
+						options[handle[0]] = handle[1].indexOf(config[key]) !== -1 ? config[key] : handle[2];
+					}
 					break;
 			}
 		});
@@ -1025,10 +1031,6 @@
 			document.getElementById('tech-radar__settings').style.display = 'none';
 		}
 	
-		__webpack_require__(112)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
-			return !k.match(/^(configvalue$|hidden-graph-item)/);
-		}) : [], options);
-	
 		var buttons = document.getElementById('tech-radar__buttons');
 	
 		var updateDataButton = document.createElement('button');
@@ -1056,6 +1058,18 @@
 			});
 		});
 	
+		cleanUpTable = generateTable(data);
+		cleanUpGraph = generateGraphs(data);
+	
+		var o = process(data);
+		var rings = generateChartRings(o.data, o.labels);
+	
+		__webpack_require__(112)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
+			return !k.match(/^(configvalue$|hidden-graph-item)/);
+		}) : [], rings.map(function (r) {
+			return r.groupLabel;
+		}), options);
+	
 		document.getElementById('filter').addEventListener('input', function (e) {
 	
 			// Filter graph
@@ -1063,9 +1077,6 @@
 			cleanUpTable();
 			cleanUpTable = generateTable(data);
 		});
-	
-		cleanUpTable = generateTable(data);
-		cleanUpGraph = generateGraphs(data);
 	})['catch'](function (e) {
 		document.getElementById('error-text-target').textContent = e.message;
 		throw e;
@@ -3981,80 +3992,75 @@
 		var boilDown = document.getElementById('boil-down');
 		var width = size || 400;
 		var height = size || 400;
-		var nodes = data.slice(0);
 		var innerWidth = 0.1;
 		var totalRingSize = height;
 		var chargeDistance = size / 2;
+		var segmentLines = [];
+		var nodes = data.slice(0);
+		var links = [];
+		var labelAnchorNodes = [];
+		var labelAnchorLinks = [];
+	
+		var rootNodeObject = {
+			name: 'root',
+			fixed: true,
+			visible: false,
+			rootEl: true,
+			charge: 10
+		};
+		switch (options.quadrant) {
+			case 'bottom right':
+				rootNodeObject.x = width;
+				rootNodeObject.y = height;
+				break;
+			case 'bottom left':
+				rootNodeObject.x = -width;
+				rootNodeObject.y = height;
+				break;
+			case 'top left':
+				rootNodeObject.x = -width;
+				rootNodeObject.y = -height;
+				break;
+			case 'top right':
+				rootNodeObject.x = width;
+				rootNodeObject.y = -height;
+				break;
+		}
 	
 		nodes.forEach(function (n) {
 			n.ring = rings[Math.floor(n.datumValue)];
 			var positionInRing = n.datumValue % 1 * n.ring.width;
 			var startPositionOfRing = n.ring.proportionalSizeStart * (1 - innerWidth) + innerWidth;
 			n.pseudoDatumValue = positionInRing + startPositionOfRing;
-			n.weight = 0.1;
+			n.weight = 0.2;
+			n.x = rootNodeObject.x / 2;
+			n.y = rootNodeObject.y / 2;
 	
 			// Initial boost of repulsion which drives them apart
 			n.charge = -100 * (options.nodeRepulsion || 3) * Math.pow((Math.floor(n.datumValue) + 2) / rings.length, 2);
 		});
+		(function addRootNode() {
+			nodes.unshift(rootNodeObject);
 	
-		nodes.unshift({
-			name: 'root',
-			x: width,
-			y: height,
-			fixed: true,
-			visible: false,
-			rootEl: true,
-			charge: 0
-		});
-	
-		var segmentLines = [];
-		// Draw an arc of attractive points with labels
-		for (var i = 0, l = rings[0].segments.length; i < l; i++) {
-			var r = height * 1.05;
-			var segment = rings[0].segments[i];
-			var thetaMin = 1 * 2 * Math.PI / 4; // slightly negative
-			var thetaMax = 2 * 2 * Math.PI / 4; // same amount from the otherside
-			var arcWidth = thetaMax - thetaMin;
-			var segmentWidth = arcWidth / (l + 1);
-			var theta = thetaMin + (1 + i) * segmentWidth;
-			nodes.push({
-				name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
-				x: width + r * Math.cos(theta),
-				y: height - r * Math.sin(theta),
-				fixed: true,
-				charge: 0,
-				dot: false
+			// Attatch all nodes to the rootnode
+			nodes.map(function (n, i) {
+				return {
+					target: 0,
+					source: i,
+					distance: (n.pseudoDatumValue || 0) * totalRingSize,
+					linkStrength: 0.1,
+					fixed: n.fixed,
+					toRoot: true
+				};
+			}).filter(function (l) {
+				return !l.fixed;
+			}).forEach(function (l) {
+				links.push(l);
 			});
-			segmentLines.push({
-				x: r * Math.cos(theta - segmentWidth / 2),
-				y: r * -Math.sin(theta - segmentWidth / 2)
-			});
-			if (i === l - 1) {
-				segmentLines.push({
-					x: r * Math.cos(theta + segmentWidth / 2),
-					y: r * -Math.sin(theta + segmentWidth / 2)
-				});
-			}
-		}
+		})();
 	
-		// remove first and last line
-		segmentLines.pop();
-		segmentLines.shift();
-	
-		var links = nodes.map(function (n, i) {
-			return {
-				target: 0,
-				source: i,
-				distance: (n.pseudoDatumValue || 0) * totalRingSize,
-				linkStrength: 20,
-				fixed: n.fixed
-			};
-		}).filter(function (l) {
-			return !l.fixed;
-		});
-	
-		var labelAnchorNodes = [];
-		var labelAnchorLinks = [];
+		// Create a label and attatch it to each node
+		// this resides in it's own force diagram.
 		links.forEach(function (l, i) {
 			var nodeToAttachTo = nodes[l.source];
 			var x = nodeToAttachTo.x - totalRingSize;
@@ -4069,7 +4075,7 @@
 				y: y,
 				weight: weight,
 				text: text,
-				charge: options.tightlyBoundLabels ? -10 : -700,
+				charge: options.tightlyBoundLabels ? -50 : -300,
 				id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 			};
 	
@@ -4079,8 +4085,7 @@
 				x: x,
 				y: y,
 				fixed: true,
-				weight: 0,
-				charge: -100
+				charge: 10
 			};
 			labelAnchorNodes.push(label);
 			labelAnchorNodes.push(anchorToNode);
@@ -4092,65 +4097,173 @@
 				weight: weight
 			});
 		});
-		var _iteratorNormalCompletion = true;
-		var _didIteratorError = false;
-		var _iteratorError = undefined;
 	
-		try {
-			for (var _iterator = _getIterator(rings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-				var ring = _step.value;
-	
-				labelAnchorNodes.push({
-					__comment: 'ring label repulsion',
-					x: totalRingSize + 100,
-					y: -1 * ((ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize),
-					fixed: true,
-					charge: -700
-				});
-				labelAnchorNodes.push({
-					__comment: 'ring bottom repulsion',
-					x: -1 * ((ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize),
-					y: totalRingSize - 100,
-					fixed: true,
-					charge: -700
-				});
+		// Add invisible nodes to repel the labels at the edges of the quadrant
+		(function () {
+			var offsetVerticalX = undefined;
+			var offsetVerticalY = undefined;
+			switch (options.quadrant) {
+				case 'bottom right':
+					offsetVerticalX = rootNodeObject.x + 100;
+					offsetVerticalY = -1;
+					break;
+				case 'bottom left':
+					offsetVerticalX = rootNodeObject.x - 100;
+					offsetVerticalY = -1;
+					break;
+				case 'top left':
+					offsetVerticalX = rootNodeObject.x - 100;
+					offsetVerticalY = 1;
+					break;
+				case 'top right':
+					offsetVerticalX = rootNodeObject.x + 100;
+					offsetVerticalY = 1;
+					break;
 			}
+			var _iteratorNormalCompletion = true;
+			var _didIteratorError = false;
+			var _iteratorError = undefined;
 	
-			// Attract the nodes to the segments
-		} catch (err) {
-			_didIteratorError = true;
-			_iteratorError = err;
-		} finally {
 			try {
-				if (!_iteratorNormalCompletion && _iterator['return']) {
-					_iterator['return']();
+				for (var _iterator = _getIterator(rings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+					var ring = _step.value;
+	
+					labelAnchorNodes.push({
+						__comment: 'ring label repulsion',
+						x: offsetVerticalX,
+						y: offsetVerticalY * ((ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize),
+						fixed: true,
+						charge: -700
+					});
 				}
+			} catch (err) {
+				_didIteratorError = true;
+				_iteratorError = err;
 			} finally {
-				if (_didIteratorError) {
-					throw _iteratorError;
+				try {
+					if (!_iteratorNormalCompletion && _iterator['return']) {
+						_iterator['return']();
+					}
+				} finally {
+					if (_didIteratorError) {
+						throw _iteratorError;
+					}
 				}
 			}
-		}
+		})();
 	
+		(function drawSegmentLabels() {
+	
+			// Draw an arc of points to act as the segment labels
+			// they also attract the nodes.
+			var r = height * 1.05;
+			var offset = undefined;
+			switch (options.quadrant) {
+				case 'bottom right':
+					offset = 1;
+					break;
+				case 'bottom left':
+					offset = 0;
+					break;
+				case 'top left':
+					offset = -1;
+					break;
+				case 'top right':
+					offset = -2;
+					break;
+			}
+	
+			var thetaMin = offset * Math.PI / 2;
+			var thetaMax = (offset + 1) * Math.PI / 2;
+			for (var i = 0, l = rings[0].segments.length; i < l; i++) {
+	
+				var segment = rings[0].segments[i];
+				var arcWidth = thetaMax - thetaMin;
+				var segmentWidth = arcWidth / l;
+				var theta = thetaMin + i * segmentWidth;
+				var attractionNode = {
+					name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
+					x: rootNodeObject.x + r * Math.cos(theta + segmentWidth / 2),
+					y: rootNodeObject.y - r * Math.sin(theta + segmentWidth / 2),
+					fixed: true,
+					charge: 0,
+					dot: false
+				};
+				labelAnchorNodes.push({
+					name: '',
+					x: rootNodeObject.x + r * Math.cos(theta + segmentWidth / 2),
+					y: rootNodeObject.y - r * Math.sin(theta + segmentWidth / 2),
+					fixed: true,
+					charge: -700
+				});
+				labelAnchorNodes.push({
+					name: '',
+					x: rootNodeObject.x + 1.4 * 2 * Math.cos(theta + segmentWidth / 2),
+					y: rootNodeObject.y - 1.4 * 2 * Math.sin(theta + segmentWidth / 2),
+					fixed: true,
+					charge: -700
+				});
+				nodes.push(attractionNode);
+				segmentLines.push({
+					x: r * Math.cos(theta),
+					y: r * -Math.sin(theta)
+				});
+				if (i === l - 1) {
+					segmentLines.push({
+						x: r * Math.cos(theta),
+						y: r * -Math.sin(theta)
+					});
+				}
+			}
+	
+			// remove first and last line
+			segmentLines.pop();
+			segmentLines.shift();
+		})();
+	
+		// Attract the nodes to the segments
 		nodes.forEach(function (n, j) {
 			for (var i = 0, l = rings[0].segments.length; i < l; i++) {
 				if (n[rings[0].segmentBy] !== undefined && n[rings[0].segmentBy] === rings[0].segments[i]) {
 					var target = nodes.length - l + i;
 					n.x = nodes[target].x;
 					n.y = nodes[target].y;
-					links.push({
+					var link = {
 						target: target,
 						source: j,
 						distance: 0,
 						linkStrength: 0.01 * (options.nodeAttraction || 3) * Math.pow(1.2, l)
-					});
+					};
+					links.push(link);
 					break;
 				}
 			}
 		});
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-		var svg = d3.select(svgNode).attr('width', width + 500 + 130).attr('height', height + 100).attr('viewBox', '-500 -50 ' + (width + 500 + 130) + ' ' + (height + 100));
+		var svg = d3.select(svgNode);
+		svg.attr('class', options.quadrant);
+		var padding = {
+			hSmall: 110,
+			hLarge: 300,
+			vTop: 50,
+			vBottom: 110
+		};
+	
+		switch (options.quadrant) {
+			case 'bottom right':
+				svg.attr('width', width + padding.hLarge + padding.hSmall).attr('height', height + padding.vTop + padding.vBottom).attr('viewBox', -padding.hLarge + ' ' + -padding.vTop + ' ' + (width + padding.hLarge + padding.hSmall) + ' ' + (height + padding.vTop + padding.vBottom));
+				break;
+			case 'bottom left':
+				svg.attr('width', width + padding.hLarge + padding.hSmall).attr('height', height + padding.vTop + padding.vBottom).attr('viewBox', -width - padding.hSmall + ' ' + -padding.vTop + ' ' + (width + padding.hLarge + padding.hSmall) + ' ' + (height + padding.vTop + padding.vBottom));
+				break;
+			case 'top left':
+				svg.attr('width', width + padding.hLarge + padding.hSmall).attr('height', height + padding.vTop + padding.vBottom).attr('viewBox', -width - padding.hSmall + ' ' + (-height - padding.vBottom) + ' ' + (width + padding.hLarge + padding.hSmall) + ' ' + (height + padding.vTop + padding.vBottom));
+				break;
+			case 'top right':
+				svg.attr('width', width + padding.hLarge + padding.hSmall).attr('height', height + padding.vTop + padding.vBottom).attr('viewBox', -padding.hLarge + ' ' + (-height - padding.vBottom) + ' ' + (width + padding.hLarge + padding.hSmall) + ' ' + (height + padding.vTop + padding.vBottom));
+				break;
+		}
 	
 		var force = d3.layout.force().nodes(nodes).links(links).charge(function (n) {
 			return n.charge;
@@ -4158,38 +4271,26 @@
 			return l.linkStrength;
 		}).linkDistance(function (l) {
 			return l.distance;
-		}).gravity(0).size([width, height]);
+		}).gravity(0.01).size([width, height]);
 	
 		var labelForce = d3.layout.force().nodes(labelAnchorNodes).links(labelAnchorLinks).charge(function (n) {
 			return n.charge || 0;
-		}).gravity(0.1).linkStrength(options.tightlyBoundLabels ? 10 : 1).linkDistance(3).size([width, height]);
+		}).chargeDistance(totalRingSize).gravity(0.01).linkStrength(options.tightlyBoundLabels ? 10 : 0.5).linkDistance(3).size([width, height]);
 	
 		var drag = force.drag().on('dragstart', function () {
 			return nodes.forEach(function (n) {
 				return n.fixed = true;
 			});
 		});
-		var dragLabel = labelForce.drag().on('dragstart', function () {
-			return labelAnchorNodes.forEach(function (n) {
-				return n.fixed = true;
-			});
+		var dragLabel = labelForce.drag().on('dragend', function (d) {
+			d.fixed = true;
 		});
 	
 		force.on('tick', function () {
 	
 			nodes.forEach(function (d) {
-				if (d.x > width) {
-					;
-					var _ref2 = [d.px, d.x];
-					d.x = _ref2[0];
-					d.px = _ref2[1];
-				}if (d.y > height) {
-					;
 	
-					var _ref3 = [d.py, d.y];
-					d.y = _ref3[0];
-					d.py = _ref3[1];
-				} // Attach the label node to this node
+				// Attach the label node to this node
 				if (d.labelAnchor) {
 					d.labelAnchor.px = d.x;
 					d.labelAnchor.py = d.y;
@@ -4204,6 +4305,39 @@
 		});
 	
 		labelForce.on('tick', function () {
+			labelAnchorNodes.forEach(function (n) {
+	
+				switch (options.quadrant) {
+					case 'bottom right':
+						if (n.y > rootNodeObject.y) {
+							n.y = rootNodeObject.y;
+						}
+						break;
+					case 'bottom left':
+						if (n.y > rootNodeObject.y) {
+							n.y = rootNodeObject.y;
+						}
+						break;
+					case 'top left':
+						if (n.y < rootNodeObject.y) {
+							n.y = rootNodeObject.y;
+						}
+						break;
+					case 'top right':
+						if (n.y < rootNodeObject.y) {
+							n.y = rootNodeObject.y;
+						}
+						break;
+				}
+			});
+			labelNode.forEach(function (n) {
+				var vY = 0;
+				if (n.y < rootNode.y) {
+					vY = 20.0;
+				}
+				n.py -= vY;
+			});
+	
 			labelLine.attr('x1', function (d) {
 				return d.source.x;
 			}).attr('y1', function (d) {
@@ -4224,7 +4358,7 @@
 			return n['hidden-graph-item-id'] + '--graph-point';
 		}).call(drag);
 	
-		var labelNode = svg.selectAll('.label-node').data(labelAnchorNodes).enter().append('svg:g').attr('id', function (n) {
+		var labelNode = svg.selectAll('.label-node').data(labelAnchorNodes).enter().append('svg:g').call(dragLabel).attr('id', function (n) {
 			return '' + n.id;
 		});
 	
@@ -4240,7 +4374,7 @@
 			});
 		});
 	
-		labelNode.append('svg:text').attr('class', 'd3-label').attr('x', '-10px').attr('y', '5px').call(dragLabel).each(function (n) {
+		labelNode.append('svg:text').attr('class', 'd3-label').attr('x', '-10px').attr('y', '5px').each(function (n) {
 			var _this2 = this;
 	
 			if (!n.text) return;
@@ -4354,9 +4488,36 @@
 		rings.reverse();
 	
 		// Add rectangles to hide other quadrants of the circle.
-		rootNode.append('svg:rect').attr('class', 'mask').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', 'rgba(255, 255, 255, 1)');
-		rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', 'rgba(255, 255, 255, 1)');
+		var rectFill = 'rgba(255, 255, 255, 1)';
+		switch (options.quadrant) {
+			case 'bottom right':
+				rootNode.append('svg:rect').attr('class', 'mask').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', rectFill);
+				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', rectFill);
+				break;
+			case 'bottom left':
+				// Tall Box
+				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', rectFill);
 	
+				// Wide box
+				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', rectFill);
+				break;
+			case 'top left':
+				// Tall Box
+				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', rectFill);
+	
+				// Wide box
+				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', -totalRingSize).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', rectFill);
+				break;
+			case 'top right':
+				// Tall Box
+				rootNode.append('svg:rect').attr('class', 'mask').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', rectFill);
+	
+				// Wide box
+				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', -totalRingSize).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', rectFill);
+				break;
+		}
+	
+		// Draw segment lines
 		var _iteratorNormalCompletion3 = true;
 		var _didIteratorError3 = false;
 		var _iteratorError3 = undefined;
@@ -4368,7 +4529,7 @@
 				rootNode.append('svg:line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
 			}
 	
-			// Nothing goes in the middle ring
+			// Nothing goes in the middle  block it out
 		} catch (err) {
 			_didIteratorError3 = true;
 			_iteratorError3 = err;
@@ -4386,34 +4547,81 @@
 	
 		rootNode.append('svg:circle').attr('class', 'background mask').attr('r', totalRingSize * innerWidth).style('fill', 'rgba(255, 255, 255, 1)');
 	
-		var _iteratorNormalCompletion4 = true;
-		var _didIteratorError4 = false;
-		var _iteratorError4 = undefined;
-	
-		try {
-			for (var _iterator4 = _getIterator(rings), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-				var ring = _step4.value;
-	
-				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label bg').attr('x', '-5').attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
-				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label').attr('x', '-5').attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+		// Ring labels
+		(function () {
+			var labelX = undefined;
+			var labelY = undefined;
+			switch (options.quadrant) {
+				case 'bottom right':
+					labelX = -5;
+					labelY = -1;
+					break;
+				case 'bottom left':
+					labelX = 5;
+					labelY = -1;
+					break;
+				case 'top left':
+					labelX = 5;
+					labelY = 1;
+					break;
+				case 'top right':
+					labelX = -5;
+					labelY = 1;
+					break;
 			}
-		} catch (err) {
-			_didIteratorError4 = true;
-			_iteratorError4 = err;
-		} finally {
+			var _iteratorNormalCompletion4 = true;
+			var _didIteratorError4 = false;
+			var _iteratorError4 = undefined;
+	
 			try {
-				if (!_iteratorNormalCompletion4 && _iterator4['return']) {
-					_iterator4['return']();
+				for (var _iterator4 = _getIterator(rings), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+					var ring = _step4.value;
+	
+					rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label bg').attr('x', labelX).attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * labelY * totalRingSize + 'px');
+					rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label').attr('x', labelX).attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * labelY * totalRingSize + 'px');
 				}
+			} catch (err) {
+				_didIteratorError4 = true;
+				_iteratorError4 = err;
 			} finally {
-				if (_didIteratorError4) {
-					throw _iteratorError4;
+				try {
+					if (!_iteratorNormalCompletion4 && _iterator4['return']) {
+						_iterator4['return']();
+					}
+				} finally {
+					if (_didIteratorError4) {
+						throw _iteratorError4;
+					}
 				}
 			}
-		}
+		})();
 	
 		force.start().alpha(0.05);
 		labelForce.start().alpha(0.05);
+		var n = 120;
+		for (var i = 0; i < n; ++i) {
+	
+			if (i === 10) {
+				links.filter(function (l) {
+					return l.toRoot;
+				}).forEach(function (l) {
+					return l.linkStrength = 0.5;
+				});
+				force.links(links).start().alpha(0.05);
+			}
+	
+			if (i === 30) {
+				links.filter(function (l) {
+					return l.toRoot;
+				}).forEach(function (l) {
+					return l.linkStrength = 10;
+				});
+				force.links(links).start().alpha(0.05);
+			}
+	
+			force.tick();
+			labelForce.tick();
+		}
 	
 		var renderOnTop = svg.append('svg:g').append('svg:use');
 	
@@ -9522,7 +9730,7 @@
 			}
 	
 			if (Array.isArray(val)) {
-				return val.sort().map(function (val2) {
+				return val.slice().sort().map(function (val2) {
 					return strictUriEncode(key) + '=' + strictUriEncode(val2);
 				}).join('&');
 			}
@@ -9592,7 +9800,7 @@
 	}
 	
 	var inputs = [];
-	module.exports = function (schema, dataFormat, options) {
+	module.exports = function (schema, visibleColumns, ringLabels, options) {
 	
 		var formLocation = document.getElementById('tech-radar__qp-form');
 	
@@ -9633,6 +9841,11 @@
 				// show the default value if it is something worth showing
 				input.placeholder = optionType.name + (!!String(optionDefault) ? ' (' + thisSchema[2] + ')' : '');
 				label.title = desc;
+	
+				if (qp === 'id') {
+					desc = desc + (' <a href="https://docs.google.com/spreadsheets/d/' + optionValue + '/" target="_blank">Link to spreadsheet</a>');
+				}
+	
 				small.innerHTML = desc;
 				input.value = optionValue || '';
 				if (optionValue === optionDefault) {
@@ -9656,6 +9869,10 @@
 					group.style.flexBasis = '60%';
 				}
 	
+				if (optionType.constructor === Array) {
+					input = makeSelect(optionType, optionValue || optionDefault);
+				}
+	
 				if (qp === 'filter') {
 					group.style.flexBasis = '80%';
 				}
@@ -9666,11 +9883,15 @@
 				small.classList.add('o-forms-additional-info');
 	
 				if (qp === 'sortcol') {
-					input = makeSelect(dataFormat, options.sortCol === optionDefault ? 'Default' : options.sortCol);
+					input = makeSelect(visibleColumns, options.sortCol === optionDefault ? 'Default' : options.sortCol);
 				}
 	
 				if (qp === 'segment') {
-					input = makeSelect(dataFormat, options.segment === optionDefault ? 'Default' : options.segment);
+					input = makeSelect(visibleColumns, options.segment === optionDefault ? 'Default' : options.segment);
+				}
+	
+				if (qp === 'crystallisation') {
+					input = makeSelect(ringLabels, options.crystallisation || 'Default');
 				}
 	
 				if (qp === 'css') {
