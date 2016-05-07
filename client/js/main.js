@@ -2,7 +2,7 @@
 
 // configProperty: [optionsParameter, type, default value, description, category]
 const qpSchema = {
-	filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li></ul>', 'Filter Data'],
+	filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
 	id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
 	sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
 	sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
@@ -291,6 +291,10 @@ function process (data) {
 		)
 	);
 
+	if (!data.length) {
+		throw Error('No data from source');
+	}
+
 	let sortType = 'numerical';
 
 	// Default to numerical but if any of the sortcol values
@@ -372,6 +376,10 @@ function process (data) {
 			if (p.match(regex)) return true;
 		}
 	});
+
+	if (!data.length) {
+		throw Error('No data matched by filter');
+	}
 
 	return {
 		data,
@@ -634,6 +642,33 @@ Promise.all([
 .then(data => mergeData(data))
 .then(function (data) {
 
+	let rings = [];
+	let e;
+	try {
+		const o = process(data);
+		rings = generateChartRings(o.data, o.labels);
+	} catch (err) {
+		document.getElementById('error-text-target').textContent = err.message;
+		e = err;
+	}
+	require('./lib/form')(
+		qpSchema,
+		data[0] ? Object.keys(data[0]).filter(k => !k.match(/^(configvalue$|hidden-graph-item)/)) : [],
+		rings.map(r => r.groupLabel),
+		options
+	);
+
+	document.getElementById('filter')
+	.addEventListener('input', function (e) {
+
+		// Filter graph
+		options.filter = e.currentTarget.value;
+		cleanUpTable();
+		cleanUpTable = generateTable(data);
+	});
+
+	if (e) throw e;
+
 	let cleanUpGraph = function () {};
 	let cleanUpTable = function () {};
 
@@ -676,25 +711,6 @@ Promise.all([
 	cleanUpTable = generateTable(data);
 	cleanUpGraph = generateGraphs(data);
 
-
-	const o = process(data);
-	const rings = generateChartRings(o.data, o.labels);
-
-	require('./lib/form')(
-		qpSchema,
-		data[0] ? Object.keys(data[0]).filter(k => !k.match(/^(configvalue$|hidden-graph-item)/)) : [],
-		rings.map(r => r.groupLabel),
-		options
-	);
-
-	document.getElementById('filter')
-	.addEventListener('input', function (e) {
-
-		// Filter graph
-		options.filter = e.currentTarget.value;
-		cleanUpTable();
-		cleanUpTable = generateTable(data);
-	});
 })
 .catch(e => {
 	document.getElementById('error-text-target').textContent = e.message;
