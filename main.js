@@ -67,7 +67,7 @@
 	
 	// configProperty: [optionsParameter, type, default value, description, category]
 	var qpSchema = {
-		filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
+		filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
 		id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
 		sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
 		sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
@@ -1026,8 +1026,11 @@
 		return mergeData(data);
 	}).then(function (data) {
 	
+		var cleanUpGraph = function cleanUpGraph() {};
+		var cleanUpTable = function cleanUpTable() {};
 		var rings = [];
 		var e = undefined;
+	
 		try {
 			var o = process(data);
 			rings = generateChartRings(o.data, o.labels);
@@ -1050,9 +1053,6 @@
 		});
 	
 		if (e) throw e;
-	
-		var cleanUpGraph = function cleanUpGraph() {};
-		var cleanUpTable = function cleanUpTable() {};
 	
 		if (options.customCss) {
 			var customStyleSheet = document.createElement('style');
