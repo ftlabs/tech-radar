@@ -2,7 +2,7 @@
 
 // configProperty: [optionsParameter, type, default value, description, category]
 const qpSchema = {
-	filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
+	filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
 	id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
 	sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
 	sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
@@ -642,8 +642,12 @@ Promise.all([
 .then(data => mergeData(data))
 .then(function (data) {
 
+
+	let cleanUpGraph = function () {};
+	let cleanUpTable = function () {};
 	let rings = [];
 	let e;
+
 	try {
 		const o = process(data);
 		rings = generateChartRings(o.data, o.labels);
@@ -668,9 +672,6 @@ Promise.all([
 	});
 
 	if (e) throw e;
-
-	let cleanUpGraph = function () {};
-	let cleanUpTable = function () {};
 
 	if (options.customCss) {
 		const customStyleSheet = document.createElement('style');
