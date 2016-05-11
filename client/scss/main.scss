@@ -15,6 +15,9 @@ div, form {
 }
 
 #boil-down {
+	position: absolute;
+	top: 0;
+	left: 0;
 	font-size: 1.5em;
 	width: 5em;
 	overflow: visible;
@@ -44,6 +47,7 @@ div, form {
 
 #tech-radar__display {
 	display: flex;
+	position: relative;
 	flex-direction: row-reverse;
 	justify-content: flex-end;
 }
@@ -109,6 +113,7 @@ svg {
 
 	&.right {
 		.d3-label {
+			text-anchor: end;
 			&.ring-label {
 				text-anchor: start;
 			}
@@ -120,6 +125,7 @@ svg {
 
 	&.left {
 		.d3-label {
+			text-anchor: start;
 			&.ring-label {
 				text-anchor: end;
 			}

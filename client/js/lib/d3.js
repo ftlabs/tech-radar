@@ -96,7 +96,7 @@ module.exports = function ({
 			y,
 			weight,
 			text,
-			charge: options.tightlyBoundLabels ? -50 : -300,
+			charge: options.tightlyBoundLabels ? -50 : -1100,
 			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 		};
 
@@ -106,7 +106,7 @@ module.exports = function ({
 			x,
 			y,
 			fixed: true,
-			charge: 10
+			charge: 0
 		};
 		labelAnchorNodes.push(label);
 		labelAnchorNodes.push(anchorToNode);
@@ -118,39 +118,6 @@ module.exports = function ({
 			weight,
 		});
 	});
-
-	// Add invisible nodes to repel the labels at the edges of the quadrant
-	(function () {
-		let offsetVerticalX;
-		let offsetVerticalY;
-		switch(options.quadrant) {
-		case 'bottom right':
-			offsetVerticalX = rootNodeObject.x + 100;
-			offsetVerticalY = -1;
-			break;
-		case 'bottom left':
-			offsetVerticalX = rootNodeObject.x - 100;
-			offsetVerticalY = -1;
-			break;
-		case 'top left':
-			offsetVerticalX = rootNodeObject.x - 100;
-			offsetVerticalY = 1;
-			break;
-		case 'top right':
-			offsetVerticalX = rootNodeObject.x + 100;
-			offsetVerticalY = 1;
-			break;
-		}
-		for (const ring of rings) {
-			labelAnchorNodes.push({
-				__comment: 'ring label repulsion',
-				x: offsetVerticalX,
-				y: offsetVerticalY * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
-				fixed: true,
-				charge: -700
-			});
-		}
-	}());
 
 	(function drawSegmentLabels () {
 
@@ -193,13 +160,6 @@ module.exports = function ({
 				name: '',
 				x: rootNodeObject.x + r * Math.cos(theta + segmentWidth/2),
 				y: rootNodeObject.y - r * Math.sin(theta + segmentWidth/2),
-				fixed: true,
-				charge: -700
-			});
-			labelAnchorNodes.push({
-				name: '',
-				x: rootNodeObject.x + 1.4 * 2 * Math.cos(theta + segmentWidth/2),
-				y: rootNodeObject.y - 1.4 * 2 * Math.sin(theta + segmentWidth/2),
 				fixed: true,
 				charge: -700
 			});
@@ -290,10 +250,10 @@ module.exports = function ({
 		.nodes(labelAnchorNodes)
 		.links(labelAnchorLinks)
 		.charge(n => n.charge || 0)
-		.chargeDistance(totalRingSize)
+		.chargeDistance(totalRingSize/4)
 		.gravity(0.01)
-		.linkStrength(options.tightlyBoundLabels ? 10 : 0.5)
-		.linkDistance(3)
+		.linkStrength(options.tightlyBoundLabels ? 10 : 1.5)
+		.linkDistance(0.5)
 		.size([width, height]);
 
 	const drag = force.drag()
@@ -303,9 +263,57 @@ module.exports = function ({
 			d.fixed = true;
 		});
 
+	function anchorNode(n) {
+		switch(options.quadrant) {
+		case 'bottom right':
+			if (n.y > rootNodeObject.y) {
+				n.y = rootNodeObject.y;
+			}
+			if (n.x > rootNodeObject.x) {
+				n.x = rootNodeObject.x;
+			}
+			break;
+		case 'bottom left':
+			if (n.y > rootNodeObject.y) {
+				n.y = rootNodeObject.y;
+			}
+			if (n.x < rootNodeObject.x) {
+				n.x = rootNodeObject.x;
+			}
+			break;
+		case 'top left':
+			if (n.y < rootNodeObject.y) {
+				n.y = rootNodeObject.y;
+			}
+			if (n.x < rootNodeObject.x) {
+				n.x = rootNodeObject.x;
+			}
+			break;
+		case 'top right':
+			if (n.y < rootNodeObject.y) {
+				n.y = rootNodeObject.y;
+			}
+			if (n.x > rootNodeObject.x) {
+				n.x = rootNodeObject.x;
+			}
+			break;
+		}
+
+		const r = Math.pow(Math.pow(n.x - rootNodeObject.x, 2) + Math.pow(n.y - rootNodeObject.y, 2), 0.5);
+		if (r >= totalRingSize) {
+			let vX = n.x - rootNodeObject.x;
+			let vY = n.y - rootNodeObject.y;
+			vX *= totalRingSize/r;
+			vY *= totalRingSize/r;
+			n.x = rootNodeObject.x + vX;
+			n.y = rootNodeObject.y + vY;
+		}
+	}
+
 	force.on('tick', function () {
 
 		nodes.forEach(function (d) {
+			anchorNode(d);
 
 			// Attach the label node to this node
 			if (d.labelAnchor) {
@@ -316,42 +324,10 @@ module.exports = function ({
 			}
 		});
 		node.attr('transform', d => `translate(${d.x}, ${d.y})`);
-		labelForce.alpha(0.1);
 	});
 
 	labelForce.on('tick', function () {
-		labelAnchorNodes.forEach(n => {
-
-			switch(options.quadrant) {
-			case 'bottom right':
-				if (n.y > rootNodeObject.y) {
-					n.y = rootNodeObject.y;
-				}
-				break;
-			case 'bottom left':
-				if (n.y > rootNodeObject.y) {
-					n.y = rootNodeObject.y;
-				}
-				break;
-			case 'top left':
-				if (n.y < rootNodeObject.y) {
-					n.y = rootNodeObject.y;
-				}
-				break;
-			case 'top right':
-				if (n.y < rootNodeObject.y) {
-					n.y = rootNodeObject.y;
-				}
-				break;
-			}
-		});
-		labelNode.forEach(n => {
-			let vY = 0;
-			if (n.y < rootNode.y ) {
-				vY = 20.0;
-			}
-			n.py -= vY;
-		});
+		labelAnchorNodes.forEach(anchorNode);
 
 		labelLine
 			.attr('x1', function (d) { return d.source.x; })
@@ -396,7 +372,7 @@ module.exports = function ({
 				.append('svg:tspan')
 				.text(str)
 				.attr('x', 0)
-				.attr('y', (i - (strs.length/2)) + 'em');
+				.attr('y', (i + (strs.length/2)) * (options.quadrant.match(/bottom/) ? -1 : 1) + 'em');
 			});
 		});
 
@@ -413,7 +389,7 @@ module.exports = function ({
 				.append('svg:tspan')
 				.text(str)
 				.attr('x', 0)
-				.attr('y', (i - (strs.length/2)) + 'em');
+				.attr('y', (i + (strs.length/2)) * (options.quadrant.match(/bottom/) ? -1 : 1) + 'em');
 			});
 		});
 
@@ -439,11 +415,13 @@ module.exports = function ({
 
 	function showTable (d, alsoUncollapseTable) {
 
-		if (alsoUncollapseTable && document.querySelector('.filter-table') !== null){
+		const hasTable = document.querySelector('.filter-table') !== null;
+
+		if (alsoUncollapseTable === true && hasTable){
 			const row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
 			row.classList.toggle('collapsed');
-		} else {
+		} else if (!hasTable) {
 
 			boilDown.innerHTML = '';
 			d.longDesc.split('\n').forEach(line => {
@@ -634,8 +612,8 @@ module.exports = function ({
 
 	}());
 
-	force.start().alpha(0.05);
-	labelForce.start().alpha(0.05);
+	force.start();
+	labelForce.start();
 	const n = 120;
 	for (let i = 0; i < n; ++i) {
 
