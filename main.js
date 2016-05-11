@@ -4270,7 +4270,9 @@
 			return n.charge || 0;
 		}).chargeDistance(totalRingSize / 4).gravity(0.01).linkStrength(options.tightlyBoundLabels ? 10 : 1.5).linkDistance(0.5).size([width, height]);
 	
-		var drag = force.drag().on('dragstart', function () {
+		var drag = force.drag().on('drag', function () {
+			return labelForce.alpha(0.03);
+		}).on('dragstart', function () {
 			return nodes.forEach(function (n) {
 				return n.fixed = true;
 			});
