@@ -55,9 +55,9 @@
 	
 	var _Promise = __webpack_require__(61)['default'];
 	
-	var _getIterator = __webpack_require__(72)['default'];
-	
 	var _Array$from = __webpack_require__(2)['default'];
+	
+	var _getIterator = __webpack_require__(72)['default'];
 	
 	var _Map = __webpack_require__(75)['default'];
 	
@@ -70,6 +70,7 @@
 		filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
 		id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
 		sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
+		json: ['jsonFeeds', Array, [], 'List of JSON documents from which to pull data', 'Data Source'],
 		sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
 		segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.', 'Data Source'],
 		showcol: ['showCol', Array, [], 'Comma seperated list of columns to show', 'Data Source'],
@@ -163,25 +164,6 @@
 	
 	tracking({ action: 'PageLoad' });
 	
-	// read query params
-	parseOptions((function () {
-		var parsed = queryString.parse(location.search);
-	
-		if (parsed.title !== undefined && parsed.title !== '') {
-			titleFromQueryParam = true;
-			document.querySelector('.sheet-title').textContent = parsed.title;
-		}
-	
-		// show the table by default
-		if (parsed.id && parsed.sheet) {
-			return parsed;
-		}
-	
-		var errMessage = 'No ID and Sheet parameters.';
-		document.getElementById('error-text-target').textContent = errMessage;
-		throw Error(errMessage);
-	})(), true);
-	
 	function addScript(url) {
 		return new _Promise(function (resolve, reject) {
 			var script = document.createElement('script');
@@ -192,147 +174,16 @@
 		});
 	}
 	
-	function getDocsFromBertha(docs) {
-		var republish = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+	function getDocsFromJson(jsons) {
 	
-		var requests = docs.map(function (doc) {
-			return fetch('' + berthaRoot + (republish ? berthaRepublish : berthaView) + doc.UID + '/' + doc.sheet).then(function (response) {
+		var requests = jsons.map(function (jsonOrigin) {
+			return fetch(jsonOrigin).then(function (response) {
 				return response.json();
 			}).then(function (json) {
-	
-				// supply some additional information about where the datum came from.
-				var i = 0;
-				var _iteratorNormalCompletion = true;
-				var _didIteratorError = false;
-				var _iteratorError = undefined;
-	
-				try {
-					for (var _iterator = _getIterator(json), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-						var datum = _step.value;
-	
-						datum['hidden-graph-item-source'] = doc.UID + '/' + doc.sheet;
-						datum['hidden-graph-item-id'] = (datum.name + '---' + doc.UID + '---' + doc.sheet + '---' + i++).replace(/[^a-z_\-0-9]/ig, '_');
-					}
-	
-					// override options
-	
-					// only override if it has configuration data
-				} catch (err) {
-					_didIteratorError = true;
-					_iteratorError = err;
-				} finally {
-					try {
-						if (!_iteratorNormalCompletion && _iterator['return']) {
-							_iterator['return']();
-						}
-					} finally {
-						if (_didIteratorError) {
-							throw _iteratorError;
-						}
-					}
-				}
-	
-				if (json[0].configvalue === undefined || json[0].name === undefined) {
-					var _iteratorNormalCompletion2 = true;
-					var _didIteratorError2 = false;
-					var _iteratorError2 = undefined;
-	
-					try {
-	
-						for (var _iterator2 = _getIterator(json), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-							var datum = _step2.value;
-	
-							datum.sheetTitle = doc.sheet;
-						}
-					} catch (err) {
-						_didIteratorError2 = true;
-						_iteratorError2 = err;
-					} finally {
-						try {
-							if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-								_iterator2['return']();
-							}
-						} finally {
-							if (_didIteratorError2) {
-								throw _iteratorError2;
-							}
-						}
-					}
-	
-					sheetTitles.add(doc.sheet);
-	
-					return json;
-				}
-	
-				var config = {};
-	
-				var _iteratorNormalCompletion3 = true;
-				var _didIteratorError3 = false;
-				var _iteratorError3 = undefined;
-	
-				try {
-					for (var _iterator3 = _getIterator(json), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-						var datum = _step3.value;
-	
-						if (datum.configvalue !== null && // It has a config value set
-						datum.name !== null) {
-	
-							if (datum.name === 'sortcol' && docs.length > 1 || // local sortcol is invalid if there are multiple documents
-							datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
-							datum.name === 'id') {
-								continue;
-							}
-	
-							config[datum.name] = datum.configvalue;
-						}
-					}
-	
-					// Set the options globally
-				} catch (err) {
-					_didIteratorError3 = true;
-					_iteratorError3 = err;
-				} finally {
-					try {
-						if (!_iteratorNormalCompletion3 && _iterator3['return']) {
-							_iterator3['return']();
-						}
-					} finally {
-						if (_didIteratorError3) {
-							throw _iteratorError3;
-						}
-					}
-				}
-	
-				parseOptions(config);
-	
-				var _iteratorNormalCompletion4 = true;
-				var _didIteratorError4 = false;
-				var _iteratorError4 = undefined;
-	
-				try {
-					for (var _iterator4 = _getIterator(json), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-						var datum = _step4.value;
-	
-						datum.sheetTitle = config.title || doc.sheet;
-					}
-				} catch (err) {
-					_didIteratorError4 = true;
-					_iteratorError4 = err;
-				} finally {
-					try {
-						if (!_iteratorNormalCompletion4 && _iterator4['return']) {
-							_iterator4['return']();
-						}
-					} finally {
-						if (_didIteratorError4) {
-							throw _iteratorError4;
-						}
-					}
-				}
-	
-				sheetTitles.add(config.title || doc.sheet);
-	
-				return json;
+				return processJSON(json, {
+					UID: jsonOrigin,
+					sheet: (jsonOrigin.match(/[^/]+$/) || [0])[0]
+				}, jsons.length);
 			});
 		});
 	
@@ -345,6 +196,165 @@
 	
 			return requests;
 		});
+	}
+	
+	function getDocsFromBertha(docs) {
+		var republish = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+	
+		var requests = docs.map(function (doc) {
+			return fetch('' + berthaRoot + (republish ? berthaRepublish : berthaView) + doc.UID + '/' + doc.sheet).then(function (response) {
+				return response.json();
+			}).then(function (json) {
+				return processJSON(json, doc, docs.length);
+			});
+		});
+	
+		return _Promise.all(requests).then(function (requests) {
+	
+			if (!titleFromQueryParam) {
+				options.title = document.querySelector('.sheet-title').textContent = _Array$from(sheetTitles).join(' & ');
+				sheetTitles.clear();
+			}
+	
+			return requests;
+		});
+	}
+	
+	function processJSON(json, doc, numberOfItems) {
+	
+		// supply some additional information about where the datum came from.
+		var i = 0;
+		var _iteratorNormalCompletion = true;
+		var _didIteratorError = false;
+		var _iteratorError = undefined;
+	
+		try {
+			for (var _iterator = _getIterator(json), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+				var datum = _step.value;
+	
+				datum['hidden-graph-item-source'] = doc.UID + '/' + doc.sheet;
+				datum['hidden-graph-item-id'] = (datum.name + '---' + doc.UID + '---' + doc.sheet + '---' + i++).replace(/[^a-z_\-0-9]/ig, '_');
+			}
+	
+			// override options
+	
+			// only override if it has configuration data
+		} catch (err) {
+			_didIteratorError = true;
+			_iteratorError = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion && _iterator['return']) {
+					_iterator['return']();
+				}
+			} finally {
+				if (_didIteratorError) {
+					throw _iteratorError;
+				}
+			}
+		}
+	
+		if (json[0].configvalue === undefined || json[0].name === undefined) {
+			var _iteratorNormalCompletion2 = true;
+			var _didIteratorError2 = false;
+			var _iteratorError2 = undefined;
+	
+			try {
+	
+				for (var _iterator2 = _getIterator(json), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+					var datum = _step2.value;
+	
+					datum.sheetTitle = doc.sheet;
+				}
+			} catch (err) {
+				_didIteratorError2 = true;
+				_iteratorError2 = err;
+			} finally {
+				try {
+					if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+						_iterator2['return']();
+					}
+				} finally {
+					if (_didIteratorError2) {
+						throw _iteratorError2;
+					}
+				}
+			}
+	
+			sheetTitles.add(doc.sheet);
+	
+			return json;
+		}
+	
+		var config = {};
+	
+		var _iteratorNormalCompletion3 = true;
+		var _didIteratorError3 = false;
+		var _iteratorError3 = undefined;
+	
+		try {
+			for (var _iterator3 = _getIterator(json), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+				var datum = _step3.value;
+	
+				if (datum.configvalue !== null && // It has a config value set
+				datum.name !== null) {
+	
+					if (datum.name === 'sortcol' && numberOfItems > 1 || // local sortcol is invalid if there are multiple documents
+					datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
+					datum.name === 'id') {
+						continue;
+					}
+	
+					config[datum.name] = datum.configvalue;
+				}
+			}
+	
+			// Set the options globally
+		} catch (err) {
+			_didIteratorError3 = true;
+			_iteratorError3 = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+					_iterator3['return']();
+				}
+			} finally {
+				if (_didIteratorError3) {
+					throw _iteratorError3;
+				}
+			}
+		}
+	
+		parseOptions(config);
+	
+		var _iteratorNormalCompletion4 = true;
+		var _didIteratorError4 = false;
+		var _iteratorError4 = undefined;
+	
+		try {
+			for (var _iterator4 = _getIterator(json), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+				var datum = _step4.value;
+	
+				datum.sheetTitle = config.title || doc.sheet;
+			}
+		} catch (err) {
+			_didIteratorError4 = true;
+			_iteratorError4 = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion4 && _iterator4['return']) {
+					_iterator4['return']();
+				}
+			} finally {
+				if (_didIteratorError4) {
+					throw _iteratorError4;
+				}
+			}
+		}
+	
+		sheetTitles.add(config.title || doc.sheet);
+	
+		return json;
 	}
 	
 	function retrieveSheets(how) {
@@ -375,10 +385,13 @@
 					sheet: options.sheets[idx]
 				};
 			}), republish);
+		} else if (how === 'json') {
+			return getDocsFromJson(options.jsonFeeds);
 		}
 	}
 	
 	function decideHowToAct() {
+		if (options.jsonFeeds.length) return _Promise.resolve('json');
 		if (options.docUIDs.length > options.sheets.length) {
 			return _Promise.resolve('multipleIDsWithSingleSheet');
 		} else if (options.docUIDs.length === 1 && options.sheets.length) {
@@ -1020,7 +1033,32 @@
 		});
 	}
 	
-	_Promise.all([addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'), addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')]).then(decideHowToAct).then(function (howToAct) {
+	_Promise.all([addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'), addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')]).then(function () {
+	
+		// read query params
+		parseOptions((function () {
+			var parsed = queryString.parse(location.search);
+	
+			if (parsed.title !== undefined && parsed.title !== '') {
+				titleFromQueryParam = true;
+				document.querySelector('.sheet-title').textContent = parsed.title;
+			}
+	
+			return parsed;
+		})(), true);
+	}).then(function () {
+		if (!options.jsonFeeds.length && (!options.docUIDs.length || !options.sheets.length)) {
+			var errMessage = 'No ID and Sheet parameters or JSON feed provided.';
+	
+			// Don't go any further
+			// Render the form anyway
+			__webpack_require__(112)(qpSchema, [], [], options);
+	
+			document.querySelector('li[aria-controls="data-source"]').click();
+	
+			throw Error(errMessage);
+		}
+	}).then(decideHowToAct).then(function (howToAct) {
 		return retrieveSheets(howToAct);
 	}).then(function (data) {
 		return mergeData(data);
@@ -4091,7 +4129,7 @@
 				y: y,
 				weight: weight,
 				text: text,
-				charge: options.tightlyBoundLabels ? -50 : -300,
+				charge: options.tightlyBoundLabels ? -50 : -1100,
 				id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 			};
 	
@@ -4101,7 +4139,7 @@
 				x: x,
 				y: y,
 				fixed: true,
-				charge: 10
+				charge: 0
 			};
 			labelAnchorNodes.push(label);
 			labelAnchorNodes.push(anchorToNode);
@@ -4113,60 +4151,6 @@
 				weight: weight
 			});
 		});
-	
-		// Add invisible nodes to repel the labels at the edges of the quadrant
-		(function () {
-			var offsetVerticalX = undefined;
-			var offsetVerticalY = undefined;
-			switch (options.quadrant) {
-				case 'bottom right':
-					offsetVerticalX = rootNodeObject.x + 100;
-					offsetVerticalY = -1;
-					break;
-				case 'bottom left':
-					offsetVerticalX = rootNodeObject.x - 100;
-					offsetVerticalY = -1;
-					break;
-				case 'top left':
-					offsetVerticalX = rootNodeObject.x - 100;
-					offsetVerticalY = 1;
-					break;
-				case 'top right':
-					offsetVerticalX = rootNodeObject.x + 100;
-					offsetVerticalY = 1;
-					break;
-			}
-			var _iteratorNormalCompletion = true;
-			var _didIteratorError = false;
-			var _iteratorError = undefined;
-	
-			try {
-				for (var _iterator = _getIterator(rings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-					var ring = _step.value;
-	
-					labelAnchorNodes.push({
-						__comment: 'ring label repulsion',
-						x: offsetVerticalX,
-						y: offsetVerticalY * ((ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize),
-						fixed: true,
-						charge: -700
-					});
-				}
-			} catch (err) {
-				_didIteratorError = true;
-				_iteratorError = err;
-			} finally {
-				try {
-					if (!_iteratorNormalCompletion && _iterator['return']) {
-						_iterator['return']();
-					}
-				} finally {
-					if (_didIteratorError) {
-						throw _iteratorError;
-					}
-				}
-			}
-		})();
 	
 		(function drawSegmentLabels() {
 	
@@ -4209,13 +4193,6 @@
 					name: '',
 					x: rootNodeObject.x + r * Math.cos(theta + segmentWidth / 2),
 					y: rootNodeObject.y - r * Math.sin(theta + segmentWidth / 2),
-					fixed: true,
-					charge: -700
-				});
-				labelAnchorNodes.push({
-					name: '',
-					x: rootNodeObject.x + 1.4 * 2 * Math.cos(theta + segmentWidth / 2),
-					y: rootNodeObject.y - 1.4 * 2 * Math.sin(theta + segmentWidth / 2),
 					fixed: true,
 					charge: -700
 				});
@@ -4291,7 +4268,7 @@
 	
 		var labelForce = d3.layout.force().nodes(labelAnchorNodes).links(labelAnchorLinks).charge(function (n) {
 			return n.charge || 0;
-		}).chargeDistance(totalRingSize).gravity(0.01).linkStrength(options.tightlyBoundLabels ? 10 : 0.5).linkDistance(3).size([width, height]);
+		}).chargeDistance(totalRingSize / 4).gravity(0.01).linkStrength(options.tightlyBoundLabels ? 10 : 1.5).linkDistance(0.5).size([width, height]);
 	
 		var drag = force.drag().on('dragstart', function () {
 			return nodes.forEach(function (n) {
@@ -4302,9 +4279,57 @@
 			d.fixed = true;
 		});
 	
+		function anchorNode(n) {
+			switch (options.quadrant) {
+				case 'bottom right':
+					if (n.y > rootNodeObject.y) {
+						n.y = rootNodeObject.y;
+					}
+					if (n.x > rootNodeObject.x) {
+						n.x = rootNodeObject.x;
+					}
+					break;
+				case 'bottom left':
+					if (n.y > rootNodeObject.y) {
+						n.y = rootNodeObject.y;
+					}
+					if (n.x < rootNodeObject.x) {
+						n.x = rootNodeObject.x;
+					}
+					break;
+				case 'top left':
+					if (n.y < rootNodeObject.y) {
+						n.y = rootNodeObject.y;
+					}
+					if (n.x < rootNodeObject.x) {
+						n.x = rootNodeObject.x;
+					}
+					break;
+				case 'top right':
+					if (n.y < rootNodeObject.y) {
+						n.y = rootNodeObject.y;
+					}
+					if (n.x > rootNodeObject.x) {
+						n.x = rootNodeObject.x;
+					}
+					break;
+			}
+	
+			var r = Math.pow(Math.pow(n.x - rootNodeObject.x, 2) + Math.pow(n.y - rootNodeObject.y, 2), 0.5);
+			if (r >= totalRingSize) {
+				var vX = n.x - rootNodeObject.x;
+				var vY = n.y - rootNodeObject.y;
+				vX *= totalRingSize / r;
+				vY *= totalRingSize / r;
+				n.x = rootNodeObject.x + vX;
+				n.y = rootNodeObject.y + vY;
+			}
+		}
+	
 		force.on('tick', function () {
 	
 			nodes.forEach(function (d) {
+				anchorNode(d);
 	
 				// Attach the label node to this node
 				if (d.labelAnchor) {
@@ -4317,42 +4342,10 @@
 			node.attr('transform', function (d) {
 				return 'translate(' + d.x + ', ' + d.y + ')';
 			});
-			labelForce.alpha(0.1);
 		});
 	
 		labelForce.on('tick', function () {
-			labelAnchorNodes.forEach(function (n) {
-	
-				switch (options.quadrant) {
-					case 'bottom right':
-						if (n.y > rootNodeObject.y) {
-							n.y = rootNodeObject.y;
-						}
-						break;
-					case 'bottom left':
-						if (n.y > rootNodeObject.y) {
-							n.y = rootNodeObject.y;
-						}
-						break;
-					case 'top left':
-						if (n.y < rootNodeObject.y) {
-							n.y = rootNodeObject.y;
-						}
-						break;
-					case 'top right':
-						if (n.y < rootNodeObject.y) {
-							n.y = rootNodeObject.y;
-						}
-						break;
-				}
-			});
-			labelNode.forEach(function (n) {
-				var vY = 0;
-				if (n.y < rootNode.y) {
-					vY = 20.0;
-				}
-				n.py -= vY;
-			});
+			labelAnchorNodes.forEach(anchorNode);
 	
 			labelLine.attr('x1', function (d) {
 				return d.source.x;
@@ -4386,7 +4379,7 @@
 			if (!n.text) return;
 			var strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach(function (str, i) {
-				d3.select(_this).append('svg:tspan').text(str).attr('x', 0).attr('y', i - strs.length / 2 + 'em');
+				d3.select(_this).append('svg:tspan').text(str).attr('x', 0).attr('y', (i + strs.length / 2) * (options.quadrant.match(/bottom/) ? -1 : 1) + 'em');
 			});
 		});
 	
@@ -4396,7 +4389,7 @@
 			if (!n.text) return;
 			var strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach(function (str, i) {
-				d3.select(_this2).append('svg:tspan').text(str).attr('x', 0).attr('y', i - strs.length / 2 + 'em');
+				d3.select(_this2).append('svg:tspan').text(str).attr('x', 0).attr('y', (i + strs.length / 2) * (options.quadrant.match(/bottom/) ? -1 : 1) + 'em');
 			});
 		});
 	
@@ -4424,11 +4417,13 @@
 	
 		function showTable(d, alsoUncollapseTable) {
 	
-			if (alsoUncollapseTable && document.querySelector('.filter-table') !== null) {
+			var hasTable = document.querySelector('.filter-table') !== null;
+	
+			if (alsoUncollapseTable === true && hasTable) {
 				var row = document.getElementById(d['hidden-graph-item-id']);
 				if (!row) return;
 				row.classList.toggle('collapsed');
-			} else {
+			} else if (!hasTable) {
 	
 				boilDown.innerHTML = '';
 				d.longDesc.split('\n').forEach(function (line) {
@@ -4476,27 +4471,27 @@
 		var rootNode = svg.select('.rootNode');
 	
 		rings.reverse();
-		var _iteratorNormalCompletion2 = true;
-		var _didIteratorError2 = false;
-		var _iteratorError2 = undefined;
+		var _iteratorNormalCompletion = true;
+		var _didIteratorError = false;
+		var _iteratorError = undefined;
 	
 		try {
-			for (var _iterator2 = _getIterator(rings), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-				var ring = _step2.value;
+			for (var _iterator = _getIterator(rings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+				var ring = _step.value;
 	
 				rootNode.append('svg:circle').attr('class', 'background').attr('r', (ring.proportionalSizeEnd * (1 - innerWidth) + innerWidth) * totalRingSize).style('fill', ring.fill);
 			}
 		} catch (err) {
-			_didIteratorError2 = true;
-			_iteratorError2 = err;
+			_didIteratorError = true;
+			_iteratorError = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-					_iterator2['return']();
+				if (!_iteratorNormalCompletion && _iterator['return']) {
+					_iterator['return']();
 				}
 			} finally {
-				if (_didIteratorError2) {
-					throw _iteratorError2;
+				if (_didIteratorError) {
+					throw _iteratorError;
 				}
 			}
 		}
@@ -4534,29 +4529,29 @@
 		}
 	
 		// Draw segment lines
-		var _iteratorNormalCompletion3 = true;
-		var _didIteratorError3 = false;
-		var _iteratorError3 = undefined;
+		var _iteratorNormalCompletion2 = true;
+		var _didIteratorError2 = false;
+		var _iteratorError2 = undefined;
 	
 		try {
-			for (var _iterator3 = _getIterator(segmentLines), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-				var lineOrigin = _step3.value;
+			for (var _iterator2 = _getIterator(segmentLines), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+				var lineOrigin = _step2.value;
 	
 				rootNode.append('svg:line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
 			}
 	
 			// Nothing goes in the middle  block it out
 		} catch (err) {
-			_didIteratorError3 = true;
-			_iteratorError3 = err;
+			_didIteratorError2 = true;
+			_iteratorError2 = err;
 		} finally {
 			try {
-				if (!_iteratorNormalCompletion3 && _iterator3['return']) {
-					_iterator3['return']();
+				if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+					_iterator2['return']();
 				}
 			} finally {
-				if (_didIteratorError3) {
-					throw _iteratorError3;
+				if (_didIteratorError2) {
+					throw _iteratorError2;
 				}
 			}
 		}
@@ -4585,35 +4580,35 @@
 					labelY = 1;
 					break;
 			}
-			var _iteratorNormalCompletion4 = true;
-			var _didIteratorError4 = false;
-			var _iteratorError4 = undefined;
+			var _iteratorNormalCompletion3 = true;
+			var _didIteratorError3 = false;
+			var _iteratorError3 = undefined;
 	
 			try {
-				for (var _iterator4 = _getIterator(rings), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-					var ring = _step4.value;
+				for (var _iterator3 = _getIterator(rings), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+					var ring = _step3.value;
 	
 					rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label bg').attr('x', labelX).attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * labelY * totalRingSize + 'px');
 					rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label').attr('x', labelX).attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * labelY * totalRingSize + 'px');
 				}
 			} catch (err) {
-				_didIteratorError4 = true;
-				_iteratorError4 = err;
+				_didIteratorError3 = true;
+				_iteratorError3 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion4 && _iterator4['return']) {
-						_iterator4['return']();
+					if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+						_iterator3['return']();
 					}
 				} finally {
-					if (_didIteratorError4) {
-						throw _iteratorError4;
+					if (_didIteratorError3) {
+						throw _iteratorError3;
 					}
 				}
 			}
 		})();
 	
-		force.start().alpha(0.05);
-		labelForce.start().alpha(0.05);
+		force.start();
+		labelForce.start();
 		var n = 120;
 		for (var i = 0; i < n; ++i) {
 	

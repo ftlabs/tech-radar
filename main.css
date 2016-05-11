@@ -14,6 +14,9 @@ div, form {
   position: relative; }
 
 #boil-down {
+  position: absolute;
+  top: 0;
+  left: 0;
   font-size: 1.5em;
   width: 5em;
   overflow: visible;
@@ -58,6 +61,7 @@ div, form {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
+  position: relative;
   -webkit-box-orient: horizontal;
   -webkit-box-direction: reverse;
   -webkit-flex-direction: row-reverse;
@@ -108,14 +112,18 @@ svg {
       svg .d3-label.ring-label.bg, svg .d3-label.segment-label.bg {
         stroke: black;
         stroke-width: 5px; }
-  svg.right .d3-label.ring-label {
-    text-anchor: start; }
-  svg.right .d3-label.segment-label {
+  svg.right .d3-label {
     text-anchor: end; }
-  svg.left .d3-label.ring-label {
-    text-anchor: end; }
-  svg.left .d3-label.segment-label {
+    svg.right .d3-label.ring-label {
+      text-anchor: start; }
+    svg.right .d3-label.segment-label {
+      text-anchor: end; }
+  svg.left .d3-label {
     text-anchor: start; }
+    svg.left .d3-label.ring-label {
+      text-anchor: end; }
+    svg.left .d3-label.segment-label {
+      text-anchor: start; }
   svg .hovering .d3-label {
     fill: red !important;
     font-weight: bold; }
