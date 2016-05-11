@@ -373,7 +373,7 @@ module.exports = function ({
 				.append('svg:tspan')
 				.text(str)
 				.attr('x', 0)
-				.attr('y', (i + (strs.length/2)) * (options.quadrant.match(/bottom/) ? -1 : 1) + 'em');
+				.attr('y', (options.quadrant.match(/bottom/) ? -(strs.length-1) : +1) + i + 'em');
 			});
 		});
 
@@ -390,7 +390,7 @@ module.exports = function ({
 				.append('svg:tspan')
 				.text(str)
 				.attr('x', 0)
-				.attr('y', (i + (strs.length/2)) * (options.quadrant.match(/bottom/) ? -1 : 1) + 'em');
+				.attr('y', (options.quadrant.match(/bottom/) ? -(strs.length-1) : +1) + i + 'em');
 			});
 		});
 
