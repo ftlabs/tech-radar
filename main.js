@@ -4381,7 +4381,7 @@
 			if (!n.text) return;
 			var strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach(function (str, i) {
-				d3.select(_this).append('svg:tspan').text(str).attr('x', 0).attr('y', (i + strs.length / 2) * (options.quadrant.match(/bottom/) ? -1 : 1) + 'em');
+				d3.select(_this).append('svg:tspan').text(str).attr('x', 0).attr('y', (options.quadrant.match(/bottom/) ? -(strs.length - 1) : +1) + i + 'em');
 			});
 		});
 	
@@ -4391,7 +4391,7 @@
 			if (!n.text) return;
 			var strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach(function (str, i) {
-				d3.select(_this2).append('svg:tspan').text(str).attr('x', 0).attr('y', (i + strs.length / 2) * (options.quadrant.match(/bottom/) ? -1 : 1) + 'em');
+				d3.select(_this2).append('svg:tspan').text(str).attr('x', 0).attr('y', (options.quadrant.match(/bottom/) ? -(strs.length - 1) : +1) + i + 'em');
 			});
 		});
 	
