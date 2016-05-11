@@ -257,6 +257,7 @@ module.exports = function ({
 		.size([width, height]);
 
 	const drag = force.drag()
+		.on('drag', () => labelForce.alpha(0.03))
 		.on('dragstart', () => nodes.forEach(n => n.fixed = true ));
 	const dragLabel = labelForce.drag()
 		.on('dragend', function (d) {
