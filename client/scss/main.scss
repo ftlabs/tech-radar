@@ -15,6 +15,9 @@ div, form {
 }
 
 #boil-down {
+	position: absolute;
+	top: 0;
+	left: 0;
 	font-size: 1.5em;
 	width: 5em;
 	overflow: visible;
@@ -38,13 +41,13 @@ div, form {
 
 #tech-radar__graph-target {
 	flex-grow: 1;
-	margin-left: -250px;
 	min-width: 500px;
 	text-align: right;
 }
 
 #tech-radar__display {
 	display: flex;
+	position: relative;
 	flex-direction: row-reverse;
 	justify-content: flex-end;
 }
@@ -76,14 +79,17 @@ svg {
 	font-size: 1.3em;
 	font-family: MetricWeb, helvetica, sans;
 	font-weight: bold;
+	-webkit-user-select: none;
 
 	.d3-label {
 		fill: black;
 		fill-opacity: 1;
 		z-index: 10;
-		pointer-events: none;
 		transition: transform 0.2s ease;
 		text-anchor: end;
+
+   		cursor: move;
+		cursor: -webkit-grab;
 
 		&.bg {
 			stroke: white;
@@ -97,7 +103,6 @@ svg {
 		&.ring-label, &.segment-label {
 			fill: white;
 			font-size: 18pt;
-			text-anchor: start;
 
 			&.bg{
 				stroke: black;
@@ -105,6 +110,31 @@ svg {
 			}
 		}
 	}
+
+	&.right {
+		.d3-label {
+			text-anchor: end;
+			&.ring-label {
+				text-anchor: start;
+			}
+			&.segment-label {
+				text-anchor: end;
+			}
+		}
+	}
+
+	&.left {
+		.d3-label {
+			text-anchor: start;
+			&.ring-label {
+				text-anchor: end;
+			}
+			&.segment-label {
+				text-anchor: start;
+			}
+		}
+	}
+
 
 	// Hide it do that the use label is shown instead
 	.hovering {
@@ -122,11 +152,17 @@ svg {
 		fill: white;
 		stroke-width: 2px;
 		stroke: black;
+   		cursor: move;
+		cursor: -webkit-grab;
 
 		&.segment-label {
 			display: none;
 			font-size: 16pt;
 		}
+	}
+
+	.rootNode {
+		pointer-events: none;
 	}
 }
 

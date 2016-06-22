@@ -15,77 +15,73 @@ module.exports = function ({
 	const boilDown = document.getElementById('boil-down');
 	const width = (size || 400);
 	const height = (size || 400);
-	const nodes = data.slice(0);
 	const innerWidth = 0.1;
 	const totalRingSize = height;
 	const chargeDistance = size/2;
+	const segmentLines = [];
+	const nodes = data.slice(0);
+	const links = [];
+	const labelAnchorNodes = [];
+	const labelAnchorLinks = [];
+
+	const rootNodeObject = {
+		name: 'root',
+		fixed: true,
+		visible: false,
+		rootEl: true,
+		charge: 10
+	};
+	switch(options.quadrant) {
+	case 'bottom right':
+		rootNodeObject.x = width;
+		rootNodeObject.y = height;
+		break;
+	case 'bottom left':
+		rootNodeObject.x = -width;
+		rootNodeObject.y = height;
+		break;
+	case 'top left':
+		rootNodeObject.x = -width;
+		rootNodeObject.y = -height;
+		break;
+	case 'top right':
+		rootNodeObject.x = width;
+		rootNodeObject.y = -height;
+		break;
+	}
 
 	nodes.forEach(n => {
 		n.ring = rings[Math.floor(n.datumValue)];
 		const positionInRing = (n.datumValue % 1) * n.ring.width;
 		const startPositionOfRing = (n.ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth;
 		n.pseudoDatumValue = positionInRing + startPositionOfRing;
-		n.weight = 0.1;
+		n.weight = 0.2;
+		n.x = rootNodeObject.x / 2;
+		n.y = rootNodeObject.y / 2;
 
 		// Initial boost of repulsion which drives them apart
 		n.charge = -100 * (options.nodeRepulsion || 3) * Math.pow((Math.floor(n.datumValue) + 2)/rings.length, 2);
 	});
+	(function addRootNode () {
+		nodes.unshift(rootNodeObject);
 
-	nodes.unshift({
-		name: 'root',
-		x: width,
-		y: height,
-		fixed: true,
-		visible: false,
-		rootEl: true,
-		charge: 0
-	});
-
-	const segmentLines = [];
-	// Draw an arc of attractive points with labels
-	for (let i=0,l=rings[0].segments.length;i<l;i++) {
-		const r = height * 1.05;
-		const segment = rings[0].segments[i];
-		const thetaMin = 1 * 2 * Math.PI/4; // slightly negative
-		const thetaMax = 2 * 2 * Math.PI/4; // same amount from the otherside
-		const arcWidth = thetaMax - thetaMin;
-		const segmentWidth = arcWidth/(l+1);
-		const theta = thetaMin + (1+i)*segmentWidth;
-		nodes.push({
-			name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
-			x: width + r * Math.cos(theta),
-			y: height - r * Math.sin(theta),
-			fixed: true,
-			charge: 0,
-			dot: false
+		// Attatch all nodes to the rootnode
+		nodes.map((n, i) => ({
+			target: 0,
+			source: i,
+			distance:(n.pseudoDatumValue || 0) * totalRingSize,
+			linkStrength: 0.1,
+			fixed: n.fixed,
+			toRoot: true
+		}))
+		.filter(l => !l.fixed)
+		.forEach(l => {
+			links.push(l);
 		});
-		segmentLines.push({
-			x: r * Math.cos(theta - (segmentWidth/2)),
-			y: r * -Math.sin(theta - (segmentWidth/2))
-		});
-		if (i === l-1) {
-			segmentLines.push({
-				x: r * Math.cos(theta + (segmentWidth/2)),
-				y: r * -Math.sin(theta + (segmentWidth/2))
-			});
-		}
-	}
+	}());
 
-	// remove first and last line
-	segmentLines.pop();
-	segmentLines.shift();
-
-	const links = nodes.map((n, i) => ({
-		target: 0,
-		source: i,
-		distance:(n.pseudoDatumValue || 0) * totalRingSize,
-		linkStrength: 20,
-		fixed: n.fixed
-	}))
-	.filter(l => !l.fixed);
-
-	const labelAnchorNodes = [];
-	const labelAnchorLinks = [];
+	// Create a label and attatch it to each node
+	// this resides in it's own force diagram.
 	links.forEach((l, i) => {
 		const nodeToAttachTo = nodes[l.source];
 		const x = nodeToAttachTo.x - totalRingSize;
@@ -100,7 +96,7 @@ module.exports = function ({
 			y,
 			weight,
 			text,
-			charge: options.tightlyBoundLabels ? -10 : -700,
+			charge: options.tightlyBoundLabels ? -50 : -1100,
 			id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 		};
 
@@ -110,8 +106,7 @@ module.exports = function ({
 			x,
 			y,
 			fixed: true,
-			weight: 0,
-			charge: -100
+			charge: 0
 		};
 		labelAnchorNodes.push(label);
 		labelAnchorNodes.push(anchorToNode);
@@ -123,22 +118,68 @@ module.exports = function ({
 			weight,
 		});
 	});
-	for (const ring of rings) {
-		labelAnchorNodes.push({
-			__comment: 'ring label repulsion',
-			x: totalRingSize + 100,
-			y: -1 * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
-			fixed: true,
-			charge: -700,
-		});
-		labelAnchorNodes.push({
-			__comment: 'ring bottom repulsion',
-			x: -1 * (((ring.proportionalSizeStart * (1 - innerWidth)) + innerWidth) * -totalRingSize),
-			y: totalRingSize - 100,
-			fixed: true,
-			charge: -700,
-		});
-	}
+
+	(function drawSegmentLabels () {
+
+		// Draw an arc of points to act as the segment labels
+		// they also attract the nodes.
+		const r = height * 1.05;
+		let offset;
+		switch(options.quadrant) {
+		case 'bottom right':
+			offset = 1;
+			break;
+		case 'bottom left':
+			offset = 0;
+			break;
+		case 'top left':
+			offset = -1;
+			break;
+		case 'top right':
+			offset = -2;
+			break;
+		}
+
+		const thetaMin = offset * Math.PI/2;
+		const thetaMax = (offset + 1) * Math.PI/2;
+		for (let i=0,l=rings[0].segments.length; i<l; i++) {
+
+			const segment = rings[0].segments[i];
+			const arcWidth = thetaMax - thetaMin;
+			const segmentWidth = arcWidth/l;
+			const theta = thetaMin + i*segmentWidth;
+			const attractionNode = {
+				name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
+				x: rootNodeObject.x + r * Math.cos(theta + segmentWidth/2),
+				y: rootNodeObject.y - r * Math.sin(theta + segmentWidth/2),
+				fixed: true,
+				charge: 0,
+				dot: false
+			};
+			labelAnchorNodes.push({
+				name: '',
+				x: rootNodeObject.x + r * Math.cos(theta + segmentWidth/2),
+				y: rootNodeObject.y - r * Math.sin(theta + segmentWidth/2),
+				fixed: true,
+				charge: -700
+			});
+			nodes.push(attractionNode);
+			segmentLines.push({
+				x: r * Math.cos(theta),
+				y: r * -Math.sin(theta)
+			});
+			if (i === l-1) {
+				segmentLines.push({
+					x: r * Math.cos(theta),
+					y: r * -Math.sin(theta)
+				});
+			}
+		}
+
+		// remove first and last line
+		segmentLines.pop();
+		segmentLines.shift();
+	}());
 
 	// Attract the nodes to the segments
 	nodes.forEach((n,j) => {
@@ -150,22 +191,50 @@ module.exports = function ({
 				const target = nodes.length - l + i;
 				n.x = nodes[target].x;
 				n.y = nodes[target].y;
-				links.push({
+				const link = {
 					target,
 					source: j,
 					distance: 0,
 					linkStrength: 0.01 * (options.nodeAttraction || 3) * Math.pow(1.2, l)
-				});
+				};
+				links.push(link);
 				break;
 			}
 		}
 	});
 
 	const svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-	const svg = d3.select(svgNode)
-		.attr('width', width + 500 + 130)
-		.attr('height', height + 100)
-		.attr('viewBox', `-500 -50 ${width + 500 + 130} ${height + 100}`);
+	const svg = d3.select(svgNode);
+	svg.attr('class', options.quadrant);
+	const padding = {
+		hSmall: 110,
+		hLarge: 300,
+		vTop: 50,
+		vBottom: 110
+	};
+
+	switch(options.quadrant) {
+	case 'bottom right':
+		svg.attr('width', width + padding.hLarge + padding.hSmall)
+		.attr('height', height + padding.vTop + padding.vBottom)
+		.attr('viewBox', `${-padding.hLarge} ${ -padding.vTop} ${width + padding.hLarge + padding.hSmall} ${height + padding.vTop + padding.vBottom}`);
+		break;
+	case 'bottom left':
+		svg.attr('width', width + padding.hLarge + padding.hSmall)
+		.attr('height', height + padding.vTop + padding.vBottom)
+		.attr('viewBox', `${-width - padding.hSmall} ${ -padding.vTop} ${width + padding.hLarge + padding.hSmall} ${height + padding.vTop + padding.vBottom}`);
+		break;
+	case 'top left':
+		svg.attr('width', width + padding.hLarge + padding.hSmall)
+		.attr('height', height + padding.vTop + padding.vBottom)
+		.attr('viewBox', `${-width - padding.hSmall} ${-height - padding.vBottom} ${width + padding.hLarge + padding.hSmall} ${height + padding.vTop + padding.vBottom}`);
+		break;
+	case 'top right':
+		svg.attr('width', width + padding.hLarge + padding.hSmall)
+		.attr('height', height + padding.vTop + padding.vBottom)
+		.attr('viewBox', `${-padding.hLarge} ${-height - padding.vBottom} ${width + padding.hLarge + padding.hSmall} ${height + padding.vTop + padding.vBottom}`);
+		break;
+	}
 
 	const force = d3.layout.force()
 		.nodes(nodes)
@@ -174,28 +243,78 @@ module.exports = function ({
 		.chargeDistance(chargeDistance)
 		.linkStrength(l => l.linkStrength)
 		.linkDistance(l => l.distance)
-		.gravity(0)
+		.gravity(0.01)
 		.size([width, height]);
 
 	const labelForce = d3.layout.force()
 		.nodes(labelAnchorNodes)
 		.links(labelAnchorLinks)
 		.charge(n => n.charge || 0)
-		.gravity(0.1)
-		.linkStrength(options.tightlyBoundLabels ? 10 : 1)
-		.linkDistance(3)
+		.chargeDistance(totalRingSize/4)
+		.gravity(0.01)
+		.linkStrength(options.tightlyBoundLabels ? 10 : 1.5)
+		.linkDistance(0.5)
 		.size([width, height]);
 
 	const drag = force.drag()
+		.on('drag', () => labelForce.alpha(0.03))
 		.on('dragstart', () => nodes.forEach(n => n.fixed = true ));
 	const dragLabel = labelForce.drag()
-		.on('dragstart', () => labelAnchorNodes.forEach(n => n.fixed = true ));
+		.on('dragend', function (d) {
+			d.fixed = true;
+		});
+
+	function anchorNode(n) {
+		switch(options.quadrant) {
+		case 'bottom right':
+			if (n.y > rootNodeObject.y) {
+				n.y = rootNodeObject.y;
+			}
+			if (n.x > rootNodeObject.x) {
+				n.x = rootNodeObject.x;
+			}
+			break;
+		case 'bottom left':
+			if (n.y > rootNodeObject.y) {
+				n.y = rootNodeObject.y;
+			}
+			if (n.x < rootNodeObject.x) {
+				n.x = rootNodeObject.x;
+			}
+			break;
+		case 'top left':
+			if (n.y < rootNodeObject.y) {
+				n.y = rootNodeObject.y;
+			}
+			if (n.x < rootNodeObject.x) {
+				n.x = rootNodeObject.x;
+			}
+			break;
+		case 'top right':
+			if (n.y < rootNodeObject.y) {
+				n.y = rootNodeObject.y;
+			}
+			if (n.x > rootNodeObject.x) {
+				n.x = rootNodeObject.x;
+			}
+			break;
+		}
+
+		const r = Math.pow(Math.pow(n.x - rootNodeObject.x, 2) + Math.pow(n.y - rootNodeObject.y, 2), 0.5);
+		if (r >= totalRingSize) {
+			let vX = n.x - rootNodeObject.x;
+			let vY = n.y - rootNodeObject.y;
+			vX *= totalRingSize/r;
+			vY *= totalRingSize/r;
+			n.x = rootNodeObject.x + vX;
+			n.y = rootNodeObject.y + vY;
+		}
+	}
 
 	force.on('tick', function () {
 
 		nodes.forEach(function (d) {
-			if (d.x > width) [d.x, d.px] = [d.px, d.x];
-			if (d.y > height) [d.y, d.py] = [d.py, d.y];
+			anchorNode(d);
 
 			// Attach the label node to this node
 			if (d.labelAnchor) {
@@ -206,10 +325,11 @@ module.exports = function ({
 			}
 		});
 		node.attr('transform', d => `translate(${d.x}, ${d.y})`);
-		labelForce.alpha(0.1);
 	});
 
 	labelForce.on('tick', function () {
+		labelAnchorNodes.forEach(anchorNode);
+
 		labelLine
 			.attr('x1', function (d) { return d.source.x; })
 			.attr('y1', function (d) { return d.source.y; })
@@ -230,6 +350,7 @@ module.exports = function ({
 		.data(labelAnchorNodes)
 		.enter()
 		.append('svg:g')
+		.call(dragLabel)
 		.attr('id', n => `${n.id}`);
 
 	const labelLine = svg.selectAll('.label.link')
@@ -252,7 +373,7 @@ module.exports = function ({
 				.append('svg:tspan')
 				.text(str)
 				.attr('x', 0)
-				.attr('y', (i - (strs.length/2)) + 'em');
+				.attr('y', (options.quadrant.match(/bottom/) ? -(strs.length-1) : +1) + i + 'em');
 			});
 		});
 
@@ -261,7 +382,6 @@ module.exports = function ({
 		.attr('class', 'd3-label')
 		.attr('x', '-10px')
 		.attr('y', '5px')
-		.call(dragLabel)
 		.each(function (n) {
 			if (!n.text) return;
 			const strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
@@ -270,7 +390,7 @@ module.exports = function ({
 				.append('svg:tspan')
 				.text(str)
 				.attr('x', 0)
-				.attr('y', (i - (strs.length/2)) + 'em');
+				.attr('y', (options.quadrant.match(/bottom/) ? -(strs.length-1) : +1) + i + 'em');
 			});
 		});
 
@@ -296,11 +416,13 @@ module.exports = function ({
 
 	function showTable (d, alsoUncollapseTable) {
 
-		if (alsoUncollapseTable && document.querySelector('.filter-table') !== null){
+		const hasTable = document.querySelector('.filter-table') !== null;
+
+		if (alsoUncollapseTable === true && hasTable){
 			const row = document.getElementById(d['hidden-graph-item-id']);
 			if (!row) return;
 			row.classList.toggle('collapsed');
-		} else {
+		} else if (!hasTable) {
 
 			boilDown.innerHTML = '';
 			d.longDesc.split('\n').forEach(line => {
@@ -358,22 +480,86 @@ module.exports = function ({
 	}
 	rings.reverse();
 
-	// Add rectangles to hide other quadrants of the circle.
-	rootNode.append('svg:rect')
-		.attr('class', 'mask')
-		.attr('x', 0)
-		.attr('y', -totalRingSize)
-		.attr('width', totalRingSize)
-		.attr('height', totalRingSize * 2)
-		.style('fill', 'rgba(255, 255, 255, 1)');
-	rootNode.append('svg:rect')
-		.attr('class', 'mask')
-		.attr('x', -totalRingSize)
-		.attr('y', 0)
-		.attr('width', totalRingSize * 2)
-		.attr('height', totalRingSize)
-		.style('fill', 'rgba(255, 255, 255, 1)');
 
+	// Add rectangles to hide other quadrants of the circle.
+	const rectFill = 'rgba(255, 255, 255, 1)';
+	switch(options.quadrant) {
+	case 'bottom right':
+		rootNode.append('svg:rect')
+			.attr('class', 'mask')
+			.attr('x', 0)
+			.attr('y', -totalRingSize)
+			.attr('width', totalRingSize)
+			.attr('height', totalRingSize * 2)
+			.style('fill', rectFill);
+		rootNode.append('svg:rect')
+			.attr('class', 'mask')
+			.attr('x', -totalRingSize)
+			.attr('y', 0)
+			.attr('width', totalRingSize * 2)
+			.attr('height', totalRingSize)
+			.style('fill', rectFill);
+		break;
+	case 'bottom left':
+		// Tall Box
+		rootNode.append('svg:rect')
+			.attr('class', 'mask')
+			.attr('x', -totalRingSize)
+			.attr('y', -totalRingSize)
+			.attr('width', totalRingSize)
+			.attr('height', totalRingSize * 2)
+			.style('fill', rectFill);
+
+		// Wide box
+		rootNode.append('svg:rect')
+			.attr('class', 'mask')
+			.attr('x', -totalRingSize)
+			.attr('y', 0)
+			.attr('width', totalRingSize * 2)
+			.attr('height', totalRingSize)
+			.style('fill', rectFill);
+		break;
+	case 'top left':
+		// Tall Box
+		rootNode.append('svg:rect')
+			.attr('class', 'mask')
+			.attr('x', -totalRingSize)
+			.attr('y', -totalRingSize)
+			.attr('width', totalRingSize)
+			.attr('height', totalRingSize * 2)
+			.style('fill', rectFill);
+
+		// Wide box
+		rootNode.append('svg:rect')
+			.attr('class', 'mask')
+			.attr('x', -totalRingSize)
+			.attr('y', -totalRingSize)
+			.attr('width', totalRingSize * 2)
+			.attr('height', totalRingSize)
+			.style('fill', rectFill);
+		break;
+	case 'top right':
+		// Tall Box
+		rootNode.append('svg:rect')
+			.attr('class', 'mask')
+			.attr('x', 0)
+			.attr('y', -totalRingSize)
+			.attr('width', totalRingSize)
+			.attr('height', totalRingSize * 2)
+			.style('fill', rectFill);
+
+		// Wide box
+		rootNode.append('svg:rect')
+			.attr('class', 'mask')
+			.attr('x', -totalRingSize)
+			.attr('y', -totalRingSize)
+			.attr('width', totalRingSize * 2)
+			.attr('height', totalRingSize)
+			.style('fill', rectFill);
+		break;
+	}
+
+	// Draw segment lines
 	for (const lineOrigin of segmentLines) {
 		rootNode.append('svg:line')
 			.attr('x1', lineOrigin.x)
@@ -383,28 +569,68 @@ module.exports = function ({
 			.style('stroke', 'rgba(255, 255, 255, 1)');
 	}
 
-	// Nothing goes in the middle ring
+	// Nothing goes in the middle  block it out
 	rootNode.append('svg:circle')
 		.attr('class', 'background mask')
 		.attr('r', totalRingSize * innerWidth)
 		.style('fill', 'rgba(255, 255, 255, 1)');
 
 
-	for (const ring of rings) {
-		rootNode.append('svg:text')
-			.text(ring.groupLabel || ring.min)
-			.attr('class', 'd3-label ring-label bg')
-			.attr('x', '-5')
-			.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
-		rootNode.append('svg:text')
-			.text(ring.groupLabel || ring.min)
-			.attr('class', 'd3-label ring-label')
-			.attr('x', '-5')
-			.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * -totalRingSize) + 'px');
-	}
+	// Ring labels
+	(function () {
+		let labelX;
+		let labelY;
+		switch(options.quadrant) {
+		case 'bottom right':
+			labelX = -5;
+			labelY = -1;
+			break;
+		case 'bottom left':
+			labelX = 5;
+			labelY = -1;
+			break;
+		case 'top left':
+			labelX = 5;
+			labelY = 1;
+			break;
+		case 'top right':
+			labelX = -5;
+			labelY = 1;
+			break;
+		}
+		for (const ring of rings) {
+			rootNode.append('svg:text')
+				.text(ring.groupLabel || ring.min)
+				.attr('class', 'd3-label ring-label bg')
+				.attr('x', labelX)
+				.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * labelY * totalRingSize) + 'px');
+			rootNode.append('svg:text')
+				.text(ring.groupLabel || ring.min)
+				.attr('class', 'd3-label ring-label')
+				.attr('x', labelX)
+				.attr('y', 5 + ((((ring.proportionalSizeStart + ring.width/2) * (1 - innerWidth)) + innerWidth) * labelY * totalRingSize) + 'px');
+		}
 
-	force.start().alpha(0.05);
-	labelForce.start().alpha(0.05);
+	}());
+
+	force.start();
+	labelForce.start();
+	const n = 120;
+	for (let i = 0; i < n; ++i) {
+
+		if (i === 10) {
+			links.filter(l => l.toRoot).forEach(l => l.linkStrength = 0.5);
+			force.links(links).start().alpha(0.05);
+		}
+
+		if (i === 30) {
+			links.filter(l => l.toRoot).forEach(l => l.linkStrength = 10);
+			force.links(links).start().alpha(0.05);
+		}
+
+		force.tick();
+		labelForce.tick();
+	}
 
 	const renderOnTop = svg
 	.append('svg:g')

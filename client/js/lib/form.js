@@ -31,7 +31,7 @@ function makeTextarea (placeholder, text) {
 }
 
 const inputs = [];
-module.exports = function (schema, dataFormat, options) {
+module.exports = function (schema, visibleColumns, ringLabels, options) {
 
 	const formLocation = document.getElementById('tech-radar__qp-form');
 
@@ -55,7 +55,7 @@ module.exports = function (schema, dataFormat, options) {
 		const optionDefault = thisSchema[2];
 		const category = thisSchema[4];
 		const categoryKey = category.split(' ').map(str => str.toLowerCase()).join('-');
-		const desc = thisSchema[3];
+		let desc = thisSchema[3];
 		const optionValue = options[optionKey];
 
 		input.type = 'text';
@@ -63,6 +63,11 @@ module.exports = function (schema, dataFormat, options) {
 		// show the default value if it is something worth showing
 		input.placeholder = optionType.name + (!!String(optionDefault) ? ` (${thisSchema[2]})` : '');
 		label.title = desc;
+
+		if (qp === 'id') {
+			desc = desc + ` <a href="https://docs.google.com/spreadsheets/d/${optionValue}/" target="_blank">Link to spreadsheet</a>`;
+		}
+
 		small.innerHTML = desc;
 		input.value = optionValue || '';
 		if (optionValue === optionDefault) {
@@ -86,6 +91,10 @@ module.exports = function (schema, dataFormat, options) {
 			group.style.flexBasis = '60%';
 		}
 
+		if (optionType.constructor === Array) {
+			input = makeSelect(optionType, optionValue || optionDefault);
+		}
+
 		if (qp === 'filter') {
 			group.style.flexBasis = '80%';
 		}
@@ -96,11 +105,15 @@ module.exports = function (schema, dataFormat, options) {
 		small.classList.add('o-forms-additional-info');
 
 		if (qp === 'sortcol') {
-			input = makeSelect(dataFormat, options.sortCol === optionDefault ? 'Default' : options.sortCol);
+			input = makeSelect(visibleColumns, options.sortCol === optionDefault ? 'Default' : options.sortCol);
 		}
 
 		if (qp === 'segment') {
-			input = makeSelect(dataFormat, options.segment === optionDefault ? 'Default' : options.segment);
+			input = makeSelect(visibleColumns, options.segment === optionDefault ? 'Default' : options.segment);
+		}
+
+		if (qp === 'crystallisation') {
+			input = makeSelect(ringLabels, options.crystallisation || 'Default');
 		}
 
 		if (qp === 'css') {

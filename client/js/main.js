@@ -2,9 +2,10 @@
 
 // configProperty: [optionsParameter, type, default value, description, category]
 const qpSchema = {
-	filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li></ul>', 'Filter Data'],
+	filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
 	id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
 	sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
+	json: ['jsonFeeds', Array, [], 'List of JSON documents from which to pull data', 'Data Source'],
 	sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
 	segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.', 'Data Source'],
 	showcol: ['showCol', Array, [], 'Comma seperated list of columns to show', 'Data Source'],
@@ -22,6 +23,7 @@ const qpSchema = {
 	proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.', 'Display'],
 	noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)', 'Display'],
 	nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)', 'Display'],
+	quadrant: ['quadrant', ['bottom right', 'bottom left', 'top left', 'top right'], 'bottom right', 'What quadrant of a circle should the graph display as.', 'Display'],
 	css: ['customCss', String, '', 'Advanced: Style this page with some custom css.', 'Advanced']
 };
 
@@ -83,6 +85,11 @@ function parseOptions (config, force = false) {
 		case Boolean:
 			options[handle[0]] = config[key].toLowerCase() !== 'false' && config[key] !== false;
 			break;
+		default:
+			if (handle[1].constructor === Array) {
+				options[handle[0]] = handle[1].indexOf(config[key]) !== -1 ? config[key] : handle[2];
+			}
+			break;
 		}
 	});
 
@@ -90,25 +97,6 @@ function parseOptions (config, force = false) {
 }
 
 tracking({action: 'PageLoad'});
-
-// read query params
-parseOptions((function () {
-	const parsed = queryString.parse(location.search);
-
-	if (parsed.title !== undefined && parsed.title !== '') {
-		titleFromQueryParam = true;
-		document.querySelector('.sheet-title').textContent = parsed.title;
-	}
-
-	// show the table by default
-	if (parsed.id && parsed.sheet) {
-		return parsed;
-	}
-
-	const errMessage = 'No ID and Sheet parameters.';
-	document.getElementById('error-text-target').textContent = errMessage;
-	throw Error(errMessage);
-}()), true);
 
 function addScript (url) {
 	return new Promise(function (resolve, reject) {
@@ -120,64 +108,16 @@ function addScript (url) {
 	});
 }
 
-function getDocsFromBertha (docs, republish = false) {
 
-	const requests = docs.map(doc => {
-		return fetch(`${berthaRoot}${republish ? berthaRepublish : berthaView}${doc.UID}/${doc.sheet}`)
+function getDocsFromJson (jsons) {
+
+	const requests = jsons.map(jsonOrigin => {
+		return fetch(jsonOrigin)
 		.then(response => response.json())
-		.then(function (json) {
-
-			// supply some additional information about where the datum came from.
-			let i = 0;
-			for (const datum of json) {
-				datum['hidden-graph-item-source'] = `${doc.UID}/${doc.sheet}`;
-				datum['hidden-graph-item-id'] = (`${datum.name}---${doc.UID}---${doc.sheet}---${i++}`).replace(/[^a-z_\-0-9]/ig, '_');
-			}
-
-			// override options
-
-			// only override if it has configuration data
-			if (json[0].configvalue === undefined || json[0].name === undefined) {
-
-				for (const datum of json) {
-					datum.sheetTitle = doc.sheet;
-				}
-				sheetTitles.add(doc.sheet);
-
-				return json;
-			}
-
-			const config = {};
-
-			for (const datum of json) {
-				if (
-					datum.configvalue !== null &&  // It has a config value set
-					datum.name !== null
-				) {
-
-					if (
-						datum.name === 'sortcol' && docs.length > 1 || // local sortcol is invalid if there are multiple documents
-						datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
-						datum.name === 'id'
-					) {
-						continue;
-					}
-
-					config[datum.name] = datum.configvalue;
-				}
-			}
-
-			// Set the options globally
-			parseOptions(config);
-
-			for (const datum of json) {
-				datum.sheetTitle = config.title || doc.sheet;
-			}
-
-			sheetTitles.add(config.title || doc.sheet);
-
-			return json;
-		});
+		.then(json => processJSON(json, {
+			UID: jsonOrigin,
+			sheet: (jsonOrigin.match(/[^/]+$/) || [0])[0]
+		}, jsons.length));
 	});
 
 	return Promise.all(requests)
@@ -190,7 +130,80 @@ function getDocsFromBertha (docs, republish = false) {
 
 		return requests;
 	});
+}
 
+function getDocsFromBertha (docs, republish = false) {
+
+	const requests = docs.map(doc => {
+		return fetch(`${berthaRoot}${republish ? berthaRepublish : berthaView}${doc.UID}/${doc.sheet}`)
+		.then(response => response.json())
+		.then(json => processJSON(json, doc, docs.length));
+	});
+
+	return Promise.all(requests)
+	.then(requests => {
+
+		if (!titleFromQueryParam) {
+			options.title = document.querySelector('.sheet-title').textContent = Array.from(sheetTitles).join(' & ');
+			sheetTitles.clear();
+		}
+
+		return requests;
+	});
+}
+
+function processJSON (json, doc, numberOfItems) {
+
+	// supply some additional information about where the datum came from.
+	let i = 0;
+	for (const datum of json) {
+		datum['hidden-graph-item-source'] = `${doc.UID}/${doc.sheet}`;
+		datum['hidden-graph-item-id'] = (`${datum.name}---${doc.UID}---${doc.sheet}---${i++}`).replace(/[^a-z_\-0-9]/ig, '_');
+	}
+
+	// override options
+
+	// only override if it has configuration data
+	if (json[0].configvalue === undefined || json[0].name === undefined) {
+
+		for (const datum of json) {
+			datum.sheetTitle = doc.sheet;
+		}
+		sheetTitles.add(doc.sheet);
+
+		return json;
+	}
+
+	const config = {};
+
+	for (const datum of json) {
+		if (
+			datum.configvalue !== null &&  // It has a config value set
+			datum.name !== null
+		) {
+
+			if (
+				datum.name === 'sortcol' && numberOfItems > 1 || // local sortcol is invalid if there are multiple documents
+				datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
+				datum.name === 'id'
+			) {
+				continue;
+			}
+
+			config[datum.name] = datum.configvalue;
+		}
+	}
+
+	// Set the options globally
+	parseOptions(config);
+
+	for (const datum of json) {
+		datum.sheetTitle = config.title || doc.sheet;
+	}
+
+	sheetTitles.add(config.title || doc.sheet);
+
+	return json;
 }
 
 function retrieveSheets (how, republish = false) {
@@ -223,11 +236,14 @@ function retrieveSheets (how, republish = false) {
 			})),
 			republish
 		);
+	} else if( how === 'json'){
+		return getDocsFromJson(options.jsonFeeds);
 	}
 
 }
 
 function decideHowToAct () {
+	if (options.jsonFeeds.length) return Promise.resolve('json');
 	if (options.docUIDs.length > options.sheets.length){
 		return Promise.resolve('multipleIDsWithSingleSheet');
 	} else if(options.docUIDs.length === 1 && options.sheets.length){
@@ -284,6 +300,10 @@ function process (data) {
 			datum['configvalue'] === null
 		)
 	);
+
+	if (!data.length) {
+		throw Error('No data from source');
+	}
 
 	let sortType = 'numerical';
 
@@ -366,6 +386,10 @@ function process (data) {
 			if (p.match(regex)) return true;
 		}
 	});
+
+	if (!data.length) {
+		throw Error('No data matched by filter');
+	}
 
 	return {
 		data,
@@ -623,13 +647,76 @@ Promise.all([
 	addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'),
 	addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')
 ])
+.then(function () {
+
+	// read query params
+	parseOptions((function () {
+		const parsed = queryString.parse(location.search);
+
+		if (parsed.title !== undefined && parsed.title !== '') {
+			titleFromQueryParam = true;
+			document.querySelector('.sheet-title').textContent = parsed.title;
+		}
+
+		return parsed;
+	}()), true);
+})
+.then(function () {
+	if (
+		!options.jsonFeeds.length &&
+		(!options.docUIDs.length || !options.sheets.length)
+	) {
+		const errMessage = 'No ID and Sheet parameters or JSON feed provided.';
+
+		// Don't go any further
+		// Render the form anyway
+		require('./lib/form')(
+			qpSchema,
+			[],
+			[],
+			options
+		);
+
+		document.querySelector('li[aria-controls="data-source"]').click();
+
+		throw Error(errMessage);
+	}
+})
 .then(decideHowToAct)
 .then(howToAct => retrieveSheets(howToAct))
 .then(data => mergeData(data))
 .then(function (data) {
 
+
 	let cleanUpGraph = function () {};
 	let cleanUpTable = function () {};
+	let rings = [];
+	let e;
+
+	try {
+		const o = process(data);
+		rings = generateChartRings(o.data, o.labels);
+	} catch (err) {
+		document.getElementById('error-text-target').textContent = err.message;
+		e = err;
+	}
+	require('./lib/form')(
+		qpSchema,
+		data[0] ? Object.keys(data[0]).filter(k => !k.match(/^(configvalue$|hidden-graph-item)/)) : [],
+		rings.map(r => r.groupLabel),
+		options
+	);
+
+	document.getElementById('filter')
+	.addEventListener('input', function (e) {
+
+		// Filter graph
+		options.filter = e.currentTarget.value;
+		cleanUpTable();
+		cleanUpTable = generateTable(data);
+	});
+
+	if (e) throw e;
 
 	if (options.customCss) {
 		const customStyleSheet = document.createElement('style');
@@ -640,12 +727,6 @@ Promise.all([
 	if (options.dashboard) {
 		document.getElementById('tech-radar__settings').style.display = 'none';
 	}
-
-	require('./lib/form')(
-		qpSchema,
-		data[0] ? Object.keys(data[0]).filter(k => !k.match(/^(configvalue$|hidden-graph-item)/)) : [],
-		options
-	);
 
 	const buttons = document.getElementById('tech-radar__buttons');
 
@@ -673,17 +754,9 @@ Promise.all([
 		});
 	});
 
-	document.getElementById('filter')
-	.addEventListener('input', function (e) {
-
-		// Filter graph
-		options.filter = e.currentTarget.value;
-		cleanUpTable();
-		cleanUpTable = generateTable(data);
-	});
-
 	cleanUpTable = generateTable(data);
 	cleanUpGraph = generateGraphs(data);
+
 })
 .catch(e => {
 	document.getElementById('error-text-target').textContent = e.message;
