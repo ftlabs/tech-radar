@@ -55,9 +55,9 @@
 	
 	var _Promise = __webpack_require__(61)['default'];
 	
-	var _Array$from = __webpack_require__(2)['default'];
-	
 	var _getIterator = __webpack_require__(72)['default'];
+	
+	var _Array$from = __webpack_require__(2)['default'];
 	
 	var _Map = __webpack_require__(75)['default'];
 	
@@ -67,10 +67,9 @@
 	
 	// configProperty: [optionsParameter, type, default value, description, category]
 	var qpSchema = {
-		filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li><li>fina.*times</li></ul>', 'Filter Data'],
+		filter: ['filter', String, '', 'Some Examples: <ul><li>foo</li><li>biz:baz</li><li>do-able:[3-9]</li><li>state:1|state:3|name:tech</li></ul>', 'Filter Data'],
 		id: ['docUIDs', Array, [], 'Comma seperated list of IDs of spreadsheet documents to load', 'Data Source'],
 		sheet: ['sheets', Array, [], 'Comma seperated list of sheets to load from those documents', 'Data Source'],
-		json: ['jsonFeeds', Array, [], 'List of JSON documents from which to pull data', 'Data Source'],
 		sortcol: ['sortCol', String, 'phase', 'Which column to sort by', 'Data Source'],
 		segment: ['segment', String, '', 'Column to use to segment the data, defaults to the source spreadsheet.', 'Data Source'],
 		showcol: ['showCol', Array, [], 'Comma seperated list of columns to show', 'Data Source'],
@@ -88,7 +87,6 @@
 		proportionalrings: ['useProportionalRings', Boolean, false, 'Whether to scale rings according to number of items.', 'Display'],
 		noderepulsion: ['nodeRepulsion', Number, 3, 'How strongly the nodes repel each other (default, 3)', 'Display'],
 		nodeattraction: ['nodeAttraction', Number, 3, 'How strongly the nodes are pulled to the center of the segment (default, 3)', 'Display'],
-		quadrant: ['quadrant', ['bottom right', 'bottom left', 'top left', 'top right'], 'bottom right', 'What quadrant of a circle should the graph display as.', 'Display'],
 		css: ['customCss', String, '', 'Advanced: Style this page with some custom css.', 'Advanced']
 	};
 	
@@ -104,7 +102,7 @@
 	var berthaView = 'view/publish/gss/';
 	var berthaRepublish = 'republish/publish/gss/';
 	var isEqual = __webpack_require__(105);
-	var queryString = __webpack_require__(110);
+	var queryString = __webpack_require__(109);
 	var sheetTitles = new _Set();
 	var titleFromQueryParam = false;
 	
@@ -151,11 +149,6 @@
 				case Boolean:
 					options[handle[0]] = config[key].toLowerCase() !== 'false' && config[key] !== false;
 					break;
-				default:
-					if (handle[1].constructor === Array) {
-						options[handle[0]] = handle[1].indexOf(config[key]) !== -1 ? config[key] : handle[2];
-					}
-					break;
 			}
 		});
 	
@@ -163,6 +156,25 @@
 	}
 	
 	tracking({ action: 'PageLoad' });
+	
+	// read query params
+	parseOptions((function () {
+		var parsed = queryString.parse(location.search);
+	
+		if (parsed.title !== undefined && parsed.title !== '') {
+			titleFromQueryParam = true;
+			document.querySelector('.sheet-title').textContent = parsed.title;
+		}
+	
+		// show the table by default
+		if (parsed.id && parsed.sheet) {
+			return parsed;
+		}
+	
+		var errMessage = 'No ID and Sheet parameters.';
+		document.getElementById('error-text-target').textContent = errMessage;
+		throw Error(errMessage);
+	})(), true);
 	
 	function addScript(url) {
 		return new _Promise(function (resolve, reject) {
@@ -174,30 +186,6 @@
 		});
 	}
 	
-	function getDocsFromJson(jsons) {
-	
-		var requests = jsons.map(function (jsonOrigin) {
-			return fetch(jsonOrigin).then(function (response) {
-				return response.json();
-			}).then(function (json) {
-				return processJSON(json, {
-					UID: jsonOrigin,
-					sheet: (jsonOrigin.match(/[^/]+$/) || [0])[0]
-				}, jsons.length);
-			});
-		});
-	
-		return _Promise.all(requests).then(function (requests) {
-	
-			if (!titleFromQueryParam) {
-				options.title = document.querySelector('.sheet-title').textContent = _Array$from(sheetTitles).join(' & ');
-				sheetTitles.clear();
-			}
-	
-			return requests;
-		});
-	}
-	
 	function getDocsFromBertha(docs) {
 		var republish = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 	
@@ -205,7 +193,140 @@
 			return fetch('' + berthaRoot + (republish ? berthaRepublish : berthaView) + doc.UID + '/' + doc.sheet).then(function (response) {
 				return response.json();
 			}).then(function (json) {
-				return processJSON(json, doc, docs.length);
+	
+				// supply some additional information about where the datum came from.
+				var i = 0;
+				var _iteratorNormalCompletion = true;
+				var _didIteratorError = false;
+				var _iteratorError = undefined;
+	
+				try {
+					for (var _iterator = _getIterator(json), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+						var datum = _step.value;
+	
+						datum['hidden-graph-item-source'] = doc.UID + '/' + doc.sheet;
+						datum['hidden-graph-item-id'] = (datum.name + '---' + doc.UID + '---' + doc.sheet + '---' + i++).replace(/[^a-z_\-0-9]/ig, '_');
+					}
+	
+					// override options
+	
+					// only override if it has configuration data
+				} catch (err) {
+					_didIteratorError = true;
+					_iteratorError = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion && _iterator['return']) {
+							_iterator['return']();
+						}
+					} finally {
+						if (_didIteratorError) {
+							throw _iteratorError;
+						}
+					}
+				}
+	
+				if (json[0].configvalue === undefined || json[0].name === undefined) {
+					var _iteratorNormalCompletion2 = true;
+					var _didIteratorError2 = false;
+					var _iteratorError2 = undefined;
+	
+					try {
+	
+						for (var _iterator2 = _getIterator(json), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+							var datum = _step2.value;
+	
+							datum.sheetTitle = doc.sheet;
+						}
+					} catch (err) {
+						_didIteratorError2 = true;
+						_iteratorError2 = err;
+					} finally {
+						try {
+							if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+								_iterator2['return']();
+							}
+						} finally {
+							if (_didIteratorError2) {
+								throw _iteratorError2;
+							}
+						}
+					}
+	
+					sheetTitles.add(doc.sheet);
+	
+					return json;
+				}
+	
+				var config = {};
+	
+				var _iteratorNormalCompletion3 = true;
+				var _didIteratorError3 = false;
+				var _iteratorError3 = undefined;
+	
+				try {
+					for (var _iterator3 = _getIterator(json), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+						var datum = _step3.value;
+	
+						if (datum.configvalue !== null && // It has a config value set
+						datum.name !== null) {
+	
+							if (datum.name === 'sortcol' && docs.length > 1 || // local sortcol is invalid if there are multiple documents
+							datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
+							datum.name === 'id') {
+								continue;
+							}
+	
+							config[datum.name] = datum.configvalue;
+						}
+					}
+	
+					// Set the options globally
+				} catch (err) {
+					_didIteratorError3 = true;
+					_iteratorError3 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+							_iterator3['return']();
+						}
+					} finally {
+						if (_didIteratorError3) {
+							throw _iteratorError3;
+						}
+					}
+				}
+	
+				parseOptions(config);
+	
+				var _iteratorNormalCompletion4 = true;
+				var _didIteratorError4 = false;
+				var _iteratorError4 = undefined;
+	
+				try {
+					for (var _iterator4 = _getIterator(json), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+						var datum = _step4.value;
+	
+						datum.sheetTitle = config.title || doc.sheet;
+					}
+				} catch (err) {
+					_didIteratorError4 = true;
+					_iteratorError4 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion4 && _iterator4['return']) {
+							_iterator4['return']();
+						}
+					} finally {
+						if (_didIteratorError4) {
+							throw _iteratorError4;
+						}
+					}
+				}
+	
+				sheetTitles.add(config.title || doc.sheet);
+	
+				return json;
 			});
 		});
 	
@@ -218,143 +339,6 @@
 	
 			return requests;
 		});
-	}
-	
-	function processJSON(json, doc, numberOfItems) {
-	
-		// supply some additional information about where the datum came from.
-		var i = 0;
-		var _iteratorNormalCompletion = true;
-		var _didIteratorError = false;
-		var _iteratorError = undefined;
-	
-		try {
-			for (var _iterator = _getIterator(json), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-				var datum = _step.value;
-	
-				datum['hidden-graph-item-source'] = doc.UID + '/' + doc.sheet;
-				datum['hidden-graph-item-id'] = (datum.name + '---' + doc.UID + '---' + doc.sheet + '---' + i++).replace(/[^a-z_\-0-9]/ig, '_');
-			}
-	
-			// override options
-	
-			// only override if it has configuration data
-		} catch (err) {
-			_didIteratorError = true;
-			_iteratorError = err;
-		} finally {
-			try {
-				if (!_iteratorNormalCompletion && _iterator['return']) {
-					_iterator['return']();
-				}
-			} finally {
-				if (_didIteratorError) {
-					throw _iteratorError;
-				}
-			}
-		}
-	
-		if (json[0].configvalue === undefined || json[0].name === undefined) {
-			var _iteratorNormalCompletion2 = true;
-			var _didIteratorError2 = false;
-			var _iteratorError2 = undefined;
-	
-			try {
-	
-				for (var _iterator2 = _getIterator(json), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-					var datum = _step2.value;
-	
-					datum.sheetTitle = doc.sheet;
-				}
-			} catch (err) {
-				_didIteratorError2 = true;
-				_iteratorError2 = err;
-			} finally {
-				try {
-					if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-						_iterator2['return']();
-					}
-				} finally {
-					if (_didIteratorError2) {
-						throw _iteratorError2;
-					}
-				}
-			}
-	
-			sheetTitles.add(doc.sheet);
-	
-			return json;
-		}
-	
-		var config = {};
-	
-		var _iteratorNormalCompletion3 = true;
-		var _didIteratorError3 = false;
-		var _iteratorError3 = undefined;
-	
-		try {
-			for (var _iterator3 = _getIterator(json), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-				var datum = _step3.value;
-	
-				if (datum.configvalue !== null && // It has a config value set
-				datum.name !== null) {
-	
-					if (datum.name === 'sortcol' && numberOfItems > 1 || // local sortcol is invalid if there are multiple documents
-					datum.name === 'sheet' || // overriding the sheets or id from a sheet is nonsense
-					datum.name === 'id') {
-						continue;
-					}
-	
-					config[datum.name] = datum.configvalue;
-				}
-			}
-	
-			// Set the options globally
-		} catch (err) {
-			_didIteratorError3 = true;
-			_iteratorError3 = err;
-		} finally {
-			try {
-				if (!_iteratorNormalCompletion3 && _iterator3['return']) {
-					_iterator3['return']();
-				}
-			} finally {
-				if (_didIteratorError3) {
-					throw _iteratorError3;
-				}
-			}
-		}
-	
-		parseOptions(config);
-	
-		var _iteratorNormalCompletion4 = true;
-		var _didIteratorError4 = false;
-		var _iteratorError4 = undefined;
-	
-		try {
-			for (var _iterator4 = _getIterator(json), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-				var datum = _step4.value;
-	
-				datum.sheetTitle = config.title || doc.sheet;
-			}
-		} catch (err) {
-			_didIteratorError4 = true;
-			_iteratorError4 = err;
-		} finally {
-			try {
-				if (!_iteratorNormalCompletion4 && _iterator4['return']) {
-					_iterator4['return']();
-				}
-			} finally {
-				if (_didIteratorError4) {
-					throw _iteratorError4;
-				}
-			}
-		}
-	
-		sheetTitles.add(config.title || doc.sheet);
-	
-		return json;
 	}
 	
 	function retrieveSheets(how) {
@@ -385,13 +369,10 @@
 					sheet: options.sheets[idx]
 				};
 			}), republish);
-		} else if (how === 'json') {
-			return getDocsFromJson(options.jsonFeeds);
 		}
 	}
 	
 	function decideHowToAct() {
-		if (options.jsonFeeds.length) return _Promise.resolve('json');
 		if (options.docUIDs.length > options.sheets.length) {
 			return _Promise.resolve('multipleIDsWithSingleSheet');
 		} else if (options.docUIDs.length === 1 && options.sheets.length) {
@@ -484,10 +465,6 @@
 		data = cloneData(data).filter(function (datum) {
 			return !!datum[options.sortCol] && !!datum['name'] && (datum['configvalue'] === undefined || datum['configvalue'] === null);
 		});
-	
-		if (!data.length) {
-			throw Error('No data from source');
-		}
 	
 		var sortType = 'numerical';
 	
@@ -650,10 +627,6 @@
 				}
 			}
 		});
-	
-		if (!data.length) {
-			throw Error('No data matched by filter');
-		}
 	
 		return {
 			data: data,
@@ -1033,32 +1006,7 @@
 		});
 	}
 	
-	_Promise.all([addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'), addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')]).then(function () {
-	
-		// read query params
-		parseOptions((function () {
-			var parsed = queryString.parse(location.search);
-	
-			if (parsed.title !== undefined && parsed.title !== '') {
-				titleFromQueryParam = true;
-				document.querySelector('.sheet-title').textContent = parsed.title;
-			}
-	
-			return parsed;
-		})(), true);
-	}).then(function () {
-		if (!options.jsonFeeds.length && (!options.docUIDs.length || !options.sheets.length)) {
-			var errMessage = 'No ID and Sheet parameters or JSON feed provided.';
-	
-			// Don't go any further
-			// Render the form anyway
-			__webpack_require__(112)(qpSchema, [], [], options);
-	
-			document.querySelector('li[aria-controls="data-source"]').click();
-	
-			throw Error(errMessage);
-		}
-	}).then(decideHowToAct).then(function (howToAct) {
+	_Promise.all([addScript('https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js'), addScript('https://polyfill.webservices.ft.com/v1/polyfill.min.js?features=fetch,default')]).then(decideHowToAct).then(function (howToAct) {
 		return retrieveSheets(howToAct);
 	}).then(function (data) {
 		return mergeData(data);
@@ -1066,31 +1014,6 @@
 	
 		var cleanUpGraph = function cleanUpGraph() {};
 		var cleanUpTable = function cleanUpTable() {};
-		var rings = [];
-		var e = undefined;
-	
-		try {
-			var o = process(data);
-			rings = generateChartRings(o.data, o.labels);
-		} catch (err) {
-			document.getElementById('error-text-target').textContent = err.message;
-			e = err;
-		}
-		__webpack_require__(112)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
-			return !k.match(/^(configvalue$|hidden-graph-item)/);
-		}) : [], rings.map(function (r) {
-			return r.groupLabel;
-		}), options);
-	
-		document.getElementById('filter').addEventListener('input', function (e) {
-	
-			// Filter graph
-			options.filter = e.currentTarget.value;
-			cleanUpTable();
-			cleanUpTable = generateTable(data);
-		});
-	
-		if (e) throw e;
 	
 		if (options.customCss) {
 			var customStyleSheet = document.createElement('style');
@@ -1101,6 +1024,10 @@
 		if (options.dashboard) {
 			document.getElementById('tech-radar__settings').style.display = 'none';
 		}
+	
+		__webpack_require__(111)(qpSchema, data[0] ? _Object$keys(data[0]).filter(function (k) {
+			return !k.match(/^(configvalue$|hidden-graph-item)/);
+		}) : [], options);
 	
 		var buttons = document.getElementById('tech-radar__buttons');
 	
@@ -1127,6 +1054,14 @@
 					document.getElementById('tech-radar__settings').style.display = 'none';
 				}
 			});
+		});
+	
+		document.getElementById('filter').addEventListener('input', function (e) {
+	
+			// Filter graph
+			options.filter = e.currentTarget.value;
+			cleanUpTable();
+			cleanUpTable = generateTable(data);
 		});
 	
 		cleanUpTable = generateTable(data);
@@ -4046,75 +3981,80 @@
 		var boilDown = document.getElementById('boil-down');
 		var width = size || 400;
 		var height = size || 400;
+		var nodes = data.slice(0);
 		var innerWidth = 0.1;
 		var totalRingSize = height;
 		var chargeDistance = size / 2;
-		var segmentLines = [];
-		var nodes = data.slice(0);
-		var links = [];
-		var labelAnchorNodes = [];
-		var labelAnchorLinks = [];
-	
-		var rootNodeObject = {
-			name: 'root',
-			fixed: true,
-			visible: false,
-			rootEl: true,
-			charge: 10
-		};
-		switch (options.quadrant) {
-			case 'bottom right':
-				rootNodeObject.x = width;
-				rootNodeObject.y = height;
-				break;
-			case 'bottom left':
-				rootNodeObject.x = -width;
-				rootNodeObject.y = height;
-				break;
-			case 'top left':
-				rootNodeObject.x = -width;
-				rootNodeObject.y = -height;
-				break;
-			case 'top right':
-				rootNodeObject.x = width;
-				rootNodeObject.y = -height;
-				break;
-		}
 	
 		nodes.forEach(function (n) {
 			n.ring = rings[Math.floor(n.datumValue)];
 			var positionInRing = n.datumValue % 1 * n.ring.width;
 			var startPositionOfRing = n.ring.proportionalSizeStart * (1 - innerWidth) + innerWidth;
 			n.pseudoDatumValue = positionInRing + startPositionOfRing;
-			n.weight = 0.2;
-			n.x = rootNodeObject.x / 2;
-			n.y = rootNodeObject.y / 2;
+			n.weight = 0.1;
 	
 			// Initial boost of repulsion which drives them apart
 			n.charge = -100 * (options.nodeRepulsion || 3) * Math.pow((Math.floor(n.datumValue) + 2) / rings.length, 2);
 		});
-		(function addRootNode() {
-			nodes.unshift(rootNodeObject);
 	
-			// Attatch all nodes to the rootnode
-			nodes.map(function (n, i) {
-				return {
-					target: 0,
-					source: i,
-					distance: (n.pseudoDatumValue || 0) * totalRingSize,
-					linkStrength: 0.1,
-					fixed: n.fixed,
-					toRoot: true
-				};
-			}).filter(function (l) {
-				return !l.fixed;
-			}).forEach(function (l) {
-				links.push(l);
+		nodes.unshift({
+			name: 'root',
+			x: width,
+			y: height,
+			fixed: true,
+			visible: false,
+			rootEl: true,
+			charge: 0
+		});
+	
+		var segmentLines = [];
+		// Draw an arc of attractive points with labels
+		for (var i = 0, l = rings[0].segments.length; i < l; i++) {
+			var r = height * 1.05;
+			var segment = rings[0].segments[i];
+			var thetaMin = 1 * 2 * Math.PI / 4; // slightly negative
+			var thetaMax = 2 * 2 * Math.PI / 4; // same amount from the otherside
+			var arcWidth = thetaMax - thetaMin;
+			var segmentWidth = arcWidth / (l + 1);
+			var theta = thetaMin + (1 + i) * segmentWidth;
+			nodes.push({
+				name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
+				x: width + r * Math.cos(theta),
+				y: height - r * Math.sin(theta),
+				fixed: true,
+				charge: 0,
+				dot: false
 			});
-		})();
+			segmentLines.push({
+				x: r * Math.cos(theta - segmentWidth / 2),
+				y: r * -Math.sin(theta - segmentWidth / 2)
+			});
+			if (i === l - 1) {
+				segmentLines.push({
+					x: r * Math.cos(theta + segmentWidth / 2),
+					y: r * -Math.sin(theta + segmentWidth / 2)
+				});
+			}
+		}
 	
-		// Create a label and attatch it to each node
-		// this resides in it's own force diagram.
+		// remove first and last line
+		segmentLines.pop();
+		segmentLines.shift();
+	
+		var links = nodes.map(function (n, i) {
+			return {
+				target: 0,
+				source: i,
+				distance: (n.pseudoDatumValue || 0) * totalRingSize,
+				linkStrength: 20,
+				fixed: n.fixed
+			};
+		}).filter(function (l) {
+			return !l.fixed;
+		});
+	
+		var labelAnchorNodes = [];
+		var labelAnchorLinks = [];
 		links.forEach(function (l, i) {
 			var nodeToAttachTo = nodes[l.source];
 			var x = nodeToAttachTo.x - totalRingSize;
@@ -4129,7 +4069,7 @@
 				y: y,
 				weight: weight,
 				text: text,
-				charge: options.tightlyBoundLabels ? -50 : -1100,
+				charge: options.tightlyBoundLabels ? -10 : -700,
 				id: nodeToAttachTo['hidden-graph-item-id'] + '--graph-label'
 			};
 	
@@ -4139,7 +4079,8 @@
 				x: x,
 				y: y,
 				fixed: true,
-				charge: 0
+				weight: 0,
+				charge: -100
 			};
 			labelAnchorNodes.push(label);
 			labelAnchorNodes.push(anchorToNode);
@@ -4151,112 +4092,65 @@
 				weight: weight
 			});
 		});
+		var _iteratorNormalCompletion = true;
+		var _didIteratorError = false;
+		var _iteratorError = undefined;
 	
-		(function drawSegmentLabels() {
+		try {
+			for (var _iterator = _getIterator(rings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+				var ring = _step.value;
 	
-			// Draw an arc of points to act as the segment labels
-			// they also attract the nodes.
-			var r = height * 1.05;
-			var offset = undefined;
-			switch (options.quadrant) {
-				case 'bottom right':
-					offset = 1;
-					break;
-				case 'bottom left':
-					offset = 0;
-					break;
-				case 'top left':
-					offset = -1;
-					break;
-				case 'top right':
-					offset = -2;
-					break;
-			}
-	
-			var thetaMin = offset * Math.PI / 2;
-			var thetaMax = (offset + 1) * Math.PI / 2;
-			for (var i = 0, l = rings[0].segments.length; i < l; i++) {
-	
-				var segment = rings[0].segments[i];
-				var arcWidth = thetaMax - thetaMin;
-				var segmentWidth = arcWidth / l;
-				var theta = thetaMin + i * segmentWidth;
-				var attractionNode = {
-					name: rings[0].segmentBy !== 'hidden-graph-item-source' ? segment || 'null' : '',
-					x: rootNodeObject.x + r * Math.cos(theta + segmentWidth / 2),
-					y: rootNodeObject.y - r * Math.sin(theta + segmentWidth / 2),
-					fixed: true,
-					charge: 0,
-					dot: false
-				};
 				labelAnchorNodes.push({
-					name: '',
-					x: rootNodeObject.x + r * Math.cos(theta + segmentWidth / 2),
-					y: rootNodeObject.y - r * Math.sin(theta + segmentWidth / 2),
+					__comment: 'ring label repulsion',
+					x: totalRingSize + 100,
+					y: -1 * ((ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize),
 					fixed: true,
 					charge: -700
 				});
-				nodes.push(attractionNode);
-				segmentLines.push({
-					x: r * Math.cos(theta),
-					y: r * -Math.sin(theta)
+				labelAnchorNodes.push({
+					__comment: 'ring bottom repulsion',
+					x: -1 * ((ring.proportionalSizeStart * (1 - innerWidth) + innerWidth) * -totalRingSize),
+					y: totalRingSize - 100,
+					fixed: true,
+					charge: -700
 				});
-				if (i === l - 1) {
-					segmentLines.push({
-						x: r * Math.cos(theta),
-						y: r * -Math.sin(theta)
-					});
-				}
 			}
 	
-			// remove first and last line
-			segmentLines.pop();
-			segmentLines.shift();
-		})();
+			// Attract the nodes to the segments
+		} catch (err) {
+			_didIteratorError = true;
+			_iteratorError = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion && _iterator['return']) {
+					_iterator['return']();
+				}
+			} finally {
+				if (_didIteratorError) {
+					throw _iteratorError;
+				}
+			}
+		}
 	
-		// Attract the nodes to the segments
 		nodes.forEach(function (n, j) {
 			for (var i = 0, l = rings[0].segments.length; i < l; i++) {
 				if (n[rings[0].segmentBy] !== undefined && n[rings[0].segmentBy] === rings[0].segments[i]) {
 					var target = nodes.length - l + i;
 					n.x = nodes[target].x;
 					n.y = nodes[target].y;
-					var link = {
+					links.push({
 						target: target,
 						source: j,
 						distance: 0,
 						linkStrength: 0.01 * (options.nodeAttraction || 3) * Math.pow(1.2, l)
-					};
-					links.push(link);
+					});
 					break;
 				}
 			}
 		});
 	
 		var svgNode = document.createElementNS(d3.ns.prefix.svg, 'svg');
-		var svg = d3.select(svgNode);
-		svg.attr('class', options.quadrant);
-		var padding = {
-			hSmall: 110,
-			hLarge: 300,
-			vTop: 50,
-			vBottom: 110
-		};
-	
-		switch (options.quadrant) {
-			case 'bottom right':
-				svg.attr('width', width + padding.hLarge + padding.hSmall).attr('height', height + padding.vTop + padding.vBottom).attr('viewBox', -padding.hLarge + ' ' + -padding.vTop + ' ' + (width + padding.hLarge + padding.hSmall) + ' ' + (height + padding.vTop + padding.vBottom));
-				break;
-			case 'bottom left':
-				svg.attr('width', width + padding.hLarge + padding.hSmall).attr('height', height + padding.vTop + padding.vBottom).attr('viewBox', -width - padding.hSmall + ' ' + -padding.vTop + ' ' + (width + padding.hLarge + padding.hSmall) + ' ' + (height + padding.vTop + padding.vBottom));
-				break;
-			case 'top left':
-				svg.attr('width', width + padding.hLarge + padding.hSmall).attr('height', height + padding.vTop + padding.vBottom).attr('viewBox', -width - padding.hSmall + ' ' + (-height - padding.vBottom) + ' ' + (width + padding.hLarge + padding.hSmall) + ' ' + (height + padding.vTop + padding.vBottom));
-				break;
-			case 'top right':
-				svg.attr('width', width + padding.hLarge + padding.hSmall).attr('height', height + padding.vTop + padding.vBottom).attr('viewBox', -padding.hLarge + ' ' + (-height - padding.vBottom) + ' ' + (width + padding.hLarge + padding.hSmall) + ' ' + (height + padding.vTop + padding.vBottom));
-				break;
-		}
+		var svg = d3.select(svgNode).attr('width', width + 500 + 130).attr('height', height + 100).attr('viewBox', '-500 -50 ' + (width + 500 + 130) + ' ' + (height + 100));
 	
 		var force = d3.layout.force().nodes(nodes).links(links).charge(function (n) {
 			return n.charge;
@@ -4264,76 +4158,38 @@
 			return l.linkStrength;
 		}).linkDistance(function (l) {
 			return l.distance;
-		}).gravity(0.01).size([width, height]);
+		}).gravity(0).size([width, height]);
 	
 		var labelForce = d3.layout.force().nodes(labelAnchorNodes).links(labelAnchorLinks).charge(function (n) {
 			return n.charge || 0;
-		}).chargeDistance(totalRingSize / 4).gravity(0.01).linkStrength(options.tightlyBoundLabels ? 10 : 1.5).linkDistance(0.5).size([width, height]);
+		}).gravity(0.1).linkStrength(options.tightlyBoundLabels ? 10 : 1).linkDistance(3).size([width, height]);
 	
-		var drag = force.drag().on('drag', function () {
-			return labelForce.alpha(0.03);
-		}).on('dragstart', function () {
+		var drag = force.drag().on('dragstart', function () {
 			return nodes.forEach(function (n) {
 				return n.fixed = true;
 			});
 		});
-		var dragLabel = labelForce.drag().on('dragend', function (d) {
-			d.fixed = true;
+		var dragLabel = labelForce.drag().on('dragstart', function () {
+			return labelAnchorNodes.forEach(function (n) {
+				return n.fixed = true;
+			});
 		});
-	
-		function anchorNode(n) {
-			switch (options.quadrant) {
-				case 'bottom right':
-					if (n.y > rootNodeObject.y) {
-						n.y = rootNodeObject.y;
-					}
-					if (n.x > rootNodeObject.x) {
-						n.x = rootNodeObject.x;
-					}
-					break;
-				case 'bottom left':
-					if (n.y > rootNodeObject.y) {
-						n.y = rootNodeObject.y;
-					}
-					if (n.x < rootNodeObject.x) {
-						n.x = rootNodeObject.x;
-					}
-					break;
-				case 'top left':
-					if (n.y < rootNodeObject.y) {
-						n.y = rootNodeObject.y;
-					}
-					if (n.x < rootNodeObject.x) {
-						n.x = rootNodeObject.x;
-					}
-					break;
-				case 'top right':
-					if (n.y < rootNodeObject.y) {
-						n.y = rootNodeObject.y;
-					}
-					if (n.x > rootNodeObject.x) {
-						n.x = rootNodeObject.x;
-					}
-					break;
-			}
-	
-			var r = Math.pow(Math.pow(n.x - rootNodeObject.x, 2) + Math.pow(n.y - rootNodeObject.y, 2), 0.5);
-			if (r >= totalRingSize) {
-				var vX = n.x - rootNodeObject.x;
-				var vY = n.y - rootNodeObject.y;
-				vX *= totalRingSize / r;
-				vY *= totalRingSize / r;
-				n.x = rootNodeObject.x + vX;
-				n.y = rootNodeObject.y + vY;
-			}
-		}
 	
 		force.on('tick', function () {
 	
 			nodes.forEach(function (d) {
-				anchorNode(d);
+				if (d.x > width) {
+					;
+					var _ref2 = [d.px, d.x];
+					d.x = _ref2[0];
+					d.px = _ref2[1];
+				}if (d.y > height) {
+					;
 	
-				// Attach the label node to this node
+					var _ref3 = [d.py, d.y];
+					d.y = _ref3[0];
+					d.py = _ref3[1];
+				} // Attach the label node to this node
 				if (d.labelAnchor) {
 					d.labelAnchor.px = d.x;
 					d.labelAnchor.py = d.y;
@@ -4344,11 +4200,10 @@
 			node.attr('transform', function (d) {
 				return 'translate(' + d.x + ', ' + d.y + ')';
 			});
+			labelForce.alpha(0.1);
 		});
 	
 		labelForce.on('tick', function () {
-			labelAnchorNodes.forEach(anchorNode);
-	
 			labelLine.attr('x1', function (d) {
 				return d.source.x;
 			}).attr('y1', function (d) {
@@ -4369,7 +4224,7 @@
 			return n['hidden-graph-item-id'] + '--graph-point';
 		}).call(drag);
 	
-		var labelNode = svg.selectAll('.label-node').data(labelAnchorNodes).enter().append('svg:g').call(dragLabel).attr('id', function (n) {
+		var labelNode = svg.selectAll('.label-node').data(labelAnchorNodes).enter().append('svg:g').attr('id', function (n) {
 			return '' + n.id;
 		});
 	
@@ -4381,17 +4236,17 @@
 			if (!n.text) return;
 			var strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach(function (str, i) {
-				d3.select(_this).append('svg:tspan').text(str).attr('x', 0).attr('y', (options.quadrant.match(/bottom/) ? -(strs.length - 1) : +1) + i + 'em');
+				d3.select(_this).append('svg:tspan').text(str).attr('x', 0).attr('y', i - strs.length / 2 + 'em');
 			});
 		});
 	
-		labelNode.append('svg:text').attr('class', 'd3-label').attr('x', '-10px').attr('y', '5px').each(function (n) {
+		labelNode.append('svg:text').attr('class', 'd3-label').attr('x', '-10px').attr('y', '5px').call(dragLabel).each(function (n) {
 			var _this2 = this;
 	
 			if (!n.text) return;
 			var strs = options.lineWrapLabels ? n.text.split(' ') : [n.text];
 			strs.forEach(function (str, i) {
-				d3.select(_this2).append('svg:tspan').text(str).attr('x', 0).attr('y', (options.quadrant.match(/bottom/) ? -(strs.length - 1) : +1) + i + 'em');
+				d3.select(_this2).append('svg:tspan').text(str).attr('x', 0).attr('y', i - strs.length / 2 + 'em');
 			});
 		});
 	
@@ -4419,13 +4274,11 @@
 	
 		function showTable(d, alsoUncollapseTable) {
 	
-			var hasTable = document.querySelector('.filter-table') !== null;
-	
-			if (alsoUncollapseTable === true && hasTable) {
+			if (alsoUncollapseTable && document.querySelector('.filter-table') !== null) {
 				var row = document.getElementById(d['hidden-graph-item-id']);
 				if (!row) return;
 				row.classList.toggle('collapsed');
-			} else if (!hasTable) {
+			} else {
 	
 				boilDown.innerHTML = '';
 				d.longDesc.split('\n').forEach(function (line) {
@@ -4473,76 +4326,16 @@
 		var rootNode = svg.select('.rootNode');
 	
 		rings.reverse();
-		var _iteratorNormalCompletion = true;
-		var _didIteratorError = false;
-		var _iteratorError = undefined;
-	
-		try {
-			for (var _iterator = _getIterator(rings), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-				var ring = _step.value;
-	
-				rootNode.append('svg:circle').attr('class', 'background').attr('r', (ring.proportionalSizeEnd * (1 - innerWidth) + innerWidth) * totalRingSize).style('fill', ring.fill);
-			}
-		} catch (err) {
-			_didIteratorError = true;
-			_iteratorError = err;
-		} finally {
-			try {
-				if (!_iteratorNormalCompletion && _iterator['return']) {
-					_iterator['return']();
-				}
-			} finally {
-				if (_didIteratorError) {
-					throw _iteratorError;
-				}
-			}
-		}
-	
-		rings.reverse();
-	
-		// Add rectangles to hide other quadrants of the circle.
-		var rectFill = 'rgba(255, 255, 255, 1)';
-		switch (options.quadrant) {
-			case 'bottom right':
-				rootNode.append('svg:rect').attr('class', 'mask').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', rectFill);
-				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', rectFill);
-				break;
-			case 'bottom left':
-				// Tall Box
-				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', rectFill);
-	
-				// Wide box
-				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', rectFill);
-				break;
-			case 'top left':
-				// Tall Box
-				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', rectFill);
-	
-				// Wide box
-				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', -totalRingSize).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', rectFill);
-				break;
-			case 'top right':
-				// Tall Box
-				rootNode.append('svg:rect').attr('class', 'mask').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', rectFill);
-	
-				// Wide box
-				rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', -totalRingSize).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', rectFill);
-				break;
-		}
-	
-		// Draw segment lines
 		var _iteratorNormalCompletion2 = true;
 		var _didIteratorError2 = false;
 		var _iteratorError2 = undefined;
 	
 		try {
-			for (var _iterator2 = _getIterator(segmentLines), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-				var lineOrigin = _step2.value;
+			for (var _iterator2 = _getIterator(rings), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+				var ring = _step2.value;
 	
-				rootNode.append('svg:line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
+				rootNode.append('svg:circle').attr('class', 'background').attr('r', (ring.proportionalSizeEnd * (1 - innerWidth) + innerWidth) * totalRingSize).style('fill', ring.fill);
 			}
-	
-			// Nothing goes in the middle  block it out
 		} catch (err) {
 			_didIteratorError2 = true;
 			_iteratorError2 = err;
@@ -4558,83 +4351,69 @@
 			}
 		}
 	
+		rings.reverse();
+	
+		// Add rectangles to hide other quadrants of the circle.
+		rootNode.append('svg:rect').attr('class', 'mask').attr('x', 0).attr('y', -totalRingSize).attr('width', totalRingSize).attr('height', totalRingSize * 2).style('fill', 'rgba(255, 255, 255, 1)');
+		rootNode.append('svg:rect').attr('class', 'mask').attr('x', -totalRingSize).attr('y', 0).attr('width', totalRingSize * 2).attr('height', totalRingSize).style('fill', 'rgba(255, 255, 255, 1)');
+	
+		var _iteratorNormalCompletion3 = true;
+		var _didIteratorError3 = false;
+		var _iteratorError3 = undefined;
+	
+		try {
+			for (var _iterator3 = _getIterator(segmentLines), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+				var lineOrigin = _step3.value;
+	
+				rootNode.append('svg:line').attr('x1', lineOrigin.x).attr('y1', lineOrigin.y).attr('x2', 0).attr('y2', 0).style('stroke', 'rgba(255, 255, 255, 1)');
+			}
+	
+			// Nothing goes in the middle ring
+		} catch (err) {
+			_didIteratorError3 = true;
+			_iteratorError3 = err;
+		} finally {
+			try {
+				if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+					_iterator3['return']();
+				}
+			} finally {
+				if (_didIteratorError3) {
+					throw _iteratorError3;
+				}
+			}
+		}
+	
 		rootNode.append('svg:circle').attr('class', 'background mask').attr('r', totalRingSize * innerWidth).style('fill', 'rgba(255, 255, 255, 1)');
 	
-		// Ring labels
-		(function () {
-			var labelX = undefined;
-			var labelY = undefined;
-			switch (options.quadrant) {
-				case 'bottom right':
-					labelX = -5;
-					labelY = -1;
-					break;
-				case 'bottom left':
-					labelX = 5;
-					labelY = -1;
-					break;
-				case 'top left':
-					labelX = 5;
-					labelY = 1;
-					break;
-				case 'top right':
-					labelX = -5;
-					labelY = 1;
-					break;
-			}
-			var _iteratorNormalCompletion3 = true;
-			var _didIteratorError3 = false;
-			var _iteratorError3 = undefined;
+		var _iteratorNormalCompletion4 = true;
+		var _didIteratorError4 = false;
+		var _iteratorError4 = undefined;
 	
+		try {
+			for (var _iterator4 = _getIterator(rings), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+				var ring = _step4.value;
+	
+				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label bg').attr('x', '-5').attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+				rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label').attr('x', '-5').attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * -totalRingSize + 'px');
+			}
+		} catch (err) {
+			_didIteratorError4 = true;
+			_iteratorError4 = err;
+		} finally {
 			try {
-				for (var _iterator3 = _getIterator(rings), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-					var ring = _step3.value;
-	
-					rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label bg').attr('x', labelX).attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * labelY * totalRingSize + 'px');
-					rootNode.append('svg:text').text(ring.groupLabel || ring.min).attr('class', 'd3-label ring-label').attr('x', labelX).attr('y', 5 + ((ring.proportionalSizeStart + ring.width / 2) * (1 - innerWidth) + innerWidth) * labelY * totalRingSize + 'px');
+				if (!_iteratorNormalCompletion4 && _iterator4['return']) {
+					_iterator4['return']();
 				}
-			} catch (err) {
-				_didIteratorError3 = true;
-				_iteratorError3 = err;
 			} finally {
-				try {
-					if (!_iteratorNormalCompletion3 && _iterator3['return']) {
-						_iterator3['return']();
-					}
-				} finally {
-					if (_didIteratorError3) {
-						throw _iteratorError3;
-					}
+				if (_didIteratorError4) {
+					throw _iteratorError4;
 				}
 			}
-		})();
-	
-		force.start();
-		labelForce.start();
-		var n = 120;
-		for (var i = 0; i < n; ++i) {
-	
-			if (i === 10) {
-				links.filter(function (l) {
-					return l.toRoot;
-				}).forEach(function (l) {
-					return l.linkStrength = 0.5;
-				});
-				force.links(links).start().alpha(0.05);
-			}
-	
-			if (i === 30) {
-				links.filter(function (l) {
-					return l.toRoot;
-				}).forEach(function (l) {
-					return l.linkStrength = 10;
-				});
-				force.links(links).start().alpha(0.05);
-			}
-	
-			force.tick();
-			labelForce.tick();
 		}
+	
+		force.start().alpha(0.05);
+		labelForce.start().alpha(0.05);
 	
 		var renderOnTop = svg.append('svg:g').append('svg:use');
 	
@@ -7609,12 +7388,40 @@
 	// shim for using process in browser
 	
 	var process = module.exports = {};
+	
+	// cached from whatever global is present so that test runners that stub it
+	// don't break things.  But we need to wrap it in a try catch in case it is
+	// wrapped in strict mode code which doesn't define any globals.  It's inside a
+	// function because try/catches deoptimize in certain engines.
+	
+	var cachedSetTimeout;
+	var cachedClearTimeout;
+	
+	(function () {
+	  try {
+	    cachedSetTimeout = setTimeout;
+	  } catch (e) {
+	    cachedSetTimeout = function () {
+	      throw new Error('setTimeout is not defined');
+	    }
+	  }
+	  try {
+	    cachedClearTimeout = clearTimeout;
+	  } catch (e) {
+	    cachedClearTimeout = function () {
+	      throw new Error('clearTimeout is not defined');
+	    }
+	  }
+	} ())
 	var queue = [];
 	var draining = false;
 	var currentQueue;
 	var queueIndex = -1;
 	
 	function cleanUpNextTick() {
+	    if (!draining || !currentQueue) {
+	        return;
+	    }
 	    draining = false;
 	    if (currentQueue.length) {
 	        queue = currentQueue.concat(queue);
@@ -7630,7 +7437,7 @@
 	    if (draining) {
 	        return;
 	    }
-	    var timeout = setTimeout(cleanUpNextTick);
+	    var timeout = cachedSetTimeout(cleanUpNextTick);
 	    draining = true;
 	
 	    var len = queue.length;
@@ -7647,7 +7454,7 @@
 	    }
 	    currentQueue = null;
 	    draining = false;
-	    clearTimeout(timeout);
+	    cachedClearTimeout(timeout);
 	}
 	
 	process.nextTick = function (fun) {
@@ -7659,7 +7466,7 @@
 	    }
 	    queue.push(new Item(fun, args));
 	    if (queue.length === 1 && !draining) {
-	        setTimeout(drainQueue, 0);
+	        cachedSetTimeout(drainQueue, 0);
 	    }
 	};
 	
@@ -7744,16 +7551,21 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
-	 * lodash 4.1.1 (Custom Build) <https://lodash.com/>
+	 * lodash (Custom Build) <https://lodash.com/>
 	 * Build: `lodash modularize exports="npm" -o ./`
-	 * Copyright 2012-2016 The Dojo Foundation <http://dojofoundation.org/>
+	 * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+	 * Released under MIT license <https://lodash.com/license>
 	 * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
-	 * Copyright 2009-2016 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
-	 * Available under MIT license <https://lodash.com/license>
+	 * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 */
-	var Stack = __webpack_require__(106),
-	    keys = __webpack_require__(108),
-	    root = __webpack_require__(109);
+	var keys = __webpack_require__(106),
+	    root = __webpack_require__(107);
+	
+	/** Used as the size to enable large array optimizations. */
+	var LARGE_ARRAY_SIZE = 200;
+	
+	/** Used to stand-in for `undefined` hash values. */
+	var HASH_UNDEFINED = '__lodash_hash_undefined__';
 	
 	/** Used to compose bitmasks for comparison styles. */
 	var UNORDERED_COMPARE_FLAG = 1,
@@ -7773,6 +7585,7 @@
 	    mapTag = '[object Map]',
 	    numberTag = '[object Number]',
 	    objectTag = '[object Object]',
+	    promiseTag = '[object Promise]',
 	    regexpTag = '[object RegExp]',
 	    setTag = '[object Set]',
 	    stringTag = '[object String]',
@@ -7780,6 +7593,7 @@
 	    weakMapTag = '[object WeakMap]';
 	
 	var arrayBufferTag = '[object ArrayBuffer]',
+	    dataViewTag = '[object DataView]',
 	    float32Tag = '[object Float32Array]',
 	    float64Tag = '[object Float64Array]',
 	    int8Tag = '[object Int8Array]',
@@ -7790,10 +7604,13 @@
 	    uint16Tag = '[object Uint16Array]',
 	    uint32Tag = '[object Uint32Array]';
 	
-	/** Used to match `RegExp` [syntax characters](http://ecma-international.org/ecma-262/6.0/#sec-patterns). */
+	/**
+	 * Used to match `RegExp`
+	 * [syntax characters](http://ecma-international.org/ecma-262/6.0/#sec-patterns).
+	 */
 	var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
 	
-	/** Used to detect host constructors (Safari > 5). */
+	/** Used to detect host constructors (Safari). */
 	var reIsHostCtor = /^\[object .+?Constructor\]$/;
 	
 	/** Used to identify `toStringTag` values of typed arrays. */
@@ -7805,11 +7622,12 @@
 	typedArrayTags[uint32Tag] = true;
 	typedArrayTags[argsTag] = typedArrayTags[arrayTag] =
 	typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] =
-	typedArrayTags[dateTag] = typedArrayTags[errorTag] =
-	typedArrayTags[funcTag] = typedArrayTags[mapTag] =
-	typedArrayTags[numberTag] = typedArrayTags[objectTag] =
-	typedArrayTags[regexpTag] = typedArrayTags[setTag] =
-	typedArrayTags[stringTag] = typedArrayTags[weakMapTag] = false;
+	typedArrayTags[dataViewTag] = typedArrayTags[dateTag] =
+	typedArrayTags[errorTag] = typedArrayTags[funcTag] =
+	typedArrayTags[mapTag] = typedArrayTags[numberTag] =
+	typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
+	typedArrayTags[setTag] = typedArrayTags[stringTag] =
+	typedArrayTags[weakMapTag] = false;
 	
 	/**
 	 * A specialized version of `_.some` for arrays without support for iteratee
@@ -7818,7 +7636,8 @@
 	 * @private
 	 * @param {Array} array The array to iterate over.
 	 * @param {Function} predicate The function invoked per iteration.
-	 * @returns {boolean} Returns `true` if any element passes the predicate check, else `false`.
+	 * @returns {boolean} Returns `true` if any element passes the predicate check,
+	 *  else `false`.
 	 */
 	function arraySome(array, predicate) {
 	  var index = -1,
@@ -7852,11 +7671,11 @@
 	}
 	
 	/**
-	 * Converts `map` to an array.
+	 * Converts `map` to its key-value pairs.
 	 *
 	 * @private
 	 * @param {Object} map The map to convert.
-	 * @returns {Array} Returns the converted array.
+	 * @returns {Array} Returns the key-value pairs.
 	 */
 	function mapToArray(map) {
 	  var index = -1,
@@ -7869,11 +7688,11 @@
 	}
 	
 	/**
-	 * Converts `set` to an array.
+	 * Converts `set` to an array of its values.
 	 *
 	 * @private
 	 * @param {Object} set The set to convert.
-	 * @returns {Array} Returns the converted array.
+	 * @returns {Array} Returns the values.
 	 */
 	function setToArray(set) {
 	  var index = -1,
@@ -7886,7 +7705,8 @@
 	}
 	
 	/** Used for built-in method references. */
-	var objectProto = Object.prototype;
+	var arrayProto = Array.prototype,
+	    objectProto = Object.prototype;
 	
 	/** Used to resolve the decompiled source of functions. */
 	var funcToString = Function.prototype.toString;
@@ -7895,7 +7715,8 @@
 	var hasOwnProperty = objectProto.hasOwnProperty;
 	
 	/**
-	 * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+	 * Used to resolve the
+	 * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
 	 * of values.
 	 */
 	var objectToString = objectProto.toString;
@@ -7909,21 +7730,488 @@
 	/** Built-in value references. */
 	var Symbol = root.Symbol,
 	    Uint8Array = root.Uint8Array,
-	    getPrototypeOf = Object.getPrototypeOf;
+	    splice = arrayProto.splice;
+	
+	/* Built-in method references for those with the same name as other `lodash` methods. */
+	var nativeGetPrototype = Object.getPrototypeOf;
 	
 	/* Built-in method references that are verified to be native. */
-	var Map = getNative(root, 'Map'),
+	var DataView = getNative(root, 'DataView'),
+	    Map = getNative(root, 'Map'),
+	    Promise = getNative(root, 'Promise'),
 	    Set = getNative(root, 'Set'),
-	    WeakMap = getNative(root, 'WeakMap');
+	    WeakMap = getNative(root, 'WeakMap'),
+	    nativeCreate = getNative(Object, 'create');
 	
 	/** Used to detect maps, sets, and weakmaps. */
-	var mapCtorString = Map ? funcToString.call(Map) : '',
-	    setCtorString = Set ? funcToString.call(Set) : '',
-	    weakMapCtorString = WeakMap ? funcToString.call(WeakMap) : '';
+	var dataViewCtorString = toSource(DataView),
+	    mapCtorString = toSource(Map),
+	    promiseCtorString = toSource(Promise),
+	    setCtorString = toSource(Set),
+	    weakMapCtorString = toSource(WeakMap);
 	
 	/** Used to convert symbols to primitives and strings. */
 	var symbolProto = Symbol ? Symbol.prototype : undefined,
 	    symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+	
+	/**
+	 * Creates a hash object.
+	 *
+	 * @private
+	 * @constructor
+	 * @param {Array} [entries] The key-value pairs to cache.
+	 */
+	function Hash(entries) {
+	  var index = -1,
+	      length = entries ? entries.length : 0;
+	
+	  this.clear();
+	  while (++index < length) {
+	    var entry = entries[index];
+	    this.set(entry[0], entry[1]);
+	  }
+	}
+	
+	/**
+	 * Removes all key-value entries from the hash.
+	 *
+	 * @private
+	 * @name clear
+	 * @memberOf Hash
+	 */
+	function hashClear() {
+	  this.__data__ = nativeCreate ? nativeCreate(null) : {};
+	}
+	
+	/**
+	 * Removes `key` and its value from the hash.
+	 *
+	 * @private
+	 * @name delete
+	 * @memberOf Hash
+	 * @param {Object} hash The hash to modify.
+	 * @param {string} key The key of the value to remove.
+	 * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+	 */
+	function hashDelete(key) {
+	  return this.has(key) && delete this.__data__[key];
+	}
+	
+	/**
+	 * Gets the hash value for `key`.
+	 *
+	 * @private
+	 * @name get
+	 * @memberOf Hash
+	 * @param {string} key The key of the value to get.
+	 * @returns {*} Returns the entry value.
+	 */
+	function hashGet(key) {
+	  var data = this.__data__;
+	  if (nativeCreate) {
+	    var result = data[key];
+	    return result === HASH_UNDEFINED ? undefined : result;
+	  }
+	  return hasOwnProperty.call(data, key) ? data[key] : undefined;
+	}
+	
+	/**
+	 * Checks if a hash value for `key` exists.
+	 *
+	 * @private
+	 * @name has
+	 * @memberOf Hash
+	 * @param {string} key The key of the entry to check.
+	 * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+	 */
+	function hashHas(key) {
+	  var data = this.__data__;
+	  return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
+	}
+	
+	/**
+	 * Sets the hash `key` to `value`.
+	 *
+	 * @private
+	 * @name set
+	 * @memberOf Hash
+	 * @param {string} key The key of the value to set.
+	 * @param {*} value The value to set.
+	 * @returns {Object} Returns the hash instance.
+	 */
+	function hashSet(key, value) {
+	  var data = this.__data__;
+	  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
+	  return this;
+	}
+	
+	// Add methods to `Hash`.
+	Hash.prototype.clear = hashClear;
+	Hash.prototype['delete'] = hashDelete;
+	Hash.prototype.get = hashGet;
+	Hash.prototype.has = hashHas;
+	Hash.prototype.set = hashSet;
+	
+	/**
+	 * Creates an list cache object.
+	 *
+	 * @private
+	 * @constructor
+	 * @param {Array} [entries] The key-value pairs to cache.
+	 */
+	function ListCache(entries) {
+	  var index = -1,
+	      length = entries ? entries.length : 0;
+	
+	  this.clear();
+	  while (++index < length) {
+	    var entry = entries[index];
+	    this.set(entry[0], entry[1]);
+	  }
+	}
+	
+	/**
+	 * Removes all key-value entries from the list cache.
+	 *
+	 * @private
+	 * @name clear
+	 * @memberOf ListCache
+	 */
+	function listCacheClear() {
+	  this.__data__ = [];
+	}
+	
+	/**
+	 * Removes `key` and its value from the list cache.
+	 *
+	 * @private
+	 * @name delete
+	 * @memberOf ListCache
+	 * @param {string} key The key of the value to remove.
+	 * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+	 */
+	function listCacheDelete(key) {
+	  var data = this.__data__,
+	      index = assocIndexOf(data, key);
+	
+	  if (index < 0) {
+	    return false;
+	  }
+	  var lastIndex = data.length - 1;
+	  if (index == lastIndex) {
+	    data.pop();
+	  } else {
+	    splice.call(data, index, 1);
+	  }
+	  return true;
+	}
+	
+	/**
+	 * Gets the list cache value for `key`.
+	 *
+	 * @private
+	 * @name get
+	 * @memberOf ListCache
+	 * @param {string} key The key of the value to get.
+	 * @returns {*} Returns the entry value.
+	 */
+	function listCacheGet(key) {
+	  var data = this.__data__,
+	      index = assocIndexOf(data, key);
+	
+	  return index < 0 ? undefined : data[index][1];
+	}
+	
+	/**
+	 * Checks if a list cache value for `key` exists.
+	 *
+	 * @private
+	 * @name has
+	 * @memberOf ListCache
+	 * @param {string} key The key of the entry to check.
+	 * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+	 */
+	function listCacheHas(key) {
+	  return assocIndexOf(this.__data__, key) > -1;
+	}
+	
+	/**
+	 * Sets the list cache `key` to `value`.
+	 *
+	 * @private
+	 * @name set
+	 * @memberOf ListCache
+	 * @param {string} key The key of the value to set.
+	 * @param {*} value The value to set.
+	 * @returns {Object} Returns the list cache instance.
+	 */
+	function listCacheSet(key, value) {
+	  var data = this.__data__,
+	      index = assocIndexOf(data, key);
+	
+	  if (index < 0) {
+	    data.push([key, value]);
+	  } else {
+	    data[index][1] = value;
+	  }
+	  return this;
+	}
+	
+	// Add methods to `ListCache`.
+	ListCache.prototype.clear = listCacheClear;
+	ListCache.prototype['delete'] = listCacheDelete;
+	ListCache.prototype.get = listCacheGet;
+	ListCache.prototype.has = listCacheHas;
+	ListCache.prototype.set = listCacheSet;
+	
+	/**
+	 * Creates a map cache object to store key-value pairs.
+	 *
+	 * @private
+	 * @constructor
+	 * @param {Array} [entries] The key-value pairs to cache.
+	 */
+	function MapCache(entries) {
+	  var index = -1,
+	      length = entries ? entries.length : 0;
+	
+	  this.clear();
+	  while (++index < length) {
+	    var entry = entries[index];
+	    this.set(entry[0], entry[1]);
+	  }
+	}
+	
+	/**
+	 * Removes all key-value entries from the map.
+	 *
+	 * @private
+	 * @name clear
+	 * @memberOf MapCache
+	 */
+	function mapCacheClear() {
+	  this.__data__ = {
+	    'hash': new Hash,
+	    'map': new (Map || ListCache),
+	    'string': new Hash
+	  };
+	}
+	
+	/**
+	 * Removes `key` and its value from the map.
+	 *
+	 * @private
+	 * @name delete
+	 * @memberOf MapCache
+	 * @param {string} key The key of the value to remove.
+	 * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+	 */
+	function mapCacheDelete(key) {
+	  return getMapData(this, key)['delete'](key);
+	}
+	
+	/**
+	 * Gets the map value for `key`.
+	 *
+	 * @private
+	 * @name get
+	 * @memberOf MapCache
+	 * @param {string} key The key of the value to get.
+	 * @returns {*} Returns the entry value.
+	 */
+	function mapCacheGet(key) {
+	  return getMapData(this, key).get(key);
+	}
+	
+	/**
+	 * Checks if a map value for `key` exists.
+	 *
+	 * @private
+	 * @name has
+	 * @memberOf MapCache
+	 * @param {string} key The key of the entry to check.
+	 * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+	 */
+	function mapCacheHas(key) {
+	  return getMapData(this, key).has(key);
+	}
+	
+	/**
+	 * Sets the map `key` to `value`.
+	 *
+	 * @private
+	 * @name set
+	 * @memberOf MapCache
+	 * @param {string} key The key of the value to set.
+	 * @param {*} value The value to set.
+	 * @returns {Object} Returns the map cache instance.
+	 */
+	function mapCacheSet(key, value) {
+	  getMapData(this, key).set(key, value);
+	  return this;
+	}
+	
+	// Add methods to `MapCache`.
+	MapCache.prototype.clear = mapCacheClear;
+	MapCache.prototype['delete'] = mapCacheDelete;
+	MapCache.prototype.get = mapCacheGet;
+	MapCache.prototype.has = mapCacheHas;
+	MapCache.prototype.set = mapCacheSet;
+	
+	/**
+	 *
+	 * Creates an array cache object to store unique values.
+	 *
+	 * @private
+	 * @constructor
+	 * @param {Array} [values] The values to cache.
+	 */
+	function SetCache(values) {
+	  var index = -1,
+	      length = values ? values.length : 0;
+	
+	  this.__data__ = new MapCache;
+	  while (++index < length) {
+	    this.add(values[index]);
+	  }
+	}
+	
+	/**
+	 * Adds `value` to the array cache.
+	 *
+	 * @private
+	 * @name add
+	 * @memberOf SetCache
+	 * @alias push
+	 * @param {*} value The value to cache.
+	 * @returns {Object} Returns the cache instance.
+	 */
+	function setCacheAdd(value) {
+	  this.__data__.set(value, HASH_UNDEFINED);
+	  return this;
+	}
+	
+	/**
+	 * Checks if `value` is in the array cache.
+	 *
+	 * @private
+	 * @name has
+	 * @memberOf SetCache
+	 * @param {*} value The value to search for.
+	 * @returns {number} Returns `true` if `value` is found, else `false`.
+	 */
+	function setCacheHas(value) {
+	  return this.__data__.has(value);
+	}
+	
+	// Add methods to `SetCache`.
+	SetCache.prototype.add = SetCache.prototype.push = setCacheAdd;
+	SetCache.prototype.has = setCacheHas;
+	
+	/**
+	 * Creates a stack cache object to store key-value pairs.
+	 *
+	 * @private
+	 * @constructor
+	 * @param {Array} [entries] The key-value pairs to cache.
+	 */
+	function Stack(entries) {
+	  this.__data__ = new ListCache(entries);
+	}
+	
+	/**
+	 * Removes all key-value entries from the stack.
+	 *
+	 * @private
+	 * @name clear
+	 * @memberOf Stack
+	 */
+	function stackClear() {
+	  this.__data__ = new ListCache;
+	}
+	
+	/**
+	 * Removes `key` and its value from the stack.
+	 *
+	 * @private
+	 * @name delete
+	 * @memberOf Stack
+	 * @param {string} key The key of the value to remove.
+	 * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+	 */
+	function stackDelete(key) {
+	  return this.__data__['delete'](key);
+	}
+	
+	/**
+	 * Gets the stack value for `key`.
+	 *
+	 * @private
+	 * @name get
+	 * @memberOf Stack
+	 * @param {string} key The key of the value to get.
+	 * @returns {*} Returns the entry value.
+	 */
+	function stackGet(key) {
+	  return this.__data__.get(key);
+	}
+	
+	/**
+	 * Checks if a stack value for `key` exists.
+	 *
+	 * @private
+	 * @name has
+	 * @memberOf Stack
+	 * @param {string} key The key of the entry to check.
+	 * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+	 */
+	function stackHas(key) {
+	  return this.__data__.has(key);
+	}
+	
+	/**
+	 * Sets the stack `key` to `value`.
+	 *
+	 * @private
+	 * @name set
+	 * @memberOf Stack
+	 * @param {string} key The key of the value to set.
+	 * @param {*} value The value to set.
+	 * @returns {Object} Returns the stack cache instance.
+	 */
+	function stackSet(key, value) {
+	  var cache = this.__data__;
+	  if (cache instanceof ListCache && cache.__data__.length == LARGE_ARRAY_SIZE) {
+	    cache = this.__data__ = new MapCache(cache.__data__);
+	  }
+	  cache.set(key, value);
+	  return this;
+	}
+	
+	// Add methods to `Stack`.
+	Stack.prototype.clear = stackClear;
+	Stack.prototype['delete'] = stackDelete;
+	Stack.prototype.get = stackGet;
+	Stack.prototype.has = stackHas;
+	Stack.prototype.set = stackSet;
+	
+	/**
+	 * Gets the index at which the `key` is found in `array` of key-value pairs.
+	 *
+	 * @private
+	 * @param {Array} array The array to search.
+	 * @param {*} key The key to search for.
+	 * @returns {number} Returns the index of the matched value, else `-1`.
+	 */
+	function assocIndexOf(array, key) {
+	  var length = array.length;
+	  while (length--) {
+	    if (eq(array[length][0], key)) {
+	      return length;
+	    }
+	  }
+	  return -1;
+	}
 	
 	/**
 	 * The base implementation of `_.has` without support for deep paths.
@@ -7938,7 +8226,7 @@
 	  // that are composed entirely of index properties, return `false` for
 	  // `hasOwnProperty` checks of them.
 	  return hasOwnProperty.call(object, key) ||
-	    (typeof object == 'object' && key in object && getPrototypeOf(object) === null);
+	    (typeof object == 'object' && key in object && getPrototype(object) === null);
 	}
 	
 	/**
@@ -7976,7 +8264,8 @@
 	 * @param {Object} other The other object to compare.
 	 * @param {Function} equalFunc The function to determine equivalents of values.
 	 * @param {Function} [customizer] The function to customize comparisons.
-	 * @param {number} [bitmask] The bitmask of comparison flags. See `baseIsEqual` for more details.
+	 * @param {number} [bitmask] The bitmask of comparison flags. See `baseIsEqual`
+	 *  for more details.
 	 * @param {Object} [stack] Tracks traversed `object` and `other` objects.
 	 * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
 	 */
@@ -8009,8 +8298,11 @@
 	        othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
 	
 	    if (objIsWrapped || othIsWrapped) {
+	      var objUnwrapped = objIsWrapped ? object.value() : object,
+	          othUnwrapped = othIsWrapped ? other.value() : other;
+	
 	      stack || (stack = new Stack);
-	      return equalFunc(objIsWrapped ? object.value() : object, othIsWrapped ? other.value() : other, customizer, bitmask, stack);
+	      return equalFunc(objUnwrapped, othUnwrapped, customizer, bitmask, stack);
 	    }
 	  }
 	  if (!isSameTag) {
@@ -8029,14 +8321,13 @@
 	 * @param {Array} other The other array to compare.
 	 * @param {Function} equalFunc The function to determine equivalents of values.
 	 * @param {Function} customizer The function to customize comparisons.
-	 * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual` for more details.
+	 * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
+	 *  for more details.
 	 * @param {Object} stack Tracks traversed `array` and `other` objects.
 	 * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
 	 */
 	function equalArrays(array, other, equalFunc, customizer, bitmask, stack) {
-	  var index = -1,
-	      isPartial = bitmask & PARTIAL_COMPARE_FLAG,
-	      isUnordered = bitmask & UNORDERED_COMPARE_FLAG,
+	  var isPartial = bitmask & PARTIAL_COMPARE_FLAG,
 	      arrLength = array.length,
 	      othLength = other.length;
 	
@@ -8048,7 +8339,10 @@
 	  if (stacked) {
 	    return stacked == other;
 	  }
-	  var result = true;
+	  var index = -1,
+	      result = true,
+	      seen = (bitmask & UNORDERED_COMPARE_FLAG) ? new SetCache : undefined;
+	
 	  stack.set(array, other);
 	
 	  // Ignore non-index properties.
@@ -8069,14 +8363,20 @@
 	      break;
 	    }
 	    // Recursively compare arrays (susceptible to call stack limits).
-	    if (isUnordered) {
-	      if (!arraySome(other, function(othValue) {
-	            return arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack);
+	    if (seen) {
+	      if (!arraySome(other, function(othValue, othIndex) {
+	            if (!seen.has(othIndex) &&
+	                (arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+	              return seen.add(othIndex);
+	            }
 	          })) {
 	        result = false;
 	        break;
 	      }
-	    } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+	    } else if (!(
+	          arrValue === othValue ||
+	            equalFunc(arrValue, othValue, customizer, bitmask, stack)
+	        )) {
 	      result = false;
 	      break;
 	    }
@@ -8098,12 +8398,21 @@
 	 * @param {string} tag The `toStringTag` of the objects to compare.
 	 * @param {Function} equalFunc The function to determine equivalents of values.
 	 * @param {Function} customizer The function to customize comparisons.
-	 * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual` for more details.
+	 * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
+	 *  for more details.
 	 * @param {Object} stack Tracks traversed `object` and `other` objects.
 	 * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
 	 */
 	function equalByTag(object, other, tag, equalFunc, customizer, bitmask, stack) {
 	  switch (tag) {
+	    case dataViewTag:
+	      if ((object.byteLength != other.byteLength) ||
+	          (object.byteOffset != other.byteOffset)) {
+	        return false;
+	      }
+	      object = object.buffer;
+	      other = other.buffer;
+	
 	    case arrayBufferTag:
 	      if ((object.byteLength != other.byteLength) ||
 	          !equalFunc(new Uint8Array(object), new Uint8Array(other))) {
@@ -8113,8 +8422,9 @@
 	
 	    case boolTag:
 	    case dateTag:
-	      // Coerce dates and booleans to numbers, dates to milliseconds and booleans
-	      // to `1` or `0` treating invalid dates coerced to `NaN` as not equal.
+	      // Coerce dates and booleans to numbers, dates to milliseconds and
+	      // booleans to `1` or `0` treating invalid dates coerced to `NaN` as
+	      // not equal.
 	      return +object == +other;
 	
 	    case errorTag:
@@ -8126,8 +8436,9 @@
 	
 	    case regexpTag:
 	    case stringTag:
-	      // Coerce regexes to strings and treat strings primitives and string
-	      // objects as equal. See https://es5.github.io/#x15.10.6.4 for more details.
+	      // Coerce regexes to strings and treat strings, primitives and objects,
+	      // as equal. See http://www.ecma-international.org/ecma-262/6.0/#sec-regexp.prototype.tostring
+	      // for more details.
 	      return object == (other + '');
 	
 	    case mapTag:
@@ -8145,8 +8456,11 @@
 	      if (stacked) {
 	        return stacked == other;
 	      }
+	      bitmask |= UNORDERED_COMPARE_FLAG;
+	      stack.set(object, other);
+	
 	      // Recursively compare objects (susceptible to call stack limits).
-	      return equalArrays(convert(object), convert(other), equalFunc, customizer, bitmask | UNORDERED_COMPARE_FLAG, stack.set(object, other));
+	      return equalArrays(convert(object), convert(other), equalFunc, customizer, bitmask, stack);
 	
 	    case symbolTag:
 	      if (symbolValueOf) {
@@ -8165,7 +8479,8 @@
 	 * @param {Object} other The other object to compare.
 	 * @param {Function} equalFunc The function to determine equivalents of values.
 	 * @param {Function} customizer The function to customize comparisons.
-	 * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual` for more details.
+	 * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
+	 *  for more details.
 	 * @param {Object} stack Tracks traversed `object` and `other` objects.
 	 * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
 	 */
@@ -8232,6 +8547,21 @@
 	}
 	
 	/**
+	 * Gets the data for `map`.
+	 *
+	 * @private
+	 * @param {Object} map The map to query.
+	 * @param {string} key The reference key.
+	 * @returns {*} Returns the map data.
+	 */
+	function getMapData(map, key) {
+	  var data = map.__data__;
+	  return isKeyable(key)
+	    ? data[typeof key == 'string' ? 'string' : 'hash']
+	    : data.map;
+	}
+	
+	/**
 	 * Gets the native function at `key` of `object`.
 	 *
 	 * @private
@@ -8242,6 +8572,17 @@
 	function getNative(object, key) {
 	  var value = object[key];
 	  return isNative(value) ? value : undefined;
+	}
+	
+	/**
+	 * Gets the `[[Prototype]]` of `value`.
+	 *
+	 * @private
+	 * @param {*} value The value to query.
+	 * @returns {null|Object} Returns the `[[Prototype]]`.
+	 */
+	function getPrototype(value) {
+	  return nativeGetPrototype(Object(value));
 	}
 	
 	/**
@@ -8255,734 +8596,29 @@
 	  return objectToString.call(value);
 	}
 	
-	// Fallback for IE 11 providing `toStringTag` values for maps, sets, and weakmaps.
-	if ((Map && getTag(new Map) != mapTag) ||
+	// Fallback for data views, maps, sets, and weak maps in IE 11,
+	// for data views in Edge, and promises in Node.js.
+	if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
+	    (Map && getTag(new Map) != mapTag) ||
+	    (Promise && getTag(Promise.resolve()) != promiseTag) ||
 	    (Set && getTag(new Set) != setTag) ||
 	    (WeakMap && getTag(new WeakMap) != weakMapTag)) {
 	  getTag = function(value) {
 	    var result = objectToString.call(value),
-	        Ctor = result == objectTag ? value.constructor : null,
-	        ctorString = typeof Ctor == 'function' ? funcToString.call(Ctor) : '';
+	        Ctor = result == objectTag ? value.constructor : undefined,
+	        ctorString = Ctor ? toSource(Ctor) : undefined;
 	
 	    if (ctorString) {
 	      switch (ctorString) {
+	        case dataViewCtorString: return dataViewTag;
 	        case mapCtorString: return mapTag;
+	        case promiseCtorString: return promiseTag;
 	        case setCtorString: return setTag;
 	        case weakMapCtorString: return weakMapTag;
 	      }
 	    }
 	    return result;
 	  };
-	}
-	
-	/**
-	 * Checks if `value` is classified as an `Array` object.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @type {Function}
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
-	 * @example
-	 *
-	 * _.isArray([1, 2, 3]);
-	 * // => true
-	 *
-	 * _.isArray(document.body.children);
-	 * // => false
-	 *
-	 * _.isArray('abc');
-	 * // => false
-	 *
-	 * _.isArray(_.noop);
-	 * // => false
-	 */
-	var isArray = Array.isArray;
-	
-	/**
-	 * Performs a deep comparison between two values to determine if they are
-	 * equivalent.
-	 *
-	 * **Note:** This method supports comparing arrays, array buffers, booleans,
-	 * date objects, error objects, maps, numbers, `Object` objects, regexes,
-	 * sets, strings, symbols, and typed arrays. `Object` objects are compared
-	 * by their own, not inherited, enumerable properties. Functions and DOM
-	 * nodes are **not** supported.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @category Lang
-	 * @param {*} value The value to compare.
-	 * @param {*} other The other value to compare.
-	 * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
-	 * @example
-	 *
-	 * var object = { 'user': 'fred' };
-	 * var other = { 'user': 'fred' };
-	 *
-	 * _.isEqual(object, other);
-	 * // => true
-	 *
-	 * object === other;
-	 * // => false
-	 */
-	function isEqual(value, other) {
-	  return baseIsEqual(value, other);
-	}
-	
-	/**
-	 * Checks if `value` is classified as a `Function` object.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
-	 * @example
-	 *
-	 * _.isFunction(_);
-	 * // => true
-	 *
-	 * _.isFunction(/abc/);
-	 * // => false
-	 */
-	function isFunction(value) {
-	  // The use of `Object#toString` avoids issues with the `typeof` operator
-	  // in Safari 8 which returns 'object' for typed array and weak map constructors,
-	  // and PhantomJS 1.9 which returns 'function' for `NodeList` instances.
-	  var tag = isObject(value) ? objectToString.call(value) : '';
-	  return tag == funcTag || tag == genTag;
-	}
-	
-	/**
-	 * Checks if `value` is a valid array-like length.
-	 *
-	 * **Note:** This function is loosely based on [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
-	 *
-	 * @static
-	 * @memberOf _
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
-	 * @example
-	 *
-	 * _.isLength(3);
-	 * // => true
-	 *
-	 * _.isLength(Number.MIN_VALUE);
-	 * // => false
-	 *
-	 * _.isLength(Infinity);
-	 * // => false
-	 *
-	 * _.isLength('3');
-	 * // => false
-	 */
-	function isLength(value) {
-	  return typeof value == 'number' &&
-	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-	}
-	
-	/**
-	 * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
-	 * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
-	 *
-	 * @static
-	 * @memberOf _
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is an object, else `false`.
-	 * @example
-	 *
-	 * _.isObject({});
-	 * // => true
-	 *
-	 * _.isObject([1, 2, 3]);
-	 * // => true
-	 *
-	 * _.isObject(_.noop);
-	 * // => true
-	 *
-	 * _.isObject(null);
-	 * // => false
-	 */
-	function isObject(value) {
-	  var type = typeof value;
-	  return !!value && (type == 'object' || type == 'function');
-	}
-	
-	/**
-	 * Checks if `value` is object-like. A value is object-like if it's not `null`
-	 * and has a `typeof` result of "object".
-	 *
-	 * @static
-	 * @memberOf _
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
-	 * @example
-	 *
-	 * _.isObjectLike({});
-	 * // => true
-	 *
-	 * _.isObjectLike([1, 2, 3]);
-	 * // => true
-	 *
-	 * _.isObjectLike(_.noop);
-	 * // => false
-	 *
-	 * _.isObjectLike(null);
-	 * // => false
-	 */
-	function isObjectLike(value) {
-	  return !!value && typeof value == 'object';
-	}
-	
-	/**
-	 * Checks if `value` is a native function.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is a native function, else `false`.
-	 * @example
-	 *
-	 * _.isNative(Array.prototype.push);
-	 * // => true
-	 *
-	 * _.isNative(_);
-	 * // => false
-	 */
-	function isNative(value) {
-	  if (value == null) {
-	    return false;
-	  }
-	  if (isFunction(value)) {
-	    return reIsNative.test(funcToString.call(value));
-	  }
-	  return isObjectLike(value) &&
-	    (isHostObject(value) ? reIsNative : reIsHostCtor).test(value);
-	}
-	
-	/**
-	 * Checks if `value` is classified as a typed array.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
-	 * @example
-	 *
-	 * _.isTypedArray(new Uint8Array);
-	 * // => true
-	 *
-	 * _.isTypedArray([]);
-	 * // => false
-	 */
-	function isTypedArray(value) {
-	  return isObjectLike(value) &&
-	    isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
-	}
-	
-	module.exports = isEqual;
-
-
-/***/ },
-/* 106 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(module, global) {/**
-	 * lodash 4.1.1 (Custom Build) <https://lodash.com/>
-	 * Build: `lodash modularize exports="npm" -o ./`
-	 * Copyright 2012-2016 The Dojo Foundation <http://dojofoundation.org/>
-	 * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
-	 * Copyright 2009-2016 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
-	 * Available under MIT license <https://lodash.com/license>
-	 */
-	
-	/** Used as the size to enable large array optimizations. */
-	var LARGE_ARRAY_SIZE = 200;
-	
-	/** Used to stand-in for `undefined` hash values. */
-	var HASH_UNDEFINED = '__lodash_hash_undefined__';
-	
-	/** `Object#toString` result references. */
-	var funcTag = '[object Function]',
-	    genTag = '[object GeneratorFunction]';
-	
-	/** Used to match `RegExp` [syntax characters](http://ecma-international.org/ecma-262/6.0/#sec-patterns). */
-	var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
-	
-	/** Used to detect host constructors (Safari > 5). */
-	var reIsHostCtor = /^\[object .+?Constructor\]$/;
-	
-	/** Used to determine if values are of the language type `Object`. */
-	var objectTypes = {
-	  'function': true,
-	  'object': true
-	};
-	
-	/** Detect free variable `exports`. */
-	var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
-	  ? exports
-	  : undefined;
-	
-	/** Detect free variable `module`. */
-	var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
-	  ? module
-	  : undefined;
-	
-	/** Detect free variable `global` from Node.js. */
-	var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
-	
-	/** Detect free variable `self`. */
-	var freeSelf = checkGlobal(objectTypes[typeof self] && self);
-	
-	/** Detect free variable `window`. */
-	var freeWindow = checkGlobal(objectTypes[typeof window] && window);
-	
-	/** Detect `this` as the global object. */
-	var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
-	
-	/**
-	 * Used as a reference to the global object.
-	 *
-	 * The `this` value is used if it's the global object to avoid Greasemonkey's
-	 * restricted `window` object, otherwise the `window` object is used.
-	 */
-	var root = freeGlobal ||
-	  ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
-	    freeSelf || thisGlobal || Function('return this')();
-	
-	/**
-	 * Checks if `value` is a global object.
-	 *
-	 * @private
-	 * @param {*} value The value to check.
-	 * @returns {null|Object} Returns `value` if it's a global object, else `null`.
-	 */
-	function checkGlobal(value) {
-	  return (value && value.Object === Object) ? value : null;
-	}
-	
-	/**
-	 * Checks if `value` is a host object in IE < 9.
-	 *
-	 * @private
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
-	 */
-	function isHostObject(value) {
-	  // Many host objects are `Object` objects that can coerce to strings
-	  // despite having improperly defined `toString` methods.
-	  var result = false;
-	  if (value != null && typeof value.toString != 'function') {
-	    try {
-	      result = !!(value + '');
-	    } catch (e) {}
-	  }
-	  return result;
-	}
-	
-	/** Used for built-in method references. */
-	var arrayProto = Array.prototype,
-	    objectProto = Object.prototype;
-	
-	/** Used to resolve the decompiled source of functions. */
-	var funcToString = Function.prototype.toString;
-	
-	/** Used to check objects for own properties. */
-	var hasOwnProperty = objectProto.hasOwnProperty;
-	
-	/**
-	 * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-	 * of values.
-	 */
-	var objectToString = objectProto.toString;
-	
-	/** Used to detect if a method is native. */
-	var reIsNative = RegExp('^' +
-	  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
-	  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
-	);
-	
-	/** Built-in value references. */
-	var splice = arrayProto.splice;
-	
-	/* Built-in method references that are verified to be native. */
-	var Map = getNative(root, 'Map'),
-	    nativeCreate = getNative(Object, 'create');
-	
-	/**
-	 * Creates an hash object.
-	 *
-	 * @private
-	 * @constructor
-	 * @returns {Object} Returns the new hash object.
-	 */
-	function Hash() {}
-	
-	/**
-	 * Removes `key` and its value from the hash.
-	 *
-	 * @private
-	 * @param {Object} hash The hash to modify.
-	 * @param {string} key The key of the value to remove.
-	 * @returns {boolean} Returns `true` if the entry was removed, else `false`.
-	 */
-	function hashDelete(hash, key) {
-	  return hashHas(hash, key) && delete hash[key];
-	}
-	
-	/**
-	 * Gets the hash value for `key`.
-	 *
-	 * @private
-	 * @param {Object} hash The hash to query.
-	 * @param {string} key The key of the value to get.
-	 * @returns {*} Returns the entry value.
-	 */
-	function hashGet(hash, key) {
-	  if (nativeCreate) {
-	    var result = hash[key];
-	    return result === HASH_UNDEFINED ? undefined : result;
-	  }
-	  return hasOwnProperty.call(hash, key) ? hash[key] : undefined;
-	}
-	
-	/**
-	 * Checks if a hash value for `key` exists.
-	 *
-	 * @private
-	 * @param {Object} hash The hash to query.
-	 * @param {string} key The key of the entry to check.
-	 * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
-	 */
-	function hashHas(hash, key) {
-	  return nativeCreate ? hash[key] !== undefined : hasOwnProperty.call(hash, key);
-	}
-	
-	/**
-	 * Sets the hash `key` to `value`.
-	 *
-	 * @private
-	 * @param {Object} hash The hash to modify.
-	 * @param {string} key The key of the value to set.
-	 * @param {*} value The value to set.
-	 */
-	function hashSet(hash, key, value) {
-	  hash[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
-	}
-	
-	/**
-	 * Creates a map cache object to store key-value pairs.
-	 *
-	 * @private
-	 * @constructor
-	 * @param {Array} [values] The values to cache.
-	 */
-	function MapCache(values) {
-	  var index = -1,
-	      length = values ? values.length : 0;
-	
-	  this.clear();
-	  while (++index < length) {
-	    var entry = values[index];
-	    this.set(entry[0], entry[1]);
-	  }
-	}
-	
-	/**
-	 * Removes all key-value entries from the map.
-	 *
-	 * @private
-	 * @name clear
-	 * @memberOf MapCache
-	 */
-	function mapClear() {
-	  this.__data__ = {
-	    'hash': new Hash,
-	    'map': Map ? new Map : [],
-	    'string': new Hash
-	  };
-	}
-	
-	/**
-	 * Removes `key` and its value from the map.
-	 *
-	 * @private
-	 * @name delete
-	 * @memberOf MapCache
-	 * @param {string} key The key of the value to remove.
-	 * @returns {boolean} Returns `true` if the entry was removed, else `false`.
-	 */
-	function mapDelete(key) {
-	  var data = this.__data__;
-	  if (isKeyable(key)) {
-	    return hashDelete(typeof key == 'string' ? data.string : data.hash, key);
-	  }
-	  return Map ? data.map['delete'](key) : assocDelete(data.map, key);
-	}
-	
-	/**
-	 * Gets the map value for `key`.
-	 *
-	 * @private
-	 * @name get
-	 * @memberOf MapCache
-	 * @param {string} key The key of the value to get.
-	 * @returns {*} Returns the entry value.
-	 */
-	function mapGet(key) {
-	  var data = this.__data__;
-	  if (isKeyable(key)) {
-	    return hashGet(typeof key == 'string' ? data.string : data.hash, key);
-	  }
-	  return Map ? data.map.get(key) : assocGet(data.map, key);
-	}
-	
-	/**
-	 * Checks if a map value for `key` exists.
-	 *
-	 * @private
-	 * @name has
-	 * @memberOf MapCache
-	 * @param {string} key The key of the entry to check.
-	 * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
-	 */
-	function mapHas(key) {
-	  var data = this.__data__;
-	  if (isKeyable(key)) {
-	    return hashHas(typeof key == 'string' ? data.string : data.hash, key);
-	  }
-	  return Map ? data.map.has(key) : assocHas(data.map, key);
-	}
-	
-	/**
-	 * Sets the map `key` to `value`.
-	 *
-	 * @private
-	 * @name set
-	 * @memberOf MapCache
-	 * @param {string} key The key of the value to set.
-	 * @param {*} value The value to set.
-	 * @returns {Object} Returns the map cache object.
-	 */
-	function mapSet(key, value) {
-	  var data = this.__data__;
-	  if (isKeyable(key)) {
-	    hashSet(typeof key == 'string' ? data.string : data.hash, key, value);
-	  } else if (Map) {
-	    data.map.set(key, value);
-	  } else {
-	    assocSet(data.map, key, value);
-	  }
-	  return this;
-	}
-	
-	/**
-	 * Creates a stack cache object to store key-value pairs.
-	 *
-	 * @private
-	 * @constructor
-	 * @param {Array} [values] The values to cache.
-	 */
-	function Stack(values) {
-	  var index = -1,
-	      length = values ? values.length : 0;
-	
-	  this.clear();
-	  while (++index < length) {
-	    var entry = values[index];
-	    this.set(entry[0], entry[1]);
-	  }
-	}
-	
-	/**
-	 * Removes all key-value entries from the stack.
-	 *
-	 * @private
-	 * @name clear
-	 * @memberOf Stack
-	 */
-	function stackClear() {
-	  this.__data__ = { 'array': [], 'map': null };
-	}
-	
-	/**
-	 * Removes `key` and its value from the stack.
-	 *
-	 * @private
-	 * @name delete
-	 * @memberOf Stack
-	 * @param {string} key The key of the value to remove.
-	 * @returns {boolean} Returns `true` if the entry was removed, else `false`.
-	 */
-	function stackDelete(key) {
-	  var data = this.__data__,
-	      array = data.array;
-	
-	  return array ? assocDelete(array, key) : data.map['delete'](key);
-	}
-	
-	/**
-	 * Gets the stack value for `key`.
-	 *
-	 * @private
-	 * @name get
-	 * @memberOf Stack
-	 * @param {string} key The key of the value to get.
-	 * @returns {*} Returns the entry value.
-	 */
-	function stackGet(key) {
-	  var data = this.__data__,
-	      array = data.array;
-	
-	  return array ? assocGet(array, key) : data.map.get(key);
-	}
-	
-	/**
-	 * Checks if a stack value for `key` exists.
-	 *
-	 * @private
-	 * @name has
-	 * @memberOf Stack
-	 * @param {string} key The key of the entry to check.
-	 * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
-	 */
-	function stackHas(key) {
-	  var data = this.__data__,
-	      array = data.array;
-	
-	  return array ? assocHas(array, key) : data.map.has(key);
-	}
-	
-	/**
-	 * Sets the stack `key` to `value`.
-	 *
-	 * @private
-	 * @name set
-	 * @memberOf Stack
-	 * @param {string} key The key of the value to set.
-	 * @param {*} value The value to set.
-	 * @returns {Object} Returns the stack cache object.
-	 */
-	function stackSet(key, value) {
-	  var data = this.__data__,
-	      array = data.array;
-	
-	  if (array) {
-	    if (array.length < (LARGE_ARRAY_SIZE - 1)) {
-	      assocSet(array, key, value);
-	    } else {
-	      data.array = null;
-	      data.map = new MapCache(array);
-	    }
-	  }
-	  var map = data.map;
-	  if (map) {
-	    map.set(key, value);
-	  }
-	  return this;
-	}
-	
-	/**
-	 * Removes `key` and its value from the associative array.
-	 *
-	 * @private
-	 * @param {Array} array The array to query.
-	 * @param {string} key The key of the value to remove.
-	 * @returns {boolean} Returns `true` if the entry was removed, else `false`.
-	 */
-	function assocDelete(array, key) {
-	  var index = assocIndexOf(array, key);
-	  if (index < 0) {
-	    return false;
-	  }
-	  var lastIndex = array.length - 1;
-	  if (index == lastIndex) {
-	    array.pop();
-	  } else {
-	    splice.call(array, index, 1);
-	  }
-	  return true;
-	}
-	
-	/**
-	 * Gets the associative array value for `key`.
-	 *
-	 * @private
-	 * @param {Array} array The array to query.
-	 * @param {string} key The key of the value to get.
-	 * @returns {*} Returns the entry value.
-	 */
-	function assocGet(array, key) {
-	  var index = assocIndexOf(array, key);
-	  return index < 0 ? undefined : array[index][1];
-	}
-	
-	/**
-	 * Checks if an associative array value for `key` exists.
-	 *
-	 * @private
-	 * @param {Array} array The array to query.
-	 * @param {string} key The key of the entry to check.
-	 * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
-	 */
-	function assocHas(array, key) {
-	  return assocIndexOf(array, key) > -1;
-	}
-	
-	/**
-	 * Gets the index at which the first occurrence of `key` is found in `array`
-	 * of key-value pairs.
-	 *
-	 * @private
-	 * @param {Array} array The array to search.
-	 * @param {*} key The key to search for.
-	 * @returns {number} Returns the index of the matched value, else `-1`.
-	 */
-	function assocIndexOf(array, key) {
-	  var length = array.length;
-	  while (length--) {
-	    if (eq(array[length][0], key)) {
-	      return length;
-	    }
-	  }
-	  return -1;
-	}
-	
-	/**
-	 * Sets the associative array `key` to `value`.
-	 *
-	 * @private
-	 * @param {Array} array The array to modify.
-	 * @param {string} key The key of the value to set.
-	 * @param {*} value The value to set.
-	 */
-	function assocSet(array, key, value) {
-	  var index = assocIndexOf(array, key);
-	  if (index < 0) {
-	    array.push([key, value]);
-	  } else {
-	    array[index][1] = value;
-	  }
-	}
-	
-	/**
-	 * Gets the native function at `key` of `object`.
-	 *
-	 * @private
-	 * @param {Object} object The object to query.
-	 * @param {string} key The key of the method to get.
-	 * @returns {*} Returns the function if it's native, else `undefined`.
-	 */
-	function getNative(object, key) {
-	  var value = object[key];
-	  return isNative(value) ? value : undefined;
 	}
 	
 	/**
@@ -8994,16 +8630,38 @@
 	 */
 	function isKeyable(value) {
 	  var type = typeof value;
-	  return type == 'number' || type == 'boolean' ||
-	    (type == 'string' && value != '__proto__') || value == null;
+	  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
+	    ? (value !== '__proto__')
+	    : (value === null);
 	}
 	
 	/**
-	 * Performs a [`SameValueZero`](http://ecma-international.org/ecma-262/6.0/#sec-samevaluezero)
+	 * Converts `func` to its source code.
+	 *
+	 * @private
+	 * @param {Function} func The function to process.
+	 * @returns {string} Returns the source code.
+	 */
+	function toSource(func) {
+	  if (func != null) {
+	    try {
+	      return funcToString.call(func);
+	    } catch (e) {}
+	    try {
+	      return (func + '');
+	    } catch (e) {}
+	  }
+	  return '';
+	}
+	
+	/**
+	 * Performs a
+	 * [`SameValueZero`](http://ecma-international.org/ecma-262/6.0/#sec-samevaluezero)
 	 * comparison between two values to determine if they are equivalent.
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 4.0.0
 	 * @category Lang
 	 * @param {*} value The value to compare.
 	 * @param {*} other The other value to compare.
@@ -9033,13 +8691,75 @@
 	}
 	
 	/**
+	 * Checks if `value` is classified as an `Array` object.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @type {Function}
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is correctly classified,
+	 *  else `false`.
+	 * @example
+	 *
+	 * _.isArray([1, 2, 3]);
+	 * // => true
+	 *
+	 * _.isArray(document.body.children);
+	 * // => false
+	 *
+	 * _.isArray('abc');
+	 * // => false
+	 *
+	 * _.isArray(_.noop);
+	 * // => false
+	 */
+	var isArray = Array.isArray;
+	
+	/**
+	 * Performs a deep comparison between two values to determine if they are
+	 * equivalent.
+	 *
+	 * **Note:** This method supports comparing arrays, array buffers, booleans,
+	 * date objects, error objects, maps, numbers, `Object` objects, regexes,
+	 * sets, strings, symbols, and typed arrays. `Object` objects are compared
+	 * by their own, not inherited, enumerable properties. Functions and DOM
+	 * nodes are **not** supported.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to compare.
+	 * @param {*} other The other value to compare.
+	 * @returns {boolean} Returns `true` if the values are equivalent,
+	 *  else `false`.
+	 * @example
+	 *
+	 * var object = { 'user': 'fred' };
+	 * var other = { 'user': 'fred' };
+	 *
+	 * _.isEqual(object, other);
+	 * // => true
+	 *
+	 * object === other;
+	 * // => false
+	 */
+	function isEqual(value, other) {
+	  return baseIsEqual(value, other);
+	}
+	
+	/**
 	 * Checks if `value` is classified as a `Function` object.
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 0.1.0
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is correctly classified,
+	 *  else `false`.
 	 * @example
 	 *
 	 * _.isFunction(_);
@@ -9057,11 +8777,45 @@
 	}
 	
 	/**
-	 * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
-	 * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+	 * Checks if `value` is a valid array-like length.
+	 *
+	 * **Note:** This function is loosely based on
+	 * [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a valid length,
+	 *  else `false`.
+	 * @example
+	 *
+	 * _.isLength(3);
+	 * // => true
+	 *
+	 * _.isLength(Number.MIN_VALUE);
+	 * // => false
+	 *
+	 * _.isLength(Infinity);
+	 * // => false
+	 *
+	 * _.isLength('3');
+	 * // => false
+	 */
+	function isLength(value) {
+	  return typeof value == 'number' &&
+	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+	}
+	
+	/**
+	 * Checks if `value` is the
+	 * [language type](http://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-types)
+	 * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
 	 * @category Lang
 	 * @param {*} value The value to check.
 	 * @returns {boolean} Returns `true` if `value` is an object, else `false`.
@@ -9090,6 +8844,7 @@
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 4.0.0
 	 * @category Lang
 	 * @param {*} value The value to check.
 	 * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
@@ -9116,9 +8871,11 @@
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 3.0.0
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is a native function, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is a native function,
+	 *  else `false`.
 	 * @example
 	 *
 	 * _.isNative(Array.prototype.push);
@@ -9128,64 +8885,50 @@
 	 * // => false
 	 */
 	function isNative(value) {
-	  if (value == null) {
+	  if (!isObject(value)) {
 	    return false;
 	  }
-	  if (isFunction(value)) {
-	    return reIsNative.test(funcToString.call(value));
-	  }
+	  var pattern = (isFunction(value) || isHostObject(value)) ? reIsNative : reIsHostCtor;
+	  return pattern.test(toSource(value));
+	}
+	
+	/**
+	 * Checks if `value` is classified as a typed array.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 3.0.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is correctly classified,
+	 *  else `false`.
+	 * @example
+	 *
+	 * _.isTypedArray(new Uint8Array);
+	 * // => true
+	 *
+	 * _.isTypedArray([]);
+	 * // => false
+	 */
+	function isTypedArray(value) {
 	  return isObjectLike(value) &&
-	    (isHostObject(value) ? reIsNative : reIsHostCtor).test(value);
+	    isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
 	}
 	
-	// Avoid inheriting from `Object.prototype` when possible.
-	Hash.prototype = nativeCreate ? nativeCreate(null) : objectProto;
-	
-	// Add functions to the `MapCache`.
-	MapCache.prototype.clear = mapClear;
-	MapCache.prototype['delete'] = mapDelete;
-	MapCache.prototype.get = mapGet;
-	MapCache.prototype.has = mapHas;
-	MapCache.prototype.set = mapSet;
-	
-	// Add functions to the `Stack` cache.
-	Stack.prototype.clear = stackClear;
-	Stack.prototype['delete'] = stackDelete;
-	Stack.prototype.get = stackGet;
-	Stack.prototype.has = stackHas;
-	Stack.prototype.set = stackSet;
-	
-	module.exports = Stack;
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(107)(module), (function() { return this; }())))
-
-/***/ },
-/* 107 */
-/***/ function(module, exports) {
-
-	module.exports = function(module) {
-		if(!module.webpackPolyfill) {
-			module.deprecate = function() {};
-			module.paths = [];
-			// module.parent = undefined by default
-			module.children = [];
-			module.webpackPolyfill = 1;
-		}
-		return module;
-	}
+	module.exports = isEqual;
 
 
 /***/ },
-/* 108 */
+/* 106 */
 /***/ function(module, exports) {
 
 	/**
-	 * lodash 4.0.5 (Custom Build) <https://lodash.com/>
+	 * lodash (Custom Build) <https://lodash.com/>
 	 * Build: `lodash modularize exports="npm" -o ./`
-	 * Copyright 2012-2016 The Dojo Foundation <http://dojofoundation.org/>
+	 * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+	 * Released under MIT license <https://lodash.com/license>
 	 * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
-	 * Copyright 2009-2016 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
-	 * Available under MIT license <https://lodash.com/license>
+	 * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 	 */
 	
 	/** Used as references for various `Number` constants. */
@@ -9219,20 +8962,6 @@
 	  return result;
 	}
 	
-	/**
-	 * Checks if `value` is a valid array-like index.
-	 *
-	 * @private
-	 * @param {*} value The value to check.
-	 * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
-	 * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
-	 */
-	function isIndex(value, length) {
-	  value = (typeof value == 'number' || reIsUint.test(value)) ? +value : -1;
-	  length = length == null ? MAX_SAFE_INTEGER : length;
-	  return value > -1 && value % 1 == 0 && value < length;
-	}
-	
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
 	
@@ -9240,17 +8969,18 @@
 	var hasOwnProperty = objectProto.hasOwnProperty;
 	
 	/**
-	 * Used to resolve the [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+	 * Used to resolve the
+	 * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
 	 * of values.
 	 */
 	var objectToString = objectProto.toString;
 	
 	/** Built-in value references. */
-	var getPrototypeOf = Object.getPrototypeOf,
-	    propertyIsEnumerable = objectProto.propertyIsEnumerable;
+	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
 	
 	/* Built-in method references for those with the same name as other `lodash` methods. */
-	var nativeKeys = Object.keys;
+	var nativeGetPrototype = Object.getPrototypeOf,
+	    nativeKeys = Object.keys;
 	
 	/**
 	 * The base implementation of `_.has` without support for deep paths.
@@ -9265,7 +8995,7 @@
 	  // that are composed entirely of index properties, return `false` for
 	  // `hasOwnProperty` checks of them.
 	  return hasOwnProperty.call(object, key) ||
-	    (typeof object == 'object' && key in object && getPrototypeOf(object) === null);
+	    (typeof object == 'object' && key in object && getPrototype(object) === null);
 	}
 	
 	/**
@@ -9285,7 +9015,7 @@
 	 *
 	 * @private
 	 * @param {string} key The key of the property to get.
-	 * @returns {Function} Returns the new function.
+	 * @returns {Function} Returns the new accessor function.
 	 */
 	function baseProperty(key) {
 	  return function(object) {
@@ -9296,14 +9026,26 @@
 	/**
 	 * Gets the "length" property value of `object`.
 	 *
-	 * **Note:** This function is used to avoid a [JIT bug](https://bugs.webkit.org/show_bug.cgi?id=142792)
-	 * that affects Safari on at least iOS 8.1-8.3 ARM64.
+	 * **Note:** This function is used to avoid a
+	 * [JIT bug](https://bugs.webkit.org/show_bug.cgi?id=142792) that affects
+	 * Safari on at least iOS 8.1-8.3 ARM64.
 	 *
 	 * @private
 	 * @param {Object} object The object to query.
 	 * @returns {*} Returns the "length" value.
 	 */
 	var getLength = baseProperty('length');
+	
+	/**
+	 * Gets the `[[Prototype]]` of `value`.
+	 *
+	 * @private
+	 * @param {*} value The value to query.
+	 * @returns {null|Object} Returns the `[[Prototype]]`.
+	 */
+	function getPrototype(value) {
+	  return nativeGetPrototype(Object(value));
+	}
 	
 	/**
 	 * Creates an array of index keys for `object` values of arrays,
@@ -9320,6 +9062,21 @@
 	    return baseTimes(length, String);
 	  }
 	  return null;
+	}
+	
+	/**
+	 * Checks if `value` is a valid array-like index.
+	 *
+	 * @private
+	 * @param {*} value The value to check.
+	 * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+	 * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+	 */
+	function isIndex(value, length) {
+	  length = length == null ? MAX_SAFE_INTEGER : length;
+	  return !!length &&
+	    (typeof value == 'number' || reIsUint.test(value)) &&
+	    (value > -1 && value % 1 == 0 && value < length);
 	}
 	
 	/**
@@ -9341,9 +9098,11 @@
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 0.1.0
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is correctly classified,
+	 *  else `false`.
 	 * @example
 	 *
 	 * _.isArguments(function() { return arguments; }());
@@ -9363,10 +9122,12 @@
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 0.1.0
 	 * @type {Function}
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is correctly classified,
+	 *  else `false`.
 	 * @example
 	 *
 	 * _.isArray([1, 2, 3]);
@@ -9390,6 +9151,7 @@
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 4.0.0
 	 * @category Lang
 	 * @param {*} value The value to check.
 	 * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
@@ -9417,9 +9179,11 @@
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 4.0.0
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is an array-like object, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is an array-like object,
+	 *  else `false`.
 	 * @example
 	 *
 	 * _.isArrayLikeObject([1, 2, 3]);
@@ -9443,9 +9207,11 @@
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 0.1.0
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is correctly classified,
+	 *  else `false`.
 	 * @example
 	 *
 	 * _.isFunction(_);
@@ -9465,13 +9231,16 @@
 	/**
 	 * Checks if `value` is a valid array-like length.
 	 *
-	 * **Note:** This function is loosely based on [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
+	 * **Note:** This function is loosely based on
+	 * [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 4.0.0
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is a valid length,
+	 *  else `false`.
 	 * @example
 	 *
 	 * _.isLength(3);
@@ -9492,11 +9261,13 @@
 	}
 	
 	/**
-	 * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
-	 * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+	 * Checks if `value` is the
+	 * [language type](http://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-types)
+	 * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 0.1.0
 	 * @category Lang
 	 * @param {*} value The value to check.
 	 * @returns {boolean} Returns `true` if `value` is an object, else `false`.
@@ -9525,6 +9296,7 @@
 	 *
 	 * @static
 	 * @memberOf _
+	 * @since 4.0.0
 	 * @category Lang
 	 * @param {*} value The value to check.
 	 * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
@@ -9550,10 +9322,12 @@
 	 * Checks if `value` is classified as a `String` primitive or object.
 	 *
 	 * @static
+	 * @since 0.1.0
 	 * @memberOf _
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is correctly classified,
+	 *  else `false`.
 	 * @example
 	 *
 	 * _.isString('abc');
@@ -9575,6 +9349,7 @@
 	 * for more details.
 	 *
 	 * @static
+	 * @since 0.1.0
 	 * @memberOf _
 	 * @category Object
 	 * @param {Object} object The object to query.
@@ -9618,7 +9393,7 @@
 
 
 /***/ },
-/* 109 */
+/* 107 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(module, global) {/**
@@ -9681,14 +9456,30 @@
 	
 	module.exports = root;
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(107)(module), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(108)(module), (function() { return this; }())))
 
 /***/ },
-/* 110 */
+/* 108 */
+/***/ function(module, exports) {
+
+	module.exports = function(module) {
+		if(!module.webpackPolyfill) {
+			module.deprecate = function() {};
+			module.paths = [];
+			// module.parent = undefined by default
+			module.children = [];
+			module.webpackPolyfill = 1;
+		}
+		return module;
+	}
+
+
+/***/ },
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var strictUriEncode = __webpack_require__(111);
+	var strictUriEncode = __webpack_require__(110);
 	
 	exports.extract = function (str) {
 		return str.split('?')[1] || '';
@@ -9756,7 +9547,7 @@
 
 
 /***/ },
-/* 111 */
+/* 110 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -9768,7 +9559,7 @@
 
 
 /***/ },
-/* 112 */
+/* 111 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*** IMPORTS FROM imports-loader ***/
@@ -9813,7 +9604,7 @@
 	}
 	
 	var inputs = [];
-	module.exports = function (schema, visibleColumns, ringLabels, options) {
+	module.exports = function (schema, dataFormat, options) {
 	
 		var formLocation = document.getElementById('tech-radar__qp-form');
 	
@@ -9854,11 +9645,6 @@
 				// show the default value if it is something worth showing
 				input.placeholder = optionType.name + (!!String(optionDefault) ? ' (' + thisSchema[2] + ')' : '');
 				label.title = desc;
-	
-				if (qp === 'id') {
-					desc = desc + (' <a href="https://docs.google.com/spreadsheets/d/' + optionValue + '/" target="_blank">Link to spreadsheet</a>');
-				}
-	
 				small.innerHTML = desc;
 				input.value = optionValue || '';
 				if (optionValue === optionDefault) {
@@ -9882,10 +9668,6 @@
 					group.style.flexBasis = '60%';
 				}
 	
-				if (optionType.constructor === Array) {
-					input = makeSelect(optionType, optionValue || optionDefault);
-				}
-	
 				if (qp === 'filter') {
 					group.style.flexBasis = '80%';
 				}
@@ -9896,15 +9678,11 @@
 				small.classList.add('o-forms-additional-info');
 	
 				if (qp === 'sortcol') {
-					input = makeSelect(visibleColumns, options.sortCol === optionDefault ? 'Default' : options.sortCol);
+					input = makeSelect(dataFormat, options.sortCol === optionDefault ? 'Default' : options.sortCol);
 				}
 	
 				if (qp === 'segment') {
-					input = makeSelect(visibleColumns, options.segment === optionDefault ? 'Default' : options.segment);
-				}
-	
-				if (qp === 'crystallisation') {
-					input = makeSelect(ringLabels, options.crystallisation || 'Default');
+					input = makeSelect(dataFormat, options.segment === optionDefault ? 'Default' : options.segment);
 				}
 	
 				if (qp === 'css') {

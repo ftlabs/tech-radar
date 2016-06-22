@@ -14,13 +14,9 @@ div, form {
   position: relative; }
 
 #boil-down {
-  position: absolute;
-  top: 0;
-  left: 0;
   font-size: 1.5em;
   width: 5em;
   overflow: visible;
-  -webkit-flex-shrink: 0;
   -ms-flex-negative: 0;
   flex-shrink: 0; }
   #boil-down h3, #boil-down p {
@@ -28,47 +24,38 @@ div, form {
 
 .form-tab-contents {
   display: -webkit-box;
-  display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
-  -webkit-flex-wrap: wrap;
   -ms-flex-wrap: wrap;
   flex-wrap: wrap;
   -webkit-box-pack: justify;
-  -webkit-justify-content: space-between;
   -ms-flex-pack: justify;
   justify-content: space-between;
   -webkit-box-align: center;
-  -webkit-align-items: center;
   -ms-flex-align: center;
   align-items: center; }
   .form-tab-contents > div {
     -webkit-box-flex: 1;
-    -webkit-flex-grow: 1;
     -ms-flex-positive: 1;
     flex-grow: 1; }
 
 #tech-radar__graph-target {
   -webkit-box-flex: 1;
-  -webkit-flex-grow: 1;
   -ms-flex-positive: 1;
   flex-grow: 1;
+  margin-left: -250px;
   min-width: 500px;
   text-align: right; }
 
 #tech-radar__display {
   display: -webkit-box;
-  display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
-  position: relative;
   -webkit-box-orient: horizontal;
   -webkit-box-direction: reverse;
-  -webkit-flex-direction: row-reverse;
   -ms-flex-direction: row-reverse;
   flex-direction: row-reverse;
   -webkit-box-pack: end;
-  -webkit-justify-content: flex-end;
   -ms-flex-pack: end;
   justify-content: flex-end; }
 
@@ -84,21 +71,19 @@ div, form {
 svg {
   max-width: 100%;
   height: auto;
-  font-size: 0.9em;
+  font-size: 1.3em;
   font-family: MetricWeb, helvetica, sans;
-  font-weight: bold;
-  -webkit-user-select: none; }
+  font-weight: bold; }
   svg .d3-label {
     fill: black;
     fill-opacity: 1;
     z-index: 10;
+    pointer-events: none;
     -webkit-transition: -webkit-transform 0.2s ease;
     transition: -webkit-transform 0.2s ease;
     transition: transform 0.2s ease;
     transition: transform 0.2s ease, -webkit-transform 0.2s ease;
-    text-anchor: end;
-    cursor: move;
-    cursor: -webkit-grab; }
+    text-anchor: end; }
     svg .d3-label.bg {
       stroke: white;
       stroke-width: 3px;
@@ -108,22 +93,11 @@ svg {
       stroke-alignment: outer; }
     svg .d3-label.ring-label, svg .d3-label.segment-label {
       fill: white;
-      font-size: 18pt; }
+      font-size: 18pt;
+      text-anchor: start; }
       svg .d3-label.ring-label.bg, svg .d3-label.segment-label.bg {
         stroke: black;
         stroke-width: 5px; }
-  svg.right .d3-label {
-    text-anchor: end; }
-    svg.right .d3-label.ring-label {
-      text-anchor: start; }
-    svg.right .d3-label.segment-label {
-      text-anchor: end; }
-  svg.left .d3-label {
-    text-anchor: start; }
-    svg.left .d3-label.ring-label {
-      text-anchor: end; }
-    svg.left .d3-label.segment-label {
-      text-anchor: start; }
   svg .hovering .d3-label {
     fill: red !important;
     font-weight: bold; }
@@ -132,14 +106,10 @@ svg {
   svg circle.node {
     fill: white;
     stroke-width: 2px;
-    stroke: black;
-    cursor: move;
-    cursor: -webkit-grab; }
+    stroke: black; }
     svg circle.node.segment-label {
       display: none;
       font-size: 16pt; }
-  svg .rootNode {
-    pointer-events: none; }
 
 use {
   pointer-events: none; }
