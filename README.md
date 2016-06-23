@@ -23,10 +23,16 @@ If you head to `http://localhost:3010/` you'll be presented with a rainbow, but 
 
 ## Constructing the URL
 
-### There are 2 mandatory parameters :
+### There are some mandatory parameters :
+
+Either:
 
 1. sheet - sheet name (mandatory)
 2. id - spreadsheet id (mandatory)
+
+OR:
+
+1. json - a url to a json file such as [http://ftlabs.github.io/tech-radar/demo.json](http://ftlabs.github.io/tech-radar/demo.json)
 
 The mandatory parameters point to a specific Google spreadsheet (that has been published to JSON via Bertha).
 
@@ -43,6 +49,7 @@ Strings are just single values e.g. `param=myString`
 Booleans are the value `false` or any other value, e.g. `&bool=false` is false; `&bool=true` is true,
 Numbers are any positive real number. E.g. `&number=0.1`, `&number=50`
 
+* filter (String) - Filter the data using Regular Expressions.
 * sortcol (String) - It will try to sort the column numerically and will do so if any of the items start with a number. Failing to find any numbers it will sort it alphabetically. The groups will be drawn on the graph.
 * showcol (Array) - Other columns to show as headers in the table, all other information can be revealed with a click.
 * dashboard (Boolean) - whether to hide the options and settings
@@ -54,15 +61,19 @@ Numbers are any positive real number. E.g. `&number=0.1`, `&number=50`
 ..* hexadecimal: '%23FFFFFF', '%23FACADE', '%23BADA55', '%23C0FFEE'
 ..* hsl: 'hsl(200%2C50%25%2C50%25)'
 ..* **special case: 'rainbow'**
+* gradient (Number between -1 and 1) - whether the gradient should get lighter or darker from the ringcolor
 * proportionalrings (Boolean) - Whether to make the rings with more elements have more room.
 * sorttype (String) - 'alphabetical' or 'numerical', if sorted numerically items not beginning with a number will have a value of zero.
 * title (String) - Title on the Display
 * crystallisation (String) - Ring to highlight
 * noderepulsion (Number) - How strongly the nodes repel each other (default, 3)
 * nodeattraction (Number) - How strongly the nodes are pulled to the center of the segment (default, 3)
+* linewrap (Boolean) - whether to wrap the labels onto a new line per word.
+* tightlabels - Whether the labels should be allowed to position freely to avoid overlapping
+* quadrant (String, 'bottom right', 'bottom left', 'top left', 'top right') - what corner should the quarter circle sit in?
 * css (String) - An advanced property but you can use this to override existing styles.
 
-CSS Example:
+CSS Example - ugly but changes almost everything:
 
 ```
 body, svg .mask {
