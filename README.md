@@ -14,7 +14,7 @@ Either
 
 An empty value (e.g. `&sortcol=&dashboard=&ringcolor=`) just falls back to the default value.
 
-Arrays are comma seperated values e.g. `param=item1,item2,item3`
+Arrays are comma separated values e.g. `param=item1,item2,item3`
 
 Strings are just single values e.g. `param=myString`
 
