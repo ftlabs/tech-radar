@@ -81,26 +81,34 @@ svg circle.node {
 }
 ```
 
-Any of the above parameters can also be entered in the spreadsheet under name and configvalue columns e.g.
+Any of the above parameters (including 'css') can also be entered as rows in the JSON data (or spreadsheet) with fields 'name' (for the name of the config param) and 'configvalue'. Normal data items will have a blank (or no) 'configvalue' field.
 
-| Name          | configvalue   | date        | phase       | cost        |
-| ------------- |:-------------:| -----------:| -----------:| -----------:|
-| sortcol       | date          |             |             |             |
-| color         | rainbow       |             |             |             |
-| showcol       | phase, cost   |             |             |             |
-| Data Item 1   |               | 04031982    | development | 99.95       |
+-----
 
-Example URL:
+# Developing
 
-```
+## Building
 
-Example URL: http://local.ft.com:8080/?sheet=my-information-sheet&id=12345678-ABCDEFG_ABCDEFGHIJKLMNMLKJIHGFEDCBA&sortcol=important-row&showcol=revelant-row,another-relevant-row
-
-Demo URL: http://ftlabs.github.io/tech-radar/?id=14-BOCeYDFXQyGB4H7NRx5Vej6q9Fuh7gH93AsxEtl00&sheet=Data1&sortcol=do-able&showcol=heft
+Requires origami build tools setup.
 
 ```
+npm install
+npm run build
+```
 
+## Running
 
+Tech-radar has no server compenent, all of the resources are static. To view them locally, you can spin up a simple server to deliver the files, using something like `python -m SimpleHTTPServer 3010`.
+
+## Displaying information
+
+If you head to `http://localhost:3010/` you'll be presented with a rainbow, but no information will be visible. This is because you need to pass two URL parameters for tech radar to generate a chart.
+
+-----
+
+# In-house Usage: Bertha Documentation
+Bertha is an in-house Interactive Graphics application which exposes an API to turn a Google Spreadsheet into a JSON object.
+Documentation for Bertha can be found in the project's wiki - https://github.com/ft-interactive/bertha/wiki/Tutorial
 
 ## Constructing the spreadsheet
 
@@ -125,26 +133,21 @@ You can then create a Tech radar view of that spreadsheet by constructing a URL 
 
 * http://whereveryourserveris/?sheet=SheetName&id=UUID
 
-# Developing
+You can specify default values for the config params in the spreadsheet, e.g.
 
-## Building
+| Name          | configvalue   | date        | phase       | cost        |
+| ------------- |:-------------:| -----------:| -----------:| -----------:|
+| sortcol       | date          |             |             |             |
+| color         | rainbow       |             |             |             |
+| showcol       | phase, cost   |             |             |             |
+| Data Item 1   |               | 04031982    | development | 99.95       |
 
-Requires origami build tools setup.
+Example URL:
 
 ```
-npm install
-npm run build
+
+Example URL: http://local.ft.com:8080/?sheet=my-information-sheet&id=12345678-ABCDEFG_ABCDEFGHIJKLMNMLKJIHGFEDCBA&sortcol=important-row&showcol=revelant-row,another-relevant-row
+
+Demo URL: http://ftlabs.github.io/tech-radar/?id=14-BOCeYDFXQyGB4H7NRx5Vej6q9Fuh7gH93AsxEtl00&sheet=Data1&sortcol=do-able&showcol=heft
+
 ```
-
-## Running
-
-Tech-radar has no server compenent, all of the resources are static. To view them locally, you can spin up a simple server to deliver the files, using something like `python -m SimpleHTTPServer 3010`.
-
-## Displaying information
-
-If you head to `http://localhost:3010/` you'll be presented with a rainbow, but no information will be visible. This is because you need to pass two URL parameters for tech radar to generate a chart.
-
-# Bertha Documentation
-Bertha is an in-house Interactive Graphics application which exposes an API to turn a Google Spreadsheet into a JSON object.
-Documentation for Bertha can be found in the project's wiki - https://github.com/ft-interactive/bertha/wiki/Tutorial
-
