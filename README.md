@@ -1,54 +1,28 @@
 # Tech Radar
 
-## Bertha Documentation
-Bertha is an Interactive Graphics application which exposes an API to turn a Google Spreadsheet into a JSON object.
-Documentation for Bertha can be found in the project's wiki - https://github.com/ft-interactive/bertha/wiki/Tutorial
-
-## Building
-
-Requires origami build tools setup.
-
-```
-npm install
-npm run build
-```
-
-## Running
-
-Tech-radar has no server compenent, all of the resources are static. To view them locally, you can spin up a simple server to deliver the files, using something like `python -m SimpleHTTPServer 3010`.
-
-## Displaying information
-
-If you head to `http://localhost:3010/` you'll be presented with a rainbow, but no information will be visible. This is because you need to pass two URL parameters for tech radar to generate a chart.
-
 ## Constructing the URL
 
-### There are some mandatory parameters :
+Here is a working demo: https://labs.ft.com/tech-radar/?json=https%3A%2F%2Flabs.ft.com%2Ftech-radar%2Fdemo.json
 
-Either:
+### mandatory data source
 
-1. sheet - sheet name (mandatory)
-2. id - spreadsheet id (mandatory)
+Either
+1. json=*URL*, e.g. https://labs.ft.com/tech-radar/demo.json
+2. sheet=*GOOGLE_SPREADSHEET_SHEET_NAME*&id=*GOOGLE_SPREADSHEET_ID* (see Bertha Documentation below)
 
-OR:
+### assorted configuration parameters
 
-1. json - a url to a json file such as [http://ftlabs.github.io/tech-radar/demo.json](http://ftlabs.github.io/tech-radar/demo.json)
-
-The mandatory parameters point to a specific Google spreadsheet (that has been published to JSON via Bertha).
-
-Open the spreadsheet you want to display and copy the UID of the document. This will be the value for the `id` parameter.
-The `sheet` parameter is the name of the sheet in the spreadsheet document that contains the information you wish to display.
-
-An empty value (e.g. `&sortcol=&dashboard=&ringcolor=`) just fallback to the default value.
-
-The rest:
-
+An empty value (e.g. `&sortcol=&dashboard=&ringcolor=`) just falls back to the default value.
 
 Arrays are comma seperated values e.g. `param=item1,item2,item3`
+
 Strings are just single values e.g. `param=myString`
+
 Booleans are the value `false` or any other value, e.g. `&bool=false` is false; `&bool=true` is true,
+
 Numbers are any positive real number. E.g. `&number=0.1`, `&number=50`
 
+Parameters
 * filter (String) - Filter the data using Regular Expressions.
 * sortcol (String) - It will try to sort the column numerically and will do so if any of the items start with a number. Failing to find any numbers it will sort it alphabetically. The groups will be drawn on the graph.
 * showcol (Array) - Other columns to show as headers in the table, all other information can be revealed with a click.
@@ -150,3 +124,27 @@ All other named columns with be available for filtering in the radar view and ca
 You can then create a Tech radar view of that spreadsheet by constructing a URL as descriobed in the previous section
 
 * http://whereveryourserveris/?sheet=SheetName&id=UUID
+
+# Developing
+
+## Building
+
+Requires origami build tools setup.
+
+```
+npm install
+npm run build
+```
+
+## Running
+
+Tech-radar has no server compenent, all of the resources are static. To view them locally, you can spin up a simple server to deliver the files, using something like `python -m SimpleHTTPServer 3010`.
+
+## Displaying information
+
+If you head to `http://localhost:3010/` you'll be presented with a rainbow, but no information will be visible. This is because you need to pass two URL parameters for tech radar to generate a chart.
+
+# Bertha Documentation
+Bertha is an in-house Interactive Graphics application which exposes an API to turn a Google Spreadsheet into a JSON object.
+Documentation for Bertha can be found in the project's wiki - https://github.com/ft-interactive/bertha/wiki/Tutorial
+
