@@ -107,12 +107,14 @@ Tech-radar has no server component, all of the resources are static. To view the
 
 ```
 npm install -g serve
+cd ./dist
 serve
 ```
 
 or
 
 ```
+cd ./dist
 python -m SimpleHTTPServer 5000
 ```
 
