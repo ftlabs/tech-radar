@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "origami-build-tools build --js=client/js/main.js --buildFolder=dist --sass=client/scss/main.scss",
     "watch": "nodemon -e js,html,scss --watch ./client --exec 'npm run build'",
-    "build": "npm run compile && cp ./client/* ./dist/ || :",
+    "build": "npm run compile && cp -R ./client/ ./dist/ || :",
     "deploy": "git-directory-deploy --directory ./dist",
     "postinstall": "bower install"
   },

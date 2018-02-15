@@ -89,20 +89,38 @@ Any of the above parameters (including 'css') can also be entered as rows in the
 
 ## Building
 
-Requires origami build tools setup.
-
 ```
 npm install
+```
+
+This will pull in all the bower, origami.ft.com build tools, and assorted bits and bobs
+
+```
 npm run build
 ```
 
+This will populate the sub folder ./dist with the static resources.
+
 ## Running
 
-Tech-radar has no server compenent, all of the resources are static. To view them locally, you can spin up a simple server to deliver the files, using something like `python -m SimpleHTTPServer 3010`.
+Tech-radar has no server component, all of the resources are static. To view them locally, you can spin up a simple server to deliver the files, using something like
 
-## Displaying information
+```
+npm install -g serve
+serve
+```
 
-If you head to `http://localhost:3010/` you'll be presented with a rainbow, but no information will be visible. This is because you need to pass two URL parameters for tech radar to generate a chart.
+or
+
+```
+python -m SimpleHTTPServer 5000
+```
+
+## Viewing
+
+http://localhost:5000/?json=http://localhost:5000/demo.json
+
+(with whichever port your server to configured for)
 
 -----
 
