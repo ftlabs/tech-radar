@@ -120,7 +120,7 @@ python -m SimpleHTTPServer 5000
 
 http://localhost:5000/?json=http://localhost:5000/demo.json
 
-(with whichever port your server to configured for)
+(with whichever port your server is configured for)
 
 -----
 
