@@ -14,7 +14,7 @@
   "license": "MIT",
   "devDependencies": {
     "git-directory-deploy": "^1.4.0",
-    "handlebars": "^4.0.5",
+    "handlebars": "^4.7.7",
     "nodemon": "^1.9.1",
     "origami-build-tools": "^5.0.0",
     "query-string": "^3.0.0",
